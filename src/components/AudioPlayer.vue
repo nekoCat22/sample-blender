@@ -4,9 +4,10 @@
  * @details
  * - 2つの音声ファイルを同時に再生
  * - wavesurfer.jsで波形を表示
- * - 再生・停止ボタン付き（両方のサンプルを同時に制御）
+ * - 再生ボタン付き（両方のサンプルを同時に制御、常に最初から再生）
  * - エラー処理とエラーメッセージ表示機能
  * - ローディング状態の表示機能
+ * - 各サンプルのノブによる音量調整機能（ダブルクリックで初期値にリセット）
  * @limitations
  * - ファイル名は固定（sample1.wav, sample2.wav）
  */
@@ -25,18 +26,50 @@
     <div class="sample-container">
       <h3>サンプル1</h3>
       <div ref="waveform1"></div>
+      <div class="knob-container">
+        <div class="knob" @dblclick="resetVolume(1)">
+          <div class="knob-dial" :style="{ transform: `rotate(${volume1 * 270 - 135}deg)` }"></div>
+          <input
+            type="range"
+            id="volume1"
+            v-model="volume1"
+            min="0"
+            max="1"
+            step="0.01"
+            @input="updateVolume(1)"
+            class="knob-input"
+          />
+        </div>
+        <div class="knob-label">Volume</div>
+      </div>
     </div>
 
     <!-- サンプル2 -->
     <div class="sample-container">
       <h3>サンプル2</h3>
       <div ref="waveform2"></div>
+      <div class="knob-container">
+        <div class="knob" @dblclick="resetVolume(2)">
+          <div class="knob-dial" :style="{ transform: `rotate(${volume2 * 270 - 135}deg)` }"></div>
+          <input
+            type="range"
+            id="volume2"
+            v-model="volume2"
+            min="0"
+            max="1"
+            step="0.01"
+            @input="updateVolume(2)"
+            class="knob-input"
+          />
+        </div>
+        <div class="knob-label">Volume</div>
+      </div>
     </div>
 
-    <!-- 再生・停止ボタン -->
+    <!-- 再生ボタン -->
     <div class="control-container">
-      <button @click="togglePlay" :disabled="!!error || isLoading">
-        {{ isPlaying ? '停止' : '再生' }}
+      <button @click="playFromStart" :disabled="!!error || isLoading">
+        再生
       </button>
     </div>
   </div>
@@ -54,6 +87,8 @@ export default {
       isPlaying: false, // 再生中かどうか
       error: null, // エラーメッセージ
       isLoading: false, // 読み込み中かどうか
+      volume1: 0.5, // サンプル1の音量（0-1）
+      volume2: 0.5, // サンプル2の音量（0-1）
     };
   },
   async mounted() {
@@ -104,12 +139,14 @@ export default {
       this.wavesurfer1.on('ready', () => {
         this.error = null;
         this.isLoading = false;
+        this.wavesurfer1.setVolume(this.volume1);
       });
 
       // ロード完了時の処理（サンプル2）
       this.wavesurfer2.on('ready', () => {
         this.error = null;
         this.isLoading = false;
+        this.wavesurfer2.setVolume(this.volume2);
       });
 
       // 再生状態の監視（サンプル1）
@@ -166,23 +203,58 @@ export default {
   },
   methods: {
     /**
-     * @function togglePlay
-     * @description 両方のサンプルの再生・停止を切り替える
+     * @function playFromStart
+     * @description 両方のサンプルを最初から再生する
      */
-    togglePlay() {
+    playFromStart() {
       try {
         if (this.wavesurfer1 && this.wavesurfer2) {
-          if (this.isPlaying) {
-            this.wavesurfer1.pause();
-            this.wavesurfer2.pause();
-          } else {
-            this.wavesurfer1.play();
-            this.wavesurfer2.play();
-          }
+          // 両方のサンプルを最初に戻す
+          this.wavesurfer1.seekTo(0);
+          this.wavesurfer2.seekTo(0);
+          // 再生を開始
+          this.wavesurfer1.play();
+          this.wavesurfer2.play();
         }
       } catch (error) {
-        this.error = `再生/停止の切り替えに失敗しました: ${error.message}`;
-        console.error('AudioPlayer.vue: togglePlay() - 再生/停止エラー', error);
+        this.error = `再生に失敗しました: ${error.message}`;
+        console.error('AudioPlayer.vue: playFromStart() - 再生エラー', error);
+      }
+    },
+    /**
+     * @function updateVolume
+     * @description 指定したサンプルの音量を更新する
+     * @param {number} sampleNumber - サンプル番号（1または2）
+     */
+    updateVolume(sampleNumber) {
+      try {
+        const wavesurfer = sampleNumber === 1 ? this.wavesurfer1 : this.wavesurfer2;
+        const volume = sampleNumber === 1 ? this.volume1 : this.volume2;
+        if (wavesurfer) {
+          wavesurfer.setVolume(volume);
+        }
+      } catch (error) {
+        this.error = `音量の調整に失敗しました: ${error.message}`;
+        console.error('AudioPlayer.vue: updateVolume() - 音量調整エラー', error);
+      }
+    },
+    /**
+     * @function resetVolume
+     * @description 指定したサンプルの音量を初期値（0.5）にリセットする
+     * @param {number} sampleNumber - サンプル番号（1または2）
+     */
+    resetVolume(sampleNumber) {
+      try {
+        if (sampleNumber === 1) {
+          this.volume1 = 0.5;
+          this.updateVolume(1);
+        } else {
+          this.volume2 = 0.5;
+          this.updateVolume(2);
+        }
+      } catch (error) {
+        this.error = `音量のリセットに失敗しました: ${error.message}`;
+        console.error('AudioPlayer.vue: resetVolume() - 音量リセットエラー', error);
       }
     },
   },
@@ -245,5 +317,58 @@ button:disabled {
 .control-container {
   margin-top: 1em;
   text-align: center;
+}
+
+.knob-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5em;
+  margin-top: 1em;
+}
+
+.knob {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  background: #2b2b2b;
+  border-radius: 50%;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.knob:active {
+  transform: scale(0.95);
+}
+
+.knob-dial {
+  position: absolute;
+  width: 4px;
+  height: 20px;
+  background: #4361ee;
+  top: 5px;
+  left: 50%;
+  transform-origin: bottom center;
+  transform: translateX(-50%) rotate(-135deg);
+  border-radius: 2px;
+}
+
+.knob-input {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  transform: rotate(-135deg);
+}
+
+.knob-label {
+  font-size: 0.8em;
+  color: #666;
+  margin-top: 0.5em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 </style>
