@@ -40,7 +40,7 @@
         >
           <div class="knob-dial" :style="{ transform: `rotate(${volumes[1] * 270 - 135}deg)` }"></div>
         </div>
-        <div class="knob-label">Volume</div>
+        <div class="knob-label">Gain</div>
       </div>
     </div>
 
@@ -59,7 +59,7 @@
           >
             <div class="knob-dial" :style="{ transform: `rotate(${volumes[2] * 270 - 135}deg)` }"></div>
           </div>
-          <div class="knob-label">Volume</div>
+          <div class="knob-label">Gain</div>
         </div>
         <div class="knob-container">
           <div 
@@ -96,7 +96,7 @@
           >
             <div class="knob-dial" :style="{ transform: `rotate(${masterVolume * 270 - 135}deg)` }"></div>
           </div>
-          <div class="knob-label">Master Volume</div>
+          <div class="knob-label">Master</div>
         </div>
         <div class="meter-container">
           <div class="meter">
