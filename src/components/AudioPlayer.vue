@@ -11,6 +11,7 @@
  * - スペースキーでの再生制御機能
  * - マスターボリューム制御機能
  * - マスターボリュームの音量メーター表示機能（危険域の表示付き）
+ * - サンプル2のタイミング調整機能（-0.5秒から+0.5秒）
  * @limitations
  * - ファイル名は固定（sample1.wav, sample2.wav）
  */
@@ -47,17 +48,31 @@
     <div class="sample-container">
       <h3>サンプル2</h3>
       <div ref="waveform2"></div>
-      <div class="knob-container">
-        <div 
-          class="knob" 
-          @dblclick="resetVolume(2)"
-          @mousedown="startDragging(2, $event)"
-          @mousemove="handleDrag(2, $event)"
-          @mouseup="handleDocumentMouseUp"
-        >
-          <div class="knob-dial" :style="{ transform: `rotate(${volumes[2] * 270 - 135}deg)` }"></div>
+      <div class="knob-row">
+        <div class="knob-container">
+          <div 
+            class="knob" 
+            @dblclick="resetVolume(2)"
+            @mousedown="startDragging(2, $event)"
+            @mousemove="handleDrag(2, $event)"
+            @mouseup="handleDocumentMouseUp"
+          >
+            <div class="knob-dial" :style="{ transform: `rotate(${volumes[2] * 270 - 135}deg)` }"></div>
+          </div>
+          <div class="knob-label">Volume</div>
         </div>
-        <div class="knob-label">Volume</div>
+        <div class="knob-container">
+          <div 
+            class="knob" 
+            @dblclick="resetTiming"
+            @mousedown="startDragging('timing', $event)"
+            @mousemove="handleDrag('timing', $event)"
+            @mouseup="handleDocumentMouseUp"
+          >
+            <div class="knob-dial" :style="{ transform: `rotate(${(timing + 0.5) * 270 - 135}deg)` }"></div>
+          </div>
+          <div class="knob-label">Timing</div>
+        </div>
       </div>
     </div>
 
@@ -127,6 +142,8 @@ export default {
       startVolume: 0,
       meterLevel: -60, // メーターの初期値（-60dB）
       meterInterval: null, // メーター更新用のインターバル
+      volumeUpdateTimeout: null, // 音量更新用のタイムアウト
+      timing: 0, // タイミング調整値（-0.5秒から+0.5秒）
     };
   },
   async mounted() {
@@ -226,7 +243,22 @@ export default {
     handleError(message, error) {
       this.error = `${message}: ${error.message}`;
       this.isLoading = false;
+      this.isPlaying = false;
+      this.stopMeterUpdate();
       console.error(`AudioPlayer.vue: ${message}`, error);
+    },
+
+    /**
+     * @function resetPlayback
+     * @description 両方のサンプルの再生をリセットする
+     */
+    resetPlayback() {
+      [1, 2].forEach(sampleNumber => {
+        if (this.wavesurfers[sampleNumber]) {
+          this.wavesurfers[sampleNumber].stop();
+          this.wavesurfers[sampleNumber].seekTo(0);
+        }
+      });
     },
 
     /**
@@ -236,12 +268,28 @@ export default {
     playFromStart() {
       try {
         if (this.wavesurfers[1] && this.wavesurfers[2]) {
-          // 両方のサンプルを最初に戻す
-          this.wavesurfers[1].seekTo(0);
-          this.wavesurfers[2].seekTo(0);
-          // 再生を開始
-          this.wavesurfers[1].play();
-          this.wavesurfers[2].play();
+          // 再生をリセット
+          this.resetPlayback();
+          
+          if (this.timing < 0) {
+            // サンプル2を先に再生
+            this.wavesurfers[2].play();
+            // サンプル1の再生を遅延
+            setTimeout(() => {
+              this.wavesurfers[1].play();
+            }, -this.timing * 1000);
+          } else if (this.timing > 0) {
+            // サンプル1を先に再生
+            this.wavesurfers[1].play();
+            // サンプル2の再生を遅延
+            setTimeout(() => {
+              this.wavesurfers[2].play();
+            }, this.timing * 1000);
+          } else {
+            // 同時に再生
+            this.wavesurfers[1].play();
+            this.wavesurfers[2].play();
+          }
         }
       } catch (error) {
         this.handleError('再生に失敗しました', error);
@@ -283,7 +331,7 @@ export default {
     /**
      * @function handleDrag
      * @description ノブのドラッグ中の処理
-     * @param {number|string} knobNumber - ノブ番号（1または2、または'master'）
+     * @param {number|string} knobNumber - ノブ番号（1または2、または'master'、または'timing'）
      * @param {MouseEvent} event - マウスイベント
      */
     handleDrag(knobNumber, event) {
@@ -292,36 +340,57 @@ export default {
       // ドラッグ量を計算（ピクセル単位）
       const deltaY = this.startY - event.clientY;
       
-      // ドラッグ量を音量の変化量に変換（感度調整用の係数）
-      const sensitivity = 0.002;
-      const volumeDelta = deltaY * sensitivity;
+      // ドラッグ量を値の変化量に変換（感度調整用の係数）
+      const sensitivity = 0.001;
+      const valueDelta = deltaY * sensitivity;
       
-      // 新しい音量を計算（0-1の範囲に制限）
-      const newVolume = Math.max(0, Math.min(1, this.startVolume + volumeDelta));
-
-      // 音量を更新
-      if (knobNumber === 'master') {
+      if (knobNumber === 'timing') {
+        // タイミング調整（-0.5秒から+0.5秒）
+        const newTiming = Math.max(-0.5, Math.min(0.5, this.startVolume + valueDelta));
+        this.timing = newTiming;
+      } else if (knobNumber === 'master') {
+        // マスターボリュームの処理
+        const newVolume = Math.max(0, Math.min(1, this.startVolume + valueDelta));
         this.masterVolume = newVolume;
-        // 両方のサンプルの音量を更新
-        this.updateVolume(1);
-        this.updateVolume(2);
+        // ドラッグ中は更新を抑える
+        if (!this.volumeUpdateTimeout) {
+          this.volumeUpdateTimeout = setTimeout(() => {
+            this.updateVolume(1);
+            this.updateVolume(2);
+            this.volumeUpdateTimeout = null;
+          }, 100);
+        }
       } else {
+        // 個別のボリューム処理
+        const newVolume = Math.max(0, Math.min(1, this.startVolume + valueDelta));
         this.volumes[knobNumber] = newVolume;
-        this.updateVolume(knobNumber);
+        // ドラッグ中は更新を抑える
+        if (!this.volumeUpdateTimeout) {
+          this.volumeUpdateTimeout = setTimeout(() => {
+            this.updateVolume(knobNumber);
+            this.volumeUpdateTimeout = null;
+          }, 100);
+        }
       }
     },
 
     /**
      * @function startDragging
      * @description ノブのドラッグを開始する
-     * @param {number|string} knobNumber - ノブ番号（1または2、または'master'）
+     * @param {number|string} knobNumber - ノブ番号（1または2、または'master'、または'timing'）
      * @param {MouseEvent} event - マウスイベント
      */
     startDragging(knobNumber, event) {
       this.isDragging = true;
       this.currentKnob = knobNumber;
       this.startY = event.clientY;
-      this.startVolume = knobNumber === 'master' ? this.masterVolume : this.volumes[knobNumber];
+      if (knobNumber === 'timing') {
+        this.startVolume = this.timing;
+      } else if (knobNumber === 'master') {
+        this.startVolume = this.masterVolume;
+      } else {
+        this.startVolume = this.volumes[knobNumber];
+      }
       document.body.style.cursor = 'pointer';
     },
 
@@ -346,6 +415,18 @@ export default {
         document.body.style.cursor = '';
         this.isDragging = false;
         this.currentKnob = null;
+        
+        // ドラッグ終了時に確実に音量を更新
+        if (this.volumeUpdateTimeout) {
+          clearTimeout(this.volumeUpdateTimeout);
+          this.volumeUpdateTimeout = null;
+        }
+        if (this.currentKnob === 'master') {
+          this.updateVolume(1);
+          this.updateVolume(2);
+        } else if (typeof this.currentKnob === 'number') {
+          this.updateVolume(this.currentKnob);
+        }
       }
     },
 
@@ -408,6 +489,38 @@ export default {
       if (this.meterInterval) {
         clearInterval(this.meterInterval);
         this.meterInterval = null;
+      }
+    },
+
+    /**
+     * @function updateTiming
+     * @description サンプル2のタイミングを更新する
+     */
+    updateTiming() {
+      try {
+        if (this.wavesurfers[2]) {
+          // 現在の再生位置を取得
+          const currentTime = this.wavesurfers[2].getCurrentTime();
+          // タイミング調整を適用
+          this.wavesurfers[2].seekTo(Math.max(0, currentTime + this.timing));
+        }
+      } catch (error) {
+        this.handleError('タイミングの調整に失敗しました', error);
+      }
+    },
+
+    /**
+     * @function resetTiming
+     * @description タイミングを初期値（0秒）にリセットする
+     */
+    resetTiming() {
+      try {
+        this.timing = 0;
+        if (this.isPlaying) {
+          this.updateTiming();
+        }
+      } catch (error) {
+        this.handleError('タイミングのリセットに失敗しました', error);
       }
     },
   },
@@ -480,12 +593,18 @@ button:disabled {
   text-align: center;
 }
 
+.knob-row {
+  display: flex;
+  justify-content: center;
+  gap: 2em;
+  margin-top: 1em;
+}
+
 .knob-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5em;
-  margin-top: 1em;
 }
 
 .knob {
