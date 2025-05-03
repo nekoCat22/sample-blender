@@ -81,6 +81,13 @@
       <h3>サンプル3</h3>
       <div ref="waveform3"></div>
       <div class="knob-row">
+        <div class="toggle-container">
+          <label class="toggle-switch">
+            <input type="checkbox" v-model="isSample3Enabled">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="toggle-label">Enable</div>
+        </div>
         <div class="knob-container">
           <div 
             class="knob" 
@@ -88,6 +95,7 @@
             @mousedown="startDragging(3, $event)"
             @mousemove="handleDrag(3, $event)"
             @mouseup="handleDocumentMouseUp"
+            :class="{ 'disabled': !isSample3Enabled }"
           >
             <div class="knob-dial" :style="{ transform: `rotate(${volumes[3] * 270 - 135}deg)` }"></div>
           </div>
@@ -100,6 +108,7 @@
             @mousedown="startDragging('timing3', $event)"
             @mousemove="handleDrag('timing3', $event)"
             @mouseup="handleDocumentMouseUp"
+            :class="{ 'disabled': !isSample3Enabled }"
           >
             <div class="knob-dial" :style="{ transform: `rotate(${timing[3] * 540 - 135}deg)` }"></div>
           </div>
@@ -181,6 +190,7 @@ export default {
         2: 0, // サンプル2のタイミング調整値（0秒から+0.5秒）
         3: 0  // サンプル3のタイミング調整値（0秒から+0.5秒）
       },
+      isSample3Enabled: false, // サンプル3の有効/無効
     };
   },
   async mounted() {
@@ -325,14 +335,16 @@ export default {
             this.wavesurfers[2].play();
           }
           
-          // サンプル3の再生をタイミング調整
-          if (this.timing[3] > 0) {
-            // タイミングが正の場合は遅らせる
-            setTimeout(() => {
+          // サンプル3の再生をタイミング調整（有効な場合のみ）
+          if (this.isSample3Enabled) {
+            if (this.timing[3] > 0) {
+              // タイミングが正の場合は遅らせる
+              setTimeout(() => {
+                this.wavesurfers[3].play();
+              }, this.timing[3] * 1000);
+            } else {
               this.wavesurfers[3].play();
-            }, this.timing[3] * 1000);
-          } else {
-            this.wavesurfers[3].play();
+            }
           }
         }
       } catch (error) {
@@ -773,5 +785,70 @@ button:disabled {
   color: #666;
   text-transform: uppercase;
   letter-spacing: 0.1em;
+}
+
+.toggle-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 1em;
+}
+
+.toggle-label {
+  font-size: 0.8em;
+  color: #666;
+  margin-top: 0.5em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 20px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #4361ee;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 </style>
