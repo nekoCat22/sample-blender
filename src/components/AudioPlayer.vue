@@ -9,6 +9,8 @@
  * - ローディング状態の表示機能
  * - 各サンプルのノブによる音量調整機能（ダブルクリックで初期値にリセット）
  * - スペースキーでの再生制御機能
+ * - マスターボリューム制御機能
+ * - マスターボリュームの音量メーター表示機能（危険域の表示付き）
  * @limitations
  * - ファイル名は固定（sample1.wav, sample2.wav）
  */
@@ -65,6 +67,38 @@
         再生
       </button>
     </div>
+
+    <!-- マスターボリューム -->
+    <div class="master-volume-container">
+      <div class="master-controls">
+        <div class="knob-container">
+          <div 
+            class="knob" 
+            @dblclick="resetMasterVolume"
+            @mousedown="startDragging('master', $event)"
+            @mousemove="handleDrag('master', $event)"
+            @mouseup="handleDocumentMouseUp"
+          >
+            <div class="knob-dial" :style="{ transform: `rotate(${masterVolume * 270 - 135}deg)` }"></div>
+          </div>
+          <div class="knob-label">Master Volume</div>
+        </div>
+        <div class="meter-container">
+          <div class="meter">
+            <div 
+              class="meter-level" 
+              :style="{ width: `${Math.max(0, Math.min(100, (meterLevel + 60) * (100/60)))}%` }"
+              :class="{ 
+                'meter-level--warning': meterLevel > -12,
+                'meter-level--danger': meterLevel > -6
+              }"
+            ></div>
+            <div class="meter-danger-line"></div>
+          </div>
+          <div class="meter-label">Level</div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -86,10 +120,13 @@ export default {
         1: 0.5,
         2: 0.5
       },
+      masterVolume: 0.8,
       isDragging: false,
       currentKnob: null,
       startY: 0,
       startVolume: 0,
+      meterLevel: -60, // メーターの初期値（-60dB）
+      meterInterval: null, // メーター更新用のインターバル
     };
   },
   async mounted() {
@@ -106,6 +143,9 @@ export default {
 
       // キーボードイベントを監視
       document.addEventListener('keydown', this.handleKeyDown);
+
+      // メーターの更新を開始
+      this.startMeterUpdate();
     } catch (error) {
       this.handleError('プレイヤーの初期化に失敗しました', error);
     }
@@ -218,7 +258,8 @@ export default {
         const wavesurfer = this.wavesurfers[sampleNumber];
         const volume = this.volumes[sampleNumber];
         if (wavesurfer) {
-          wavesurfer.setVolume(volume);
+          // マスターボリュームを考慮した音量を設定
+          wavesurfer.setVolume(volume * this.masterVolume);
         }
       } catch (error) {
         this.handleError('音量の調整に失敗しました', error);
@@ -240,23 +281,9 @@ export default {
     },
 
     /**
-     * @function startDragging
-     * @description ノブのドラッグを開始する
-     * @param {number} knobNumber - ノブ番号（1または2）
-     * @param {MouseEvent} event - マウスイベント
-     */
-    startDragging(knobNumber, event) {
-      this.isDragging = true;
-      this.currentKnob = knobNumber;
-      this.startY = event.clientY;
-      this.startVolume = this.volumes[knobNumber];
-      document.body.style.cursor = 'pointer';
-    },
-
-    /**
      * @function handleDrag
      * @description ノブのドラッグ中の処理
-     * @param {number} knobNumber - ノブ番号（1または2）
+     * @param {number|string} knobNumber - ノブ番号（1または2、または'master'）
      * @param {MouseEvent} event - マウスイベント
      */
     handleDrag(knobNumber, event) {
@@ -273,8 +300,29 @@ export default {
       const newVolume = Math.max(0, Math.min(1, this.startVolume + volumeDelta));
 
       // 音量を更新
-      this.volumes[knobNumber] = newVolume;
-      this.updateVolume(knobNumber);
+      if (knobNumber === 'master') {
+        this.masterVolume = newVolume;
+        // 両方のサンプルの音量を更新
+        this.updateVolume(1);
+        this.updateVolume(2);
+      } else {
+        this.volumes[knobNumber] = newVolume;
+        this.updateVolume(knobNumber);
+      }
+    },
+
+    /**
+     * @function startDragging
+     * @description ノブのドラッグを開始する
+     * @param {number|string} knobNumber - ノブ番号（1または2、または'master'）
+     * @param {MouseEvent} event - マウスイベント
+     */
+    startDragging(knobNumber, event) {
+      this.isDragging = true;
+      this.currentKnob = knobNumber;
+      this.startY = event.clientY;
+      this.startVolume = knobNumber === 'master' ? this.masterVolume : this.volumes[knobNumber];
+      document.body.style.cursor = 'pointer';
     },
 
     /**
@@ -316,6 +364,52 @@ export default {
         this.playFromStart();
       }
     },
+
+    /**
+     * @function resetMasterVolume
+     * @description マスターボリュームを初期値（0.8）にリセットする
+     */
+    resetMasterVolume() {
+      try {
+        this.masterVolume = 0.8;
+        // 両方のサンプルの音量を更新
+        this.updateVolume(1);
+        this.updateVolume(2);
+      } catch (error) {
+        this.handleError('マスターボリュームのリセットに失敗しました', error);
+      }
+    },
+
+    /**
+     * @function startMeterUpdate
+     * @description メーターの更新を開始する
+     */
+    startMeterUpdate() {
+      // 60fpsでメーターを更新
+      this.meterInterval = setInterval(() => {
+        if (this.isPlaying) {
+          // 両方のサンプルの音量を取得して合成
+          const level1 = this.wavesurfers[1].getVolume() || 0;
+          const level2 = this.wavesurfers[2].getVolume() || 0;
+          // 合成した音量をdBに変換（簡易的な計算）
+          this.meterLevel = 20 * Math.log10((level1 + level2) / 2);
+        } else {
+          // 再生中でない場合は最小値に
+          this.meterLevel = -60;
+        }
+      }, 1000 / 60);
+    },
+
+    /**
+     * @function stopMeterUpdate
+     * @description メーターの更新を停止する
+     */
+    stopMeterUpdate() {
+      if (this.meterInterval) {
+        clearInterval(this.meterInterval);
+        this.meterInterval = null;
+      }
+    },
   },
   beforeUnmount() {
     // wavesurfer.jsのインスタンスを破棄
@@ -329,6 +423,9 @@ export default {
     document.removeEventListener('mousemove', this.handleDocumentMouseMove);
     document.removeEventListener('mouseup', this.handleDocumentMouseUp);
     document.removeEventListener('keydown', this.handleKeyDown);
+
+    // メーターの更新を停止
+    this.stopMeterUpdate();
   },
 };
 </script>
@@ -433,6 +530,69 @@ button:disabled {
   font-size: 0.8em;
   color: #666;
   margin-top: 0.5em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.master-volume-container {
+  margin-top: 2em;
+  padding: 1em;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.master-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2em;
+}
+
+.meter-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.meter {
+  width: 200px;
+  height: 8px;
+  background: #2b2b2b;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.meter-level {
+  height: 100%;
+  background: #4CAF50; /* 緑 */
+  transition: width 0.05s ease-out;
+}
+
+.meter-level--warning {
+  background: #FFC107; /* 黄 */
+}
+
+.meter-level--danger {
+  background: #F44336; /* 赤 */
+}
+
+.meter-danger-line {
+  position: absolute;
+  top: 0;
+  left: 90%; /* -6dBの位置（-60dBから0dBの範囲で90%の位置） */
+  width: 2px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+
+.meter-label {
+  font-size: 0.8em;
+  color: #666;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
