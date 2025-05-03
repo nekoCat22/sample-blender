@@ -64,12 +64,44 @@
         <div class="knob-container">
           <div 
             class="knob" 
-            @dblclick="resetTiming"
-            @mousedown="startDragging('timing', $event)"
-            @mousemove="handleDrag('timing', $event)"
+            @dblclick="resetTiming(2)"
+            @mousedown="startDragging('timing2', $event)"
+            @mousemove="handleDrag('timing2', $event)"
             @mouseup="handleDocumentMouseUp"
           >
-            <div class="knob-dial" :style="{ transform: `rotate(${(timing + 0.25) * 540 - 135}deg)` }"></div>
+            <div class="knob-dial" :style="{ transform: `rotate(${timing[2] * 540 - 135}deg)` }"></div>
+          </div>
+          <div class="knob-label">Timing</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- サンプル3 -->
+    <div class="sample-container">
+      <h3>サンプル3</h3>
+      <div ref="waveform3"></div>
+      <div class="knob-row">
+        <div class="knob-container">
+          <div 
+            class="knob" 
+            @dblclick="resetVolume(3)"
+            @mousedown="startDragging(3, $event)"
+            @mousemove="handleDrag(3, $event)"
+            @mouseup="handleDocumentMouseUp"
+          >
+            <div class="knob-dial" :style="{ transform: `rotate(${volumes[3] * 270 - 135}deg)` }"></div>
+          </div>
+          <div class="knob-label">Gain</div>
+        </div>
+        <div class="knob-container">
+          <div 
+            class="knob" 
+            @dblclick="resetTiming(3)"
+            @mousedown="startDragging('timing3', $event)"
+            @mousemove="handleDrag('timing3', $event)"
+            @mouseup="handleDocumentMouseUp"
+          >
+            <div class="knob-dial" :style="{ transform: `rotate(${timing[3] * 540 - 135}deg)` }"></div>
           </div>
           <div class="knob-label">Timing</div>
         </div>
@@ -126,14 +158,16 @@ export default {
     return {
       wavesurfers: {
         1: null,
-        2: null
+        2: null,
+        3: null
       },
       isPlaying: false,
       error: null,
       isLoading: false,
       volumes: {
         1: 0.5,
-        2: 0.5
+        2: 0.5,
+        3: 0.5
       },
       masterVolume: 0.8,
       isDragging: false,
@@ -143,7 +177,10 @@ export default {
       meterLevel: -60, // メーターの初期値（-60dB）
       meterInterval: null, // メーター更新用のインターバル
       volumeUpdateTimeout: null, // 音量更新用のタイムアウト
-      timing: 0, // タイミング調整値（-0.5秒から+0.5秒）
+      timing: {
+        2: 0, // サンプル2のタイミング調整値（0秒から+0.5秒）
+        3: 0  // サンプル3のタイミング調整値（0秒から+0.5秒）
+      },
     };
   },
   async mounted() {
@@ -173,12 +210,16 @@ export default {
      * @description wavesurfer.jsのインスタンスを初期化する
      */
     initializeWavesurfers() {
-      [1, 2].forEach(sampleNumber => {
+      [1, 2, 3].forEach(sampleNumber => {
         const wavesurfer = WaveSurfer.create({
           container: this.$refs[`waveform${sampleNumber}`],
           waveColor: '#a3cef1',
           progressColor: '#4361ee',
           height: 80,
+          minPxPerSec: 100,
+          partialRender: true,
+          normalize: true,
+          responsive: true,
         });
 
         // イベントリスナーの設定
@@ -221,7 +262,7 @@ export default {
       try {
         this.isLoading = true;
 
-        for (let sampleNumber of [1, 2]) {
+        for (let sampleNumber of [1, 2, 3]) {
           const response = await fetch(`/sample${sampleNumber}.wav`);
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -253,7 +294,7 @@ export default {
      * @description 両方のサンプルの再生をリセットする
      */
     resetPlayback() {
-      [1, 2].forEach(sampleNumber => {
+      [1, 2, 3].forEach(sampleNumber => {
         if (this.wavesurfers[sampleNumber]) {
           this.wavesurfers[sampleNumber].stop();
           this.wavesurfers[sampleNumber].seekTo(0);
@@ -267,28 +308,31 @@ export default {
      */
     playFromStart() {
       try {
-        if (this.wavesurfers[1] && this.wavesurfers[2]) {
+        if (this.wavesurfers[1] && this.wavesurfers[2] && this.wavesurfers[3]) {
           // 再生をリセット
           this.resetPlayback();
           
-          if (this.timing < 0) {
-            // サンプル2を先に再生
-            this.wavesurfers[2].play();
-            // サンプル1の再生を遅延
-            setTimeout(() => {
-              this.wavesurfers[1].play();
-            }, -this.timing * 1000);
-          } else if (this.timing > 0) {
-            // サンプル1を先に再生
-            this.wavesurfers[1].play();
-            // サンプル2の再生を遅延
+          // サンプル1を再生
+          this.wavesurfers[1].play();
+          
+          // サンプル2の再生をタイミング調整
+          if (this.timing[2] > 0) {
+            // タイミングが正の場合は遅らせる
             setTimeout(() => {
               this.wavesurfers[2].play();
-            }, this.timing * 1000);
+            }, this.timing[2] * 1000);
           } else {
-            // 同時に再生
-            this.wavesurfers[1].play();
             this.wavesurfers[2].play();
+          }
+          
+          // サンプル3の再生をタイミング調整
+          if (this.timing[3] > 0) {
+            // タイミングが正の場合は遅らせる
+            setTimeout(() => {
+              this.wavesurfers[3].play();
+            }, this.timing[3] * 1000);
+          } else {
+            this.wavesurfers[3].play();
           }
         }
       } catch (error) {
@@ -344,11 +388,11 @@ export default {
       const sensitivity = 0.001;
       const valueDelta = deltaY * sensitivity;
       
-      if (knobNumber === 'timing') {
-        // ノブの回転範囲は-0.5から+0.5のまま
-        const knobValue = Math.max(-0.5, Math.min(0.5, this.startVolume + valueDelta));
-        // 実際のタイミング調整量は-0.25秒から+0.25秒に変換
-        this.timing = knobValue * 0.5;
+      if (knobNumber === 'timing2' || knobNumber === 'timing3') {
+        // ノブの回転範囲は0から+0.5のまま
+        const sampleNumber = knobNumber === 'timing2' ? 2 : 3;
+        const knobValue = Math.max(0, Math.min(0.5, this.startVolume + valueDelta));
+        this.timing[sampleNumber] = knobValue;
       } else if (knobNumber === 'master') {
         // マスターボリュームの処理
         const newVolume = Math.max(0, Math.min(1, this.startVolume + valueDelta));
@@ -358,6 +402,7 @@ export default {
           this.volumeUpdateTimeout = setTimeout(() => {
             this.updateVolume(1);
             this.updateVolume(2);
+            this.updateVolume(3);
             this.volumeUpdateTimeout = null;
           }, 100);
         }
@@ -385,8 +430,9 @@ export default {
       this.isDragging = true;
       this.currentKnob = knobNumber;
       this.startY = event.clientY;
-      if (knobNumber === 'timing') {
-        this.startVolume = this.timing;
+      if (knobNumber === 'timing2' || knobNumber === 'timing3') {
+        const sampleNumber = knobNumber === 'timing2' ? 2 : 3;
+        this.startVolume = this.timing[sampleNumber];
       } else if (knobNumber === 'master') {
         this.startVolume = this.masterVolume;
       } else {
@@ -425,6 +471,7 @@ export default {
         if (this.currentKnob === 'master') {
           this.updateVolume(1);
           this.updateVolume(2);
+          this.updateVolume(3);
         } else if (typeof this.currentKnob === 'number') {
           this.updateVolume(this.currentKnob);
         }
@@ -457,6 +504,7 @@ export default {
         // 両方のサンプルの音量を更新
         this.updateVolume(1);
         this.updateVolume(2);
+        this.updateVolume(3);
       } catch (error) {
         this.handleError('マスターボリュームのリセットに失敗しました', error);
       }
@@ -470,11 +518,12 @@ export default {
       // 60fpsでメーターを更新
       this.meterInterval = setInterval(() => {
         if (this.isPlaying) {
-          // 両方のサンプルの音量を取得して合成
+          // 3つのサンプルの音量を取得して合成
           const level1 = this.wavesurfers[1].getVolume() || 0;
           const level2 = this.wavesurfers[2].getVolume() || 0;
+          const level3 = this.wavesurfers[3].getVolume() || 0;
           // 合成した音量をdBに変換（簡易的な計算）
-          this.meterLevel = 20 * Math.log10((level1 + level2) / 2);
+          this.meterLevel = 20 * Math.log10((level1 + level2 + level3) / 3);
         } else {
           // 再生中でない場合は最小値に
           this.meterLevel = -60;
@@ -497,13 +546,13 @@ export default {
      * @function updateTiming
      * @description サンプル2のタイミングを更新する
      */
-    updateTiming() {
+    updateTiming(sampleNumber) {
       try {
-        if (this.wavesurfers[2]) {
+        if (this.wavesurfers[sampleNumber]) {
           // 現在の再生位置を取得
-          const currentTime = this.wavesurfers[2].getCurrentTime();
+          const currentTime = this.wavesurfers[sampleNumber].getCurrentTime();
           // タイミング調整を適用
-          this.wavesurfers[2].seekTo(Math.max(0, currentTime + this.timing));
+          this.wavesurfers[sampleNumber].seekTo(Math.max(0, currentTime + this.timing[sampleNumber]));
         }
       } catch (error) {
         this.handleError('タイミングの調整に失敗しました', error);
@@ -514,11 +563,11 @@ export default {
      * @function resetTiming
      * @description タイミングを初期値（0秒）にリセットする
      */
-    resetTiming() {
+    resetTiming(sampleNumber) {
       try {
-        this.timing = 0;
+        this.timing[sampleNumber] = 0;
         if (this.isPlaying) {
-          this.updateTiming();
+          this.updateTiming(sampleNumber);
         }
       } catch (error) {
         this.handleError('タイミングのリセットに失敗しました', error);
@@ -547,8 +596,17 @@ export default {
 <style scoped>
 /* 波形表示のスタイル */
 div[ref="waveform1"],
-div[ref="waveform2"] {
+div[ref="waveform2"],
+div[ref="waveform3"] {
   margin-bottom: 1em;
+}
+
+/* 波形のコンテナ内のキャンバス要素のスタイル */
+div[ref="waveform1"] canvas,
+div[ref="waveform2"] canvas,
+div[ref="waveform3"] canvas {
+  width: 100% !important;
+  height: auto !important;
 }
 
 button {
