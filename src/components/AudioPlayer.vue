@@ -8,6 +8,7 @@
  * - エラー処理とエラーメッセージ表示機能
  * - ローディング状態の表示機能
  * - 各サンプルのノブによる音量調整機能（ダブルクリックで初期値にリセット）
+ * - スペースキーでの再生制御機能
  * @limitations
  * - ファイル名は固定（sample1.wav, sample2.wav）
  */
@@ -102,6 +103,9 @@ export default {
       // ドキュメント全体のマウスイベントを監視
       document.addEventListener('mousemove', this.handleDocumentMouseMove);
       document.addEventListener('mouseup', this.handleDocumentMouseUp);
+
+      // キーボードイベントを監視
+      document.addEventListener('keydown', this.handleKeyDown);
     } catch (error) {
       this.handleError('プレイヤーの初期化に失敗しました', error);
     }
@@ -296,6 +300,22 @@ export default {
         this.currentKnob = null;
       }
     },
+
+    /**
+     * @function handleKeyDown
+     * @description キーボードイベントを処理する
+     * @param {KeyboardEvent} event - キーボードイベント
+     */
+    handleKeyDown(event) {
+      // スペースキーが押された場合
+      if (event.code === 'Space') {
+        // デフォルトのスクロール動作を防止
+        event.preventDefault();
+        
+        // 再生ボタンと同じ動作を実行
+        this.playFromStart();
+      }
+    },
   },
   beforeUnmount() {
     // wavesurfer.jsのインスタンスを破棄
@@ -308,6 +328,7 @@ export default {
     // イベントリスナーを削除
     document.removeEventListener('mousemove', this.handleDocumentMouseMove);
     document.removeEventListener('mouseup', this.handleDocumentMouseUp);
+    document.removeEventListener('keydown', this.handleKeyDown);
   },
 };
 </script>
