@@ -69,7 +69,7 @@
             @mousemove="handleDrag('timing', $event)"
             @mouseup="handleDocumentMouseUp"
           >
-            <div class="knob-dial" :style="{ transform: `rotate(${(timing + 0.5) * 270 - 135}deg)` }"></div>
+            <div class="knob-dial" :style="{ transform: `rotate(${(timing + 0.25) * 540 - 135}deg)` }"></div>
           </div>
           <div class="knob-label">Timing</div>
         </div>
@@ -345,9 +345,10 @@ export default {
       const valueDelta = deltaY * sensitivity;
       
       if (knobNumber === 'timing') {
-        // タイミング調整（-0.5秒から+0.5秒）
-        const newTiming = Math.max(-0.5, Math.min(0.5, this.startVolume + valueDelta));
-        this.timing = newTiming;
+        // ノブの回転範囲は-0.5から+0.5のまま
+        const knobValue = Math.max(-0.5, Math.min(0.5, this.startVolume + valueDelta));
+        // 実際のタイミング調整量は-0.25秒から+0.25秒に変換
+        this.timing = knobValue * 0.5;
       } else if (knobNumber === 'master') {
         // マスターボリュームの処理
         const newVolume = Math.max(0, Math.min(1, this.startVolume + valueDelta));
