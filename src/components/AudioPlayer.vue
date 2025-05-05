@@ -160,42 +160,40 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue'
+import { defineComponent, ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import WaveSurfer from 'wavesurfer.js'
-import type { WaveSurferInstance, AudioPlayerState, KnobType, WaveSurferOptions } from '../types/audio'
+import type { WaveSurferInstance, KnobType, WaveSurferOptions } from '../types/audio'
 
 export default defineComponent({
   name: 'AudioPlayer',
   setup() {
     // 状態の定義
-    const state = ref<AudioPlayerState>({
-      wavesurfers: {
-        1: null,
-        2: null,
-        3: null
-      },
-      isPlaying: false,
-      error: null,
-      isLoading: false,
-      volumes: {
-        1: 0.5,
-        2: 0.5,
-        3: 0.5
-      },
-      masterVolume: 0.8,
-      isDragging: false,
-      currentKnob: null,
-      startY: 0,
-      startVolume: 0,
-      meterLevel: -60,
-      meterInterval: null,
-      volumeUpdateTimeout: null,
-      timing: {
-        2: 0,
-        3: 0
-      },
-      isSample3Enabled: false
+    const wavesurfers = ref<{ [key: number]: WaveSurferInstance | null }>({
+      1: null,
+      2: null,
+      3: null
     })
+    const isPlaying = ref(false)
+    const errorMessage = ref<string | null>(null)
+    const isLoading = ref(false)
+    const volumes = ref<{ [key: number]: number }>({
+      1: 0.5,
+      2: 0.5,
+      3: 0.5
+    })
+    const masterVolume = ref(0.8)
+    const isDragging = ref(false)
+    const currentKnob = ref<KnobType | null>(null)
+    const startY = ref(0)
+    const startVolume = ref(0)
+    const meterLevel = ref(-60)
+    const meterInterval = ref<number | null>(null)
+    const volumeUpdateTimeout = ref<number | null>(null)
+    const timing = ref<{ [key: number]: number }>({
+      2: 0,
+      3: 0
+    })
+    const isSample3Enabled = ref(false)
 
     // DOM要素の参照
     const waveform1 = ref<HTMLDivElement | null>(null)
@@ -239,35 +237,35 @@ export default defineComponent({
         })
 
         wavesurfer.on('loading', () => {
-          state.value.error = null
-          state.value.isLoading = true
+          errorMessage.value = null
+          isLoading.value = true
         })
 
         wavesurfer.on('ready', () => {
-          state.value.error = null
-          state.value.isLoading = false
-          wavesurfer.setVolume(state.value.volumes[sampleNumber])
+          errorMessage.value = null
+          isLoading.value = false
+          wavesurfer.setVolume(volumes.value[sampleNumber])
         })
 
         wavesurfer.on('play', () => {
-          state.value.isPlaying = true
+          isPlaying.value = true
         })
 
         wavesurfer.on('pause', () => {
-          state.value.isPlaying = false
+          isPlaying.value = false
         })
 
         wavesurfer.on('finish', () => {
-          state.value.isPlaying = false
+          isPlaying.value = false
         })
 
-        state.value.wavesurfers[sampleNumber] = wavesurfer
+        wavesurfers.value[sampleNumber] = wavesurfer
       })
     }
 
     const loadAudioFiles = async (): Promise<void> => {
       try {
-        state.value.isLoading = true
+        isLoading.value = true
 
         for (let sampleNumber of [1, 2, 3]) {
           const response = await fetch(`/sample${sampleNumber}.wav`)
@@ -275,22 +273,22 @@ export default defineComponent({
             throw new Error(`HTTP error! status: ${response.status}`)
           }
           const blob = await response.blob()
-          state.value.wavesurfers[sampleNumber]?.loadBlob(blob)
+          wavesurfers.value[sampleNumber]?.loadBlob(blob)
         }
       } catch (error) {
         handleError('音声ファイルの読み込みに失敗しました', error as Error)
       }
     }
 
-    const handleError = (message: string, error: Error): void => {
-      console.error('Audio Player Error:', message, error)
-      state.value.error = `${message}: ${error.message}`
-      state.value.isLoading = false
+    const handleError = (message: string, err: Error): void => {
+      console.error('Audio Player Error:', message, err)
+      errorMessage.value = `${message}: ${err.message}`
+      isLoading.value = false
     }
 
     const resetPlayback = (): void => {
       [1, 2, 3].forEach(sampleNumber => {
-        const wavesurfer = state.value.wavesurfers[sampleNumber]
+        const wavesurfer = wavesurfers.value[sampleNumber]
         if (wavesurfer) {
           wavesurfer.stop()
           wavesurfer.seekTo(0)
@@ -300,26 +298,26 @@ export default defineComponent({
 
     const playFromStart = (): void => {
       try {
-        if (state.value.wavesurfers[1] && state.value.wavesurfers[2] && state.value.wavesurfers[3]) {
+        if (wavesurfers.value[1] && wavesurfers.value[2] && wavesurfers.value[3]) {
           resetPlayback()
           
-          state.value.wavesurfers[1].play()
+          wavesurfers.value[1].play()
           
-          if (state.value.timing[2] > 0) {
+          if (timing.value[2] > 0) {
             setTimeout(() => {
-              state.value.wavesurfers[2]?.play()
-            }, state.value.timing[2] * 1000)
+              wavesurfers.value[2]?.play()
+            }, timing.value[2] * 1000)
           } else {
-            state.value.wavesurfers[2]?.play()
+            wavesurfers.value[2]?.play()
           }
           
-          if (state.value.isSample3Enabled) {
-            if (state.value.timing[3] > 0) {
+          if (isSample3Enabled.value) {
+            if (timing.value[3] > 0) {
               setTimeout(() => {
-                state.value.wavesurfers[3]?.play()
-              }, state.value.timing[3] * 1000)
+                wavesurfers.value[3]?.play()
+              }, timing.value[3] * 1000)
             } else {
-              state.value.wavesurfers[3]?.play()
+              wavesurfers.value[3]?.play()
             }
           }
         }
@@ -329,62 +327,63 @@ export default defineComponent({
     }
 
     const handleDrag = (knob: KnobType, event: MouseEvent): void => {
-      if (!state.value.isDragging || state.value.currentKnob !== knob) return
+      if (!isDragging.value || currentKnob.value !== knob) return
 
-      const deltaY = state.value.startY - event.clientY
+      const deltaY = startY.value - event.clientY
       const sensitivity = 0.005
-      let newValue = state.value.startVolume + (deltaY * sensitivity)
+      let newValue = startVolume.value + (deltaY * sensitivity)
 
       // タイミング調整の場合は異なる範囲を使用
       if (knob === 'timing2' || knob === 'timing3') {
         newValue = Math.max(-0.5, Math.min(0.5, newValue))
         const sampleNumber = parseInt(knob.replace('timing', ''))
-        state.value.timing[sampleNumber] = newValue
+        timing.value[sampleNumber] = newValue
         return
       }
 
       // ボリューム調整の場合
       newValue = Math.max(0, Math.min(1, newValue))
       if (knob === 'master') {
-        state.value.masterVolume = newValue
+        masterVolume.value = newValue
         // マスターボリュームが変更されたら、全てのサンプルの音量を更新
-        Object.keys(state.value.wavesurfers).forEach(key => {
+        Object.keys(wavesurfers.value).forEach(key => {
           const sampleNumber = parseInt(key)
           updateVolume(sampleNumber)
         })
       } else {
-        state.value.volumes[knob as number] = newValue
+        volumes.value[knob as number] = newValue
         updateVolume(knob as number)
       }
     }
 
     const startDragging = (knob: KnobType, event: MouseEvent): void => {
-      state.value.isDragging = true
-      state.value.currentKnob = knob
-      state.value.startY = event.clientY
-      state.value.startVolume = knob === 'master' 
-        ? state.value.masterVolume 
+      event.preventDefault()
+      isDragging.value = true
+      currentKnob.value = knob
+      startY.value = event.clientY
+      startVolume.value = knob === 'master' 
+        ? masterVolume.value 
         : knob === 'timing2' || knob === 'timing3'
-          ? state.value.timing[parseInt(knob.replace('timing', ''))]
-          : state.value.volumes[knob as number]
+          ? timing.value[parseInt(knob.replace('timing', ''))]
+          : volumes.value[knob as number]
 
-      // ドラッグ開始時にドキュメント全体のマウスイベントをリッスン
       document.addEventListener('mousemove', handleDocumentMouseMove)
       document.addEventListener('mouseup', handleDocumentMouseUp)
     }
 
     const handleDocumentMouseMove = (event: MouseEvent): void => {
-      if (state.value.isDragging && state.value.currentKnob) {
+      if (isDragging.value && currentKnob.value) {
+        event.preventDefault()
         document.body.style.cursor = 'pointer'
-        handleDrag(state.value.currentKnob, event)
+        handleDrag(currentKnob.value, event)
       }
     }
 
-    const handleDocumentMouseUp = (): void => {
-      state.value.isDragging = false
-      state.value.currentKnob = null
+    const handleDocumentMouseUp = (event: MouseEvent): void => {
+      event.preventDefault()
+      isDragging.value = false
+      currentKnob.value = null
       document.body.style.cursor = 'default'
-      // ドラッグ終了時にイベントリスナーを削除
       document.removeEventListener('mousemove', handleDocumentMouseMove)
       document.removeEventListener('mouseup', handleDocumentMouseUp)
     }
@@ -398,7 +397,7 @@ export default defineComponent({
 
     const resetMasterVolume = (): void => {
       try {
-        state.value.masterVolume = 0.8
+        masterVolume.value = 0.8
         updateVolume(1)
         updateVolume(2)
         updateVolume(3)
@@ -408,31 +407,31 @@ export default defineComponent({
     }
 
     const startMeterUpdate = (): void => {
-      state.value.meterInterval = window.setInterval(() => {
-        if (state.value.isPlaying) {
-          const level1 = state.value.wavesurfers[1]?.getVolume() || 0
-          const level2 = state.value.wavesurfers[2]?.getVolume() || 0
-          const level3 = state.value.wavesurfers[3]?.getVolume() || 0
-          state.value.meterLevel = 20 * Math.log10((level1 + level2 + level3) / 3)
+      meterInterval.value = window.setInterval(() => {
+        if (isPlaying.value) {
+          const level1 = wavesurfers.value[1]?.getVolume() || 0
+          const level2 = wavesurfers.value[2]?.getVolume() || 0
+          const level3 = wavesurfers.value[3]?.getVolume() || 0
+          meterLevel.value = 20 * Math.log10((level1 + level2 + level3) / 3)
         } else {
-          state.value.meterLevel = -60
+          meterLevel.value = -60
         }
       }, 1000 / 60)
     }
 
     const stopMeterUpdate = (): void => {
-      if (state.value.meterInterval) {
-        clearInterval(state.value.meterInterval)
-        state.value.meterInterval = null
+      if (meterInterval.value) {
+        clearInterval(meterInterval.value)
+        meterInterval.value = null
       }
     }
 
     const updateTiming = (sampleNumber: number): void => {
       try {
-        const wavesurfer = state.value.wavesurfers[sampleNumber]
+        const wavesurfer = wavesurfers.value[sampleNumber]
         if (wavesurfer) {
           const currentTime = wavesurfer.getCurrentTime()
-          wavesurfer.seekTo(Math.max(0, currentTime + state.value.timing[sampleNumber]))
+          wavesurfer.seekTo(Math.max(0, currentTime + timing.value[sampleNumber]))
         }
       } catch (error) {
         handleError('タイミングの調整に失敗しました', error as Error)
@@ -441,8 +440,8 @@ export default defineComponent({
 
     const resetTiming = (sampleNumber: number): void => {
       try {
-        state.value.timing[sampleNumber] = 0
-        if (state.value.isPlaying) {
+        timing.value[sampleNumber] = 0
+        if (isPlaying.value) {
           updateTiming(sampleNumber)
         }
       } catch (error) {
@@ -452,21 +451,21 @@ export default defineComponent({
 
     // 個別のボリューム更新
     const updateVolume = (sampleNumber: number): void => {
-      const wavesurfer = state.value.wavesurfers[sampleNumber]
+      const wavesurfer = wavesurfers.value[sampleNumber]
       if (!wavesurfer) return
 
-      const volume = state.value.volumes[sampleNumber] * state.value.masterVolume
+      const volume = volumes.value[sampleNumber] * masterVolume.value
       wavesurfer.setVolume(volume)
 
       // サンプル3が無効な場合は音量を0に
-      if (sampleNumber === 3 && !state.value.isSample3Enabled) {
+      if (sampleNumber === 3 && !isSample3Enabled.value) {
         wavesurfer.setVolume(0)
       }
     }
 
     const resetVolume = (sampleNumber: number): void => {
       try {
-        state.value.volumes[sampleNumber] = 0.5
+        volumes.value[sampleNumber] = 0.5
         updateVolume(sampleNumber)
       } catch (error) {
         handleError('音量のリセットに失敗しました', error as Error)
@@ -486,7 +485,7 @@ export default defineComponent({
     })
 
     onBeforeUnmount(() => {
-      Object.values(state.value.wavesurfers).forEach(wavesurfer => {
+      Object.values(wavesurfers.value).forEach(wavesurfer => {
         if (wavesurfer) {
           wavesurfer.destroy()
         }
@@ -497,8 +496,32 @@ export default defineComponent({
       stopMeterUpdate()
     })
 
+    // ノブの回転角度を計算するcomputedプロパティ
+    const knobRotations = {
+      master: computed(() => masterVolume.value * 270 - 135),
+      sample1: computed(() => volumes.value[1] * 270 - 135),
+      sample2: computed(() => volumes.value[2] * 270 - 135),
+      sample3: computed(() => volumes.value[3] * 270 - 135),
+      timing2: computed(() => timing.value[2] * 540 - 135),
+      timing3: computed(() => timing.value[3] * 540 - 135)
+    }
+
     return {
-      ...state.value,
+      wavesurfers,
+      isPlaying,
+      error: errorMessage,
+      isLoading,
+      volumes,
+      masterVolume,
+      isDragging,
+      currentKnob,
+      startY,
+      startVolume,
+      meterLevel,
+      meterInterval,
+      volumeUpdateTimeout,
+      timing,
+      isSample3Enabled,
       waveform1,
       waveform2,
       waveform3,
@@ -508,7 +531,8 @@ export default defineComponent({
       resetTiming,
       startDragging,
       handleDrag,
-      handleDocumentMouseUp
+      handleDocumentMouseUp,
+      knobRotations
     }
   }
 })
