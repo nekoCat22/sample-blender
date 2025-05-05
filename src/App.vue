@@ -1,19 +1,20 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <AudioPlayer /> 
+    <AudioPlayer />
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import AudioPlayer from './components/AudioPlayer.vue'
 
-export default {
+export default defineComponent({
   name: 'App',
   components: {
     AudioPlayer
   }
-}
+})
 </script>
 
 <style>

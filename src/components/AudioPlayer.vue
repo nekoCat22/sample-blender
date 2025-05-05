@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * @file AudioPlayer.vue
  * @brief 音声ファイルの再生と波形表示を行うVueコンポーネント
@@ -158,13 +159,16 @@
   </div>
 </template>
 
-<script>
-import WaveSurfer from 'wavesurfer.js';
+<script lang="ts">
+import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue'
+import WaveSurfer from 'wavesurfer.js'
+import type { WaveSurferInstance, AudioPlayerState, KnobType, WaveSurferOptions } from '../types/audio'
 
-export default {
+export default defineComponent({
   name: 'AudioPlayer',
-  data() {
-    return {
+  setup() {
+    // 状態の定義
+    const state = ref<AudioPlayerState>({
       wavesurfers: {
         1: null,
         2: null,
@@ -183,46 +187,35 @@ export default {
       currentKnob: null,
       startY: 0,
       startVolume: 0,
-      meterLevel: -60, // メーターの初期値（-60dB）
-      meterInterval: null, // メーター更新用のインターバル
-      volumeUpdateTimeout: null, // 音量更新用のタイムアウト
+      meterLevel: -60,
+      meterInterval: null,
+      volumeUpdateTimeout: null,
       timing: {
-        2: 0, // サンプル2のタイミング調整値（0秒から+0.5秒）
-        3: 0  // サンプル3のタイミング調整値（0秒から+0.5秒）
+        2: 0,
+        3: 0
       },
-      isSample3Enabled: false, // サンプル3の有効/無効
-    };
-  },
-  async mounted() {
-    try {
-      // wavesurfer.jsの初期化
-      this.initializeWavesurfers();
-      
-      // 音声ファイルのロード
-      await this.loadAudioFiles();
+      isSample3Enabled: false
+    })
 
-      // ドキュメント全体のマウスイベントを監視
-      document.addEventListener('mousemove', this.handleDocumentMouseMove);
-      document.addEventListener('mouseup', this.handleDocumentMouseUp);
+    // DOM要素の参照
+    const waveform1 = ref<HTMLDivElement | null>(null)
+    const waveform2 = ref<HTMLDivElement | null>(null)
+    const waveform3 = ref<HTMLDivElement | null>(null)
 
-      // キーボードイベントを監視
-      document.addEventListener('keydown', this.handleKeyDown);
-
-      // メーターの更新を開始
-      this.startMeterUpdate();
-    } catch (error) {
-      this.handleError('プレイヤーの初期化に失敗しました', error);
-    }
-  },
-  methods: {
-    /**
-     * @function initializeWavesurfers
-     * @description wavesurfer.jsのインスタンスを初期化する
-     */
-    initializeWavesurfers() {
+    // メソッドの定義
+    const initializeWavesurfers = (): void => {
       [1, 2, 3].forEach(sampleNumber => {
+        const container = sampleNumber === 1 ? waveform1.value :
+                         sampleNumber === 2 ? waveform2.value :
+                         waveform3.value
+
+        if (!container) {
+          handleError(`サンプル${sampleNumber}のコンテナが見つかりません`, new Error('Container not found'))
+          return
+        }
+
         const wavesurfer = WaveSurfer.create({
-          container: this.$refs[`waveform${sampleNumber}`],
+          container,
           waveColor: '#a3cef1',
           progressColor: '#4361ee',
           height: 80,
@@ -230,379 +223,295 @@ export default {
           partialRender: true,
           normalize: true,
           responsive: true,
-        });
+          cursorColor: '#4361ee',
+          cursorWidth: 1,
+          barWidth: 2,
+          barGap: 1,
+          barRadius: 0,
+          interact: true,
+          hideScrollbar: true,
+          autoCenter: true
+        } as WaveSurferOptions) as WaveSurferInstance
 
         // イベントリスナーの設定
-        wavesurfer.on('error', (error) => {
-          this.handleError(`サンプル${sampleNumber}の読み込みに失敗しました`, error);
-        });
+        wavesurfer.on('error', (error?: Error) => {
+          handleError(`サンプル${sampleNumber}の読み込みに失敗しました`, error || new Error('Unknown error'))
+        })
 
         wavesurfer.on('loading', () => {
-          this.error = null;
-          this.isLoading = true;
-        });
+          state.value.error = null
+          state.value.isLoading = true
+        })
 
         wavesurfer.on('ready', () => {
-          this.error = null;
-          this.isLoading = false;
-          wavesurfer.setVolume(this.volumes[sampleNumber]);
-        });
+          state.value.error = null
+          state.value.isLoading = false
+          wavesurfer.setVolume(state.value.volumes[sampleNumber])
+        })
 
         wavesurfer.on('play', () => {
-          this.isPlaying = true;
-        });
+          state.value.isPlaying = true
+        })
 
         wavesurfer.on('pause', () => {
-          this.isPlaying = false;
-        });
+          state.value.isPlaying = false
+        })
 
         wavesurfer.on('finish', () => {
-          this.isPlaying = false;
-        });
+          state.value.isPlaying = false
+        })
 
-        this.wavesurfers[sampleNumber] = wavesurfer;
-      });
-    },
+        state.value.wavesurfers[sampleNumber] = wavesurfer
+      })
+    }
 
-    /**
-     * @function loadAudioFiles
-     * @description 音声ファイルをロードする
-     */
-    async loadAudioFiles() {
+    const loadAudioFiles = async (): Promise<void> => {
       try {
-        this.isLoading = true;
+        state.value.isLoading = true
 
         for (let sampleNumber of [1, 2, 3]) {
-          const response = await fetch(`/sample${sampleNumber}.wav`);
+          const response = await fetch(`/sample${sampleNumber}.wav`)
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status}`)
           }
-          const blob = await response.blob();
-          this.wavesurfers[sampleNumber].loadBlob(blob);
+          const blob = await response.blob()
+          state.value.wavesurfers[sampleNumber]?.loadBlob(blob)
         }
       } catch (error) {
-        this.handleError('音声ファイルの読み込みに失敗しました', error);
+        handleError('音声ファイルの読み込みに失敗しました', error as Error)
       }
-    },
+    }
 
-    /**
-     * @function handleError
-     * @description エラーを処理する
-     * @param {string} message - エラーメッセージ
-     * @param {Error} error - エラーオブジェクト
-     */
-    handleError(message, error) {
-      this.error = `${message}: ${error.message}`;
-      this.isLoading = false;
-      this.isPlaying = false;
-      this.stopMeterUpdate();
-      console.error(`AudioPlayer.vue: ${message}`, error);
-    },
+    const handleError = (message: string, error: Error): void => {
+      console.error('Audio Player Error:', message, error)
+      state.value.error = `${message}: ${error.message}`
+      state.value.isLoading = false
+    }
 
-    /**
-     * @function resetPlayback
-     * @description 両方のサンプルの再生をリセットする
-     */
-    resetPlayback() {
+    const resetPlayback = (): void => {
       [1, 2, 3].forEach(sampleNumber => {
-        if (this.wavesurfers[sampleNumber]) {
-          this.wavesurfers[sampleNumber].stop();
-          this.wavesurfers[sampleNumber].seekTo(0);
+        const wavesurfer = state.value.wavesurfers[sampleNumber]
+        if (wavesurfer) {
+          wavesurfer.stop()
+          wavesurfer.seekTo(0)
         }
-      });
-    },
+      })
+    }
 
-    /**
-     * @function playFromStart
-     * @description 両方のサンプルを最初から再生する
-     */
-    playFromStart() {
+    const playFromStart = (): void => {
       try {
-        if (this.wavesurfers[1] && this.wavesurfers[2] && this.wavesurfers[3]) {
-          // 再生をリセット
-          this.resetPlayback();
+        if (state.value.wavesurfers[1] && state.value.wavesurfers[2] && state.value.wavesurfers[3]) {
+          resetPlayback()
           
-          // サンプル1を再生
-          this.wavesurfers[1].play();
+          state.value.wavesurfers[1].play()
           
-          // サンプル2の再生をタイミング調整
-          if (this.timing[2] > 0) {
-            // タイミングが正の場合は遅らせる
+          if (state.value.timing[2] > 0) {
             setTimeout(() => {
-              this.wavesurfers[2].play();
-            }, this.timing[2] * 1000);
+              state.value.wavesurfers[2]?.play()
+            }, state.value.timing[2] * 1000)
           } else {
-            this.wavesurfers[2].play();
+            state.value.wavesurfers[2]?.play()
           }
           
-          // サンプル3の再生をタイミング調整（有効な場合のみ）
-          if (this.isSample3Enabled) {
-            if (this.timing[3] > 0) {
-              // タイミングが正の場合は遅らせる
+          if (state.value.isSample3Enabled) {
+            if (state.value.timing[3] > 0) {
               setTimeout(() => {
-                this.wavesurfers[3].play();
-              }, this.timing[3] * 1000);
+                state.value.wavesurfers[3]?.play()
+              }, state.value.timing[3] * 1000)
             } else {
-              this.wavesurfers[3].play();
+              state.value.wavesurfers[3]?.play()
             }
           }
         }
       } catch (error) {
-        this.handleError('再生に失敗しました', error);
+        handleError('再生に失敗しました', error as Error)
       }
-    },
+    }
 
-    /**
-     * @function updateVolume
-     * @description 指定したサンプルの音量を更新する
-     * @param {number} sampleNumber - サンプル番号（1または2）
-     */
-    updateVolume(sampleNumber) {
-      try {
-        const wavesurfer = this.wavesurfers[sampleNumber];
-        const volume = this.volumes[sampleNumber];
-        if (wavesurfer) {
-          // マスターボリュームを考慮した音量を設定
-          wavesurfer.setVolume(volume * this.masterVolume);
-        }
-      } catch (error) {
-        this.handleError('音量の調整に失敗しました', error);
+    const handleDrag = (knob: KnobType, event: MouseEvent): void => {
+      if (!state.value.isDragging || state.value.currentKnob !== knob) return
+
+      const deltaY = state.value.startY - event.clientY
+      const sensitivity = 0.005
+      let newValue = state.value.startVolume + (deltaY * sensitivity)
+
+      // タイミング調整の場合は異なる範囲を使用
+      if (knob === 'timing2' || knob === 'timing3') {
+        newValue = Math.max(-0.5, Math.min(0.5, newValue))
+        const sampleNumber = parseInt(knob.replace('timing', ''))
+        state.value.timing[sampleNumber] = newValue
+        return
       }
-    },
 
-    /**
-     * @function resetVolume
-     * @description 指定したサンプルの音量を初期値（0.5）にリセットする
-     * @param {number} sampleNumber - サンプル番号（1または2）
-     */
-    resetVolume(sampleNumber) {
-      try {
-        this.volumes[sampleNumber] = 0.5;
-        this.updateVolume(sampleNumber);
-      } catch (error) {
-        this.handleError('音量のリセットに失敗しました', error);
-      }
-    },
-
-    /**
-     * @function handleDrag
-     * @description ノブのドラッグ中の処理
-     * @param {number|string} knobNumber - ノブ番号（1または2、または'master'、または'timing'）
-     * @param {MouseEvent} event - マウスイベント
-     */
-    handleDrag(knobNumber, event) {
-      if (!this.isDragging || this.currentKnob !== knobNumber) return;
-
-      // ドラッグ量を計算（ピクセル単位）
-      const deltaY = this.startY - event.clientY;
-      
-      // ドラッグ量を値の変化量に変換（感度調整用の係数）
-      const sensitivity = 0.001;
-      const valueDelta = deltaY * sensitivity;
-      
-      if (knobNumber === 'timing2' || knobNumber === 'timing3') {
-        // ノブの回転範囲は0から+0.5のまま
-        const sampleNumber = knobNumber === 'timing2' ? 2 : 3;
-        const knobValue = Math.max(0, Math.min(0.5, this.startVolume + valueDelta));
-        this.timing[sampleNumber] = knobValue;
-      } else if (knobNumber === 'master') {
-        // マスターボリュームの処理
-        const newVolume = Math.max(0, Math.min(1, this.startVolume + valueDelta));
-        this.masterVolume = newVolume;
-        // ドラッグ中は更新を抑える
-        if (!this.volumeUpdateTimeout) {
-          this.volumeUpdateTimeout = setTimeout(() => {
-            this.updateVolume(1);
-            this.updateVolume(2);
-            this.updateVolume(3);
-            this.volumeUpdateTimeout = null;
-          }, 100);
-        }
+      // ボリューム調整の場合
+      newValue = Math.max(0, Math.min(1, newValue))
+      if (knob === 'master') {
+        state.value.masterVolume = newValue
+        // マスターボリュームが変更されたら、全てのサンプルの音量を更新
+        Object.keys(state.value.wavesurfers).forEach(key => {
+          const sampleNumber = parseInt(key)
+          updateVolume(sampleNumber)
+        })
       } else {
-        // 個別のボリューム処理
-        const newVolume = Math.max(0, Math.min(1, this.startVolume + valueDelta));
-        this.volumes[knobNumber] = newVolume;
-        // ドラッグ中は更新を抑える
-        if (!this.volumeUpdateTimeout) {
-          this.volumeUpdateTimeout = setTimeout(() => {
-            this.updateVolume(knobNumber);
-            this.volumeUpdateTimeout = null;
-          }, 100);
-        }
+        state.value.volumes[knob as number] = newValue
+        updateVolume(knob as number)
       }
-    },
+    }
 
-    /**
-     * @function startDragging
-     * @description ノブのドラッグを開始する
-     * @param {number|string} knobNumber - ノブ番号（1または2、または'master'、または'timing'）
-     * @param {MouseEvent} event - マウスイベント
-     */
-    startDragging(knobNumber, event) {
-      this.isDragging = true;
-      this.currentKnob = knobNumber;
-      this.startY = event.clientY;
-      if (knobNumber === 'timing2' || knobNumber === 'timing3') {
-        const sampleNumber = knobNumber === 'timing2' ? 2 : 3;
-        this.startVolume = this.timing[sampleNumber];
-      } else if (knobNumber === 'master') {
-        this.startVolume = this.masterVolume;
-      } else {
-        this.startVolume = this.volumes[knobNumber];
+    const startDragging = (knob: KnobType, event: MouseEvent): void => {
+      state.value.isDragging = true
+      state.value.currentKnob = knob
+      state.value.startY = event.clientY
+      state.value.startVolume = knob === 'master' 
+        ? state.value.masterVolume 
+        : knob === 'timing2' || knob === 'timing3'
+          ? state.value.timing[parseInt(knob.replace('timing', ''))]
+          : state.value.volumes[knob as number]
+
+      // ドラッグ開始時にドキュメント全体のマウスイベントをリッスン
+      document.addEventListener('mousemove', handleDocumentMouseMove)
+      document.addEventListener('mouseup', handleDocumentMouseUp)
+    }
+
+    const handleDocumentMouseMove = (event: MouseEvent): void => {
+      if (state.value.isDragging && state.value.currentKnob) {
+        document.body.style.cursor = 'pointer'
+        handleDrag(state.value.currentKnob, event)
       }
-      document.body.style.cursor = 'pointer';
-    },
+    }
 
-    /**
-     * @function handleDocumentMouseMove
-     * @description ドキュメント全体のマウス移動を処理
-     * @param {MouseEvent} event - マウスイベント
-     */
-    handleDocumentMouseMove(event) {
-      if (this.isDragging && this.currentKnob) {
-        document.body.style.cursor = 'pointer';
-        this.handleDrag(this.currentKnob, event);
-      }
-    },
+    const handleDocumentMouseUp = (): void => {
+      state.value.isDragging = false
+      state.value.currentKnob = null
+      document.body.style.cursor = 'default'
+      // ドラッグ終了時にイベントリスナーを削除
+      document.removeEventListener('mousemove', handleDocumentMouseMove)
+      document.removeEventListener('mouseup', handleDocumentMouseUp)
+    }
 
-    /**
-     * @function handleDocumentMouseUp
-     * @description ドキュメント全体のマウスボタン解放を処理
-     */
-    handleDocumentMouseUp() {
-      if (this.isDragging) {
-        document.body.style.cursor = '';
-        this.isDragging = false;
-        this.currentKnob = null;
-        
-        // ドラッグ終了時に確実に音量を更新
-        if (this.volumeUpdateTimeout) {
-          clearTimeout(this.volumeUpdateTimeout);
-          this.volumeUpdateTimeout = null;
-        }
-        if (this.currentKnob === 'master') {
-          this.updateVolume(1);
-          this.updateVolume(2);
-          this.updateVolume(3);
-        } else if (typeof this.currentKnob === 'number') {
-          this.updateVolume(this.currentKnob);
-        }
-      }
-    },
-
-    /**
-     * @function handleKeyDown
-     * @description キーボードイベントを処理する
-     * @param {KeyboardEvent} event - キーボードイベント
-     */
-    handleKeyDown(event) {
-      // スペースキーが押された場合
+    const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.code === 'Space') {
-        // デフォルトのスクロール動作を防止
-        event.preventDefault();
-        
-        // 再生ボタンと同じ動作を実行
-        this.playFromStart();
+        event.preventDefault()
+        playFromStart()
       }
-    },
+    }
 
-    /**
-     * @function resetMasterVolume
-     * @description マスターボリュームを初期値（0.8）にリセットする
-     */
-    resetMasterVolume() {
+    const resetMasterVolume = (): void => {
       try {
-        this.masterVolume = 0.8;
-        // 両方のサンプルの音量を更新
-        this.updateVolume(1);
-        this.updateVolume(2);
-        this.updateVolume(3);
+        state.value.masterVolume = 0.8
+        updateVolume(1)
+        updateVolume(2)
+        updateVolume(3)
       } catch (error) {
-        this.handleError('マスターボリュームのリセットに失敗しました', error);
+        handleError('マスターボリュームのリセットに失敗しました', error as Error)
       }
-    },
+    }
 
-    /**
-     * @function startMeterUpdate
-     * @description メーターの更新を開始する
-     */
-    startMeterUpdate() {
-      // 60fpsでメーターを更新
-      this.meterInterval = setInterval(() => {
-        if (this.isPlaying) {
-          // 3つのサンプルの音量を取得して合成
-          const level1 = this.wavesurfers[1].getVolume() || 0;
-          const level2 = this.wavesurfers[2].getVolume() || 0;
-          const level3 = this.wavesurfers[3].getVolume() || 0;
-          // 合成した音量をdBに変換（簡易的な計算）
-          this.meterLevel = 20 * Math.log10((level1 + level2 + level3) / 3);
+    const startMeterUpdate = (): void => {
+      state.value.meterInterval = window.setInterval(() => {
+        if (state.value.isPlaying) {
+          const level1 = state.value.wavesurfers[1]?.getVolume() || 0
+          const level2 = state.value.wavesurfers[2]?.getVolume() || 0
+          const level3 = state.value.wavesurfers[3]?.getVolume() || 0
+          state.value.meterLevel = 20 * Math.log10((level1 + level2 + level3) / 3)
         } else {
-          // 再生中でない場合は最小値に
-          this.meterLevel = -60;
+          state.value.meterLevel = -60
         }
-      }, 1000 / 60);
-    },
+      }, 1000 / 60)
+    }
 
-    /**
-     * @function stopMeterUpdate
-     * @description メーターの更新を停止する
-     */
-    stopMeterUpdate() {
-      if (this.meterInterval) {
-        clearInterval(this.meterInterval);
-        this.meterInterval = null;
+    const stopMeterUpdate = (): void => {
+      if (state.value.meterInterval) {
+        clearInterval(state.value.meterInterval)
+        state.value.meterInterval = null
       }
-    },
+    }
 
-    /**
-     * @function updateTiming
-     * @description サンプル2のタイミングを更新する
-     */
-    updateTiming(sampleNumber) {
+    const updateTiming = (sampleNumber: number): void => {
       try {
-        if (this.wavesurfers[sampleNumber]) {
-          // 現在の再生位置を取得
-          const currentTime = this.wavesurfers[sampleNumber].getCurrentTime();
-          // タイミング調整を適用
-          this.wavesurfers[sampleNumber].seekTo(Math.max(0, currentTime + this.timing[sampleNumber]));
+        const wavesurfer = state.value.wavesurfers[sampleNumber]
+        if (wavesurfer) {
+          const currentTime = wavesurfer.getCurrentTime()
+          wavesurfer.seekTo(Math.max(0, currentTime + state.value.timing[sampleNumber]))
         }
       } catch (error) {
-        this.handleError('タイミングの調整に失敗しました', error);
+        handleError('タイミングの調整に失敗しました', error as Error)
       }
-    },
+    }
 
-    /**
-     * @function resetTiming
-     * @description タイミングを初期値（0秒）にリセットする
-     */
-    resetTiming(sampleNumber) {
+    const resetTiming = (sampleNumber: number): void => {
       try {
-        this.timing[sampleNumber] = 0;
-        if (this.isPlaying) {
-          this.updateTiming(sampleNumber);
+        state.value.timing[sampleNumber] = 0
+        if (state.value.isPlaying) {
+          updateTiming(sampleNumber)
         }
       } catch (error) {
-        this.handleError('タイミングのリセットに失敗しました', error);
+        handleError('タイミングのリセットに失敗しました', error as Error)
       }
-    },
-  },
-  beforeUnmount() {
-    // wavesurfer.jsのインスタンスを破棄
-    Object.values(this.wavesurfers).forEach(wavesurfer => {
-      if (wavesurfer) {
-        wavesurfer.destroy();
+    }
+
+    // 個別のボリューム更新
+    const updateVolume = (sampleNumber: number): void => {
+      const wavesurfer = state.value.wavesurfers[sampleNumber]
+      if (!wavesurfer) return
+
+      const volume = state.value.volumes[sampleNumber] * state.value.masterVolume
+      wavesurfer.setVolume(volume)
+
+      // サンプル3が無効な場合は音量を0に
+      if (sampleNumber === 3 && !state.value.isSample3Enabled) {
+        wavesurfer.setVolume(0)
       }
-    });
+    }
 
-    // イベントリスナーを削除
-    document.removeEventListener('mousemove', this.handleDocumentMouseMove);
-    document.removeEventListener('mouseup', this.handleDocumentMouseUp);
-    document.removeEventListener('keydown', this.handleKeyDown);
+    const resetVolume = (sampleNumber: number): void => {
+      try {
+        state.value.volumes[sampleNumber] = 0.5
+        updateVolume(sampleNumber)
+      } catch (error) {
+        handleError('音量のリセットに失敗しました', error as Error)
+      }
+    }
 
-    // メーターの更新を停止
-    this.stopMeterUpdate();
-  },
-};
+    // ライフサイクルフック
+    onMounted(() => {
+      try {
+        initializeWavesurfers()
+        loadAudioFiles()
+        document.addEventListener('keydown', handleKeyDown)
+        startMeterUpdate()
+      } catch (error) {
+        handleError('プレイヤーの初期化に失敗しました', error as Error)
+      }
+    })
+
+    onBeforeUnmount(() => {
+      Object.values(state.value.wavesurfers).forEach(wavesurfer => {
+        if (wavesurfer) {
+          wavesurfer.destroy()
+        }
+      })
+
+      document.removeEventListener('keydown', handleKeyDown)
+
+      stopMeterUpdate()
+    })
+
+    return {
+      ...state.value,
+      waveform1,
+      waveform2,
+      waveform3,
+      playFromStart,
+      resetVolume,
+      resetMasterVolume,
+      resetTiming,
+      startDragging,
+      handleDrag,
+      handleDocumentMouseUp
+    }
+  }
+})
 </script>
 
 <style scoped>
@@ -852,3 +761,4 @@ input:checked + .toggle-slider:before {
   pointer-events: none;
 }
 </style>
+
