@@ -70,7 +70,7 @@
             @mousemove="handleDrag('timing2', $event)"
             @mouseup="handleDocumentMouseUp"
           >
-            <div class="knob-dial" :style="{ transform: `rotate(${timing[2] * 270 - 135}deg)` }"></div>
+            <div class="knob-dial" :style="{ transform: `rotate(${timing[2] * 540 - 135}deg)` }"></div>
           </div>
           <div class="knob-label">Timing</div>
         </div>
@@ -111,7 +111,7 @@
             @mouseup="handleDocumentMouseUp"
             :class="{ 'disabled': !isSample3Enabled }"
           >
-            <div class="knob-dial" :style="{ transform: `rotate(${timing[3] * 270 - 135}deg)` }"></div>
+            <div class="knob-dial" :style="{ transform: `rotate(${timing[3] * 540 - 135}deg)` }"></div>
           </div>
           <div class="knob-label">Timing</div>
         </div>
@@ -335,7 +335,11 @@ export default defineComponent({
 
       // タイミング調整の場合は異なる範囲を使用
       if (knob === 'timing2' || knob === 'timing3') {
-        newValue = Math.max(-0.5, Math.min(0.5, newValue))
+        // マウスの移動量から回転角度を計算（-135度から135度の範囲）
+        const angle = startVolume.value + (deltaY * sensitivity * 270)
+        // 回転角度を0から0.5の範囲に変換
+        newValue = (angle + 135) / 270 * 0.5
+        newValue = Math.max(0, Math.min(0.5, newValue))
         const sampleNumber = parseInt(knob.replace('timing', ''))
         timing.value[sampleNumber] = newValue
         return
@@ -364,7 +368,7 @@ export default defineComponent({
       startVolume.value = knob === 'master' 
         ? masterVolume.value 
         : knob === 'timing2' || knob === 'timing3'
-          ? timing.value[parseInt(knob.replace('timing', ''))]
+          ? timing.value[parseInt(knob.replace('timing', ''))] * 540 - 135  // タイミング値を回転角度に変換
           : volumes.value[knob as number]
 
       document.addEventListener('mousemove', handleDocumentMouseMove)
@@ -502,8 +506,8 @@ export default defineComponent({
       sample1: computed(() => volumes.value[1] * 270 - 135),
       sample2: computed(() => volumes.value[2] * 270 - 135),
       sample3: computed(() => volumes.value[3] * 270 - 135),
-      timing2: computed(() => timing.value[2] * 270 - 135),
-      timing3: computed(() => timing.value[3] * 270 - 135)
+      timing2: computed(() => timing.value[2] * 540 - 135),
+      timing3: computed(() => timing.value[3] * 540 - 135)
     }
 
     return {
