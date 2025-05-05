@@ -2,94 +2,75 @@
  * @file BaseEffect.ts
  * @brief エフェクトの基底クラス
  * @details
- * - エフェクトの基本機能を提供
- * - 入出力の管理
- * - パラメータの制御
- * - エラー処理の統一
+ * - 入出力ノードの管理
+ * - エフェクトの有効/無効制御
+ * - パラメータの管理
+ * - エラー処理
  */
 
+import { AudioEngine } from '@/core/AudioEngine';
+
 export abstract class BaseEffect {
-  protected input: GainNode;
-  protected output: GainNode;
+  protected input!: GainNode;
+  protected output!: GainNode;
+  protected isEnabled: boolean = false;
   protected isInitialized: boolean = false;
 
-  /**
-   * BaseEffectのコンストラクタ
-   * @param {AudioContext} context - 音声コンテキスト
-   * @throws {Error} 初期化に失敗した場合
-   */
-  constructor(protected context: AudioContext) {
+  constructor(protected audioEngine: AudioEngine) {
+    if (!audioEngine) {
+      throw new Error('音声エンジンが指定されていません');
+    }
+
     try {
-      this.input = this.context.createGain();
-      this.output = this.context.createGain();
+      const context = audioEngine.getContext();
+      this.input = context.createGain();
+      this.output = context.createGain();
       this.isInitialized = true;
-    } catch (error: unknown) {
-      throw new Error(`エフェクトの初期化に失敗しました: ${(error as Error).message}`);
+    } catch (error) {
+      throw new Error(`エフェクトの初期化に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  /**
-   * エフェクトの入力ノードを取得
-   * @returns {GainNode} 入力ノード
-   * @throws {Error} 初期化されていない場合
-   */
-  public getInput(): GainNode {
+  protected checkState(): void {
+    try {
+      this.audioEngine.getContext();
+    } catch (error) {
+      this.dispose();
+      throw new Error('音声エンジンが破棄されています');
+    }
+
     if (!this.isInitialized) {
       throw new Error('エフェクトが初期化されていません');
     }
+  }
+
+  public getInput(): GainNode {
+    this.checkState();
     return this.input;
   }
 
-  /**
-   * エフェクトの出力ノードを取得
-   * @returns {GainNode} 出力ノード
-   * @throws {Error} 初期化されていない場合
-   */
   public getOutput(): GainNode {
-    if (!this.isInitialized) {
-      throw new Error('エフェクトが初期化されていません');
-    }
+    this.checkState();
     return this.output;
   }
 
-  /**
-   * エフェクトを有効化
-   * @throws {Error} 初期化されていない場合
-   */
   public abstract enable(): void;
-
-  /**
-   * エフェクトを無効化
-   * @throws {Error} 初期化されていない場合
-   */
   public abstract disable(): void;
-
-  /**
-   * エフェクトのパラメータを設定
-   * @param {string} param - パラメータ名
-   * @param {number} value - パラメータ値
-   * @throws {Error} 初期化されていない場合、または無効なパラメータの場合
-   */
   public abstract setParameter(param: string, value: number): void;
-
-  /**
-   * エフェクトのパラメータを取得
-   * @param {string} param - パラメータ名
-   * @returns {number} パラメータ値
-   * @throws {Error} 初期化されていない場合、または無効なパラメータの場合
-   */
   public abstract getParameter(param: string): number;
 
-  /**
-   * エフェクトを破棄
-   * @throws {Error} 初期化されていない場合
-   */
   public dispose(): void {
     if (!this.isInitialized) {
-      throw new Error('エフェクトが初期化されていません');
+      return;
     }
-    this.input.disconnect();
-    this.output.disconnect();
-    this.isInitialized = false;
+
+    try {
+      this.input.disconnect();
+      this.output.disconnect();
+      this.isInitialized = false;
+      this.isEnabled = false;
+    } catch (error) {
+      throw new Error(`エフェクトの破棄に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 } 
