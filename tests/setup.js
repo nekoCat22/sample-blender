@@ -7,18 +7,40 @@
  */
 
 // Web Audio APIのモック
-class MockGainNode {
+class MockAudioParam {
+  constructor(defaultValue = 0) {
+    this.value = defaultValue;
+  }
+
+  setValueAtTime(value, time) {
+    this.value = value;
+    return this;
+  }
+
+  linearRampToValueAtTime(value, time) {
+    this.value = value;
+    return this;
+  }
+}
+
+class MockAudioNode {
   constructor() {
-    this._gainValue = 1;
-    this.gain = {
-      value: this._gainValue,
-      setValueAtTime: jest.fn(),
-      linearRampToValueAtTime: jest.fn()
-    };
+    this.context = new MockAudioContext();
+  }
+
+  connect(destination) {
+    return destination;
   }
 
   disconnect() {}
-  connect() {}
+}
+
+class MockGainNode extends MockAudioNode {
+  constructor() {
+    super();
+    this._gainValue = 1;
+    this.gain = new MockAudioParam(this._gainValue);
+  }
 }
 
 class MockAudioContext {
@@ -52,7 +74,13 @@ class MockAudioContext {
 
 // グローバルにモックを設定
 global.AudioContext = MockAudioContext;
+global.AudioNode = MockAudioNode;
+global.AudioParam = MockAudioParam;
+global.GainNode = MockGainNode;
 global.window.AudioContext = MockAudioContext;
+global.window.AudioNode = MockAudioNode;
+global.window.AudioParam = MockAudioParam;
+global.window.GainNode = MockGainNode;
 
 // グローバルなfetchのモック
 global.fetch = jest.fn().mockImplementation(() =>

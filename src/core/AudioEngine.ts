@@ -9,6 +9,8 @@
  * - サンプルの再生タイミング制御
  */
 
+import { EffectChain } from './effects/EffectChain';
+
 export class AudioEngine {
   private context: AudioContext;
   private masterGain: GainNode;
@@ -21,6 +23,7 @@ export class AudioEngine {
   private sampleGains: Map<string, GainNode> = new Map();
   private startTime = 0;
   private sampleStartTimes: Map<string, number> = new Map();
+  private effectChains: Map<string, EffectChain> = new Map();
 
   /**
    * AudioEngineのコンストラクタ
@@ -122,6 +125,9 @@ export class AudioEngine {
     // 音声コンテキストを破棄する前に、すべての接続を切断
     this.masterGain.disconnect();
     this.sampleGains.forEach(gain => gain.disconnect());
+    // エフェクトチェーンの破棄を追加
+    this.effectChains.forEach(chain => chain.dispose());
+    this.effectChains.clear();
     // 音声コンテキストを破棄
     if (this.context.state !== 'closed') {
       await this.context.close();
@@ -357,5 +363,49 @@ export class AudioEngine {
     return Math.max(
       ...Array.from(this.sampleBuffers.values()).map(buffer => buffer.duration)
     );
+  }
+
+  /**
+   * サンプル用のエフェクトチェーンを作成
+   * @param {string} sampleId - サンプルID
+   * @returns {EffectChain} 作成されたエフェクトチェーン
+   * @throws {Error} 初期化されていない場合
+   */
+  public createEffectChain(sampleId: string): EffectChain {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    const chain = new EffectChain(this.context);
+    this.effectChains.set(sampleId, chain);
+    return chain;
+  }
+
+  /**
+   * サンプルのエフェクトチェーンを取得
+   * @param {string} sampleId - サンプルID
+   * @returns {EffectChain | undefined} エフェクトチェーン
+   * @throws {Error} 初期化されていない場合
+   */
+  public getEffectChain(sampleId: string): EffectChain | undefined {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    return this.effectChains.get(sampleId);
+  }
+
+  /**
+   * サンプルのエフェクトチェーンを削除
+   * @param {string} sampleId - サンプルID
+   * @throws {Error} 初期化されていない場合
+   */
+  public removeEffectChain(sampleId: string): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    const chain = this.effectChains.get(sampleId);
+    if (chain) {
+      chain.dispose();
+      this.effectChains.delete(sampleId);
+    }
   }
 } 
