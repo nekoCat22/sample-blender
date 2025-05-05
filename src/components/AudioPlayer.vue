@@ -70,7 +70,7 @@
             @mousemove="handleDrag('timing2', $event)"
             @mouseup="handleDocumentMouseUp"
           >
-            <div class="knob-dial" :style="{ transform: `rotate(${timing[2] * 540 - 135}deg)` }"></div>
+            <div class="knob-dial" :style="{ transform: `rotate(${timing[2] * 270 - 135}deg)` }"></div>
           </div>
           <div class="knob-label">Timing</div>
         </div>
@@ -111,7 +111,7 @@
             @mouseup="handleDocumentMouseUp"
             :class="{ 'disabled': !isSample3Enabled }"
           >
-            <div class="knob-dial" :style="{ transform: `rotate(${timing[3] * 540 - 135}deg)` }"></div>
+            <div class="knob-dial" :style="{ transform: `rotate(${timing[3] * 270 - 135}deg)` }"></div>
           </div>
           <div class="knob-label">Timing</div>
         </div>
@@ -502,8 +502,8 @@ export default defineComponent({
       sample1: computed(() => volumes.value[1] * 270 - 135),
       sample2: computed(() => volumes.value[2] * 270 - 135),
       sample3: computed(() => volumes.value[3] * 270 - 135),
-      timing2: computed(() => timing.value[2] * 540 - 135),
-      timing3: computed(() => timing.value[3] * 540 - 135)
+      timing2: computed(() => timing.value[2] * 270 - 135),
+      timing3: computed(() => timing.value[3] * 270 - 135)
     }
 
     return {
