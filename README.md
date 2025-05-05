@@ -26,6 +26,7 @@ A web application for creating new audio samples by layering existing ones
 ### 5. 技術要件
     - フロントエンドのみの構成（バックエンド不要）
     - ブラウザでの動作
+    - TypeScriptによる型安全な実装
 ---
 
 ## 開発ステップ
@@ -33,7 +34,7 @@ A web application for creating new audio samples by layering existing ones
 
 1. プロジェクトのセットアップ
     - 開発環境の構築
-    - Vue.jsの基本構造作成
+    - Vue.js + TypeScriptの基本構造作成
     - 必要なライブラリのインストール
 2. 基本的なオーディオ機能
     - 単一サンプルの再生/停止
@@ -67,7 +68,57 @@ A web application for creating new audio samples by layering existing ones
 
 ---
 
-## Project setup
+## 技術スタック
+- Vue 3
+- TypeScript
+- Web Audio API
+- WaveSurfer.js
+- ESLint + Prettier
+
+## 開発環境のセットアップ
+
+### 必要条件
+- Node.js (v14以上)
+- npm (v6以上)
+
+### インストール
+```bash
+# 依存関係のインストール
+npm install
+
+# 開発サーバーの起動
+npm run serve
+
+# ビルド
+npm run build
+
+# リント
+npm run lint
+```
+
+### 型チェック
+```bash
+# TypeScriptの型チェック
+npm run type-check
+```
+
+### テスト
+```bash
+# ユニットテストの実行
+npm run test:unit
+```
+
+## プロジェクト構造
+```
+src/
+  ├── components/     # Vueコンポーネント
+  ├── types/         # TypeScript型定義
+  ├── utils/         # ユーティリティ関数
+  └── assets/        # 静的ファイル
+```
+
+## カスタマイズ
+設定の詳細については [Configuration Reference](https://cli.vuejs.org/config/) を参照してください。
 ```
 npm install
 ```
