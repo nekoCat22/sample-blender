@@ -12,12 +12,15 @@
 export class AudioEngine {
   private context: AudioContext;
   private masterGain: GainNode;
-  private isInitialized: boolean = false;
+  private isInitialized = false;
   private sampleTimings: Map<string, number> = new Map();
   private static readonly MAX_TIMING = 0.5;
-  private isPlaying: boolean = false;
+  private isPlaying = false;
   private sampleBuffers: Map<string, AudioBuffer> = new Map();
   private sampleSources: Map<string, AudioBufferSourceNode> = new Map();
+  private sampleGains: Map<string, GainNode> = new Map();
+  private startTime = 0;
+  private sampleStartTimes: Map<string, number> = new Map();
 
   /**
    * AudioEngineのコンストラクタ
@@ -118,6 +121,7 @@ export class AudioEngine {
     }
     // 音声コンテキストを破棄する前に、すべての接続を切断
     this.masterGain.disconnect();
+    this.sampleGains.forEach(gain => gain.disconnect());
     // 音声コンテキストを破棄
     if (this.context.state !== 'closed') {
       await this.context.close();
@@ -168,6 +172,67 @@ export class AudioEngine {
   }
 
   /**
+   * サンプルの音量を設定
+   * @param {string} sampleId - サンプルID
+   * @param {number} volume - 0.0から1.0の範囲の音量値
+   * @throws {Error} 初期化されていない場合、または無効な音量値の場合
+   */
+  public setSampleVolume(sampleId: string, volume: number): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    if (volume < 0 || volume > 1) {
+      throw new Error('音量は0.0から1.0の範囲で指定してください');
+    }
+    const gain = this.sampleGains.get(sampleId);
+    if (gain) {
+      gain.gain.value = volume;
+    }
+  }
+
+  /**
+   * サンプルの音量を取得
+   * @param {string} sampleId - サンプルID
+   * @returns {number} 現在の音量値
+   * @throws {Error} 初期化されていない場合
+   */
+  public getSampleVolume(sampleId: string): number {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    const gain = this.sampleGains.get(sampleId);
+    return gain ? gain.gain.value : 0;
+  }
+
+  /**
+   * 現在の再生時間を取得
+   * @returns {number} 現在の再生時間（秒）
+   * @throws {Error} 初期化されていない場合
+   */
+  public getCurrentTime(): number {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    if (!this.isPlaying) {
+      return 0;
+    }
+
+    // 各サンプルの再生開始時間を考慮して、最も進んでいる時間を返す
+    const currentTime = this.context.currentTime;
+    let maxProgress = 0;
+
+    this.sampleStartTimes.forEach((startTime, sampleId) => {
+      const timing = this.sampleTimings.get(sampleId) || 0;
+      const progress = currentTime - startTime - timing;
+      if (progress > maxProgress) {
+        maxProgress = progress;
+      }
+    });
+
+    return Math.max(0, maxProgress);
+  }
+
+  /**
    * サンプルを再生
    * @param {string} sampleId - サンプルID
    * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
@@ -190,7 +255,17 @@ export class AudioEngine {
     // 新しいソースを作成
     const source = this.context.createBufferSource();
     source.buffer = buffer;
-    source.connect(this.masterGain);
+
+    // ゲインノードを作成または取得
+    let gain = this.sampleGains.get(sampleId);
+    if (!gain) {
+      gain = this.context.createGain();
+      this.sampleGains.set(sampleId, gain);
+    }
+
+    // 接続
+    source.connect(gain);
+    gain.connect(this.masterGain);
     this.sampleSources.set(sampleId, source);
 
     // タイミングを考慮して再生
@@ -198,9 +273,19 @@ export class AudioEngine {
     if (timing > 0) {
       setTimeout(() => {
         source.start();
+        if (!this.isPlaying) {
+          this.startTime = this.context.currentTime;
+          this.isPlaying = true;
+        }
+        this.sampleStartTimes.set(sampleId, this.context.currentTime);
       }, timing * 1000);
     } else {
       source.start();
+      if (!this.isPlaying) {
+        this.startTime = this.context.currentTime;
+        this.isPlaying = true;
+      }
+      this.sampleStartTimes.set(sampleId, this.context.currentTime);
     }
   }
 
@@ -220,6 +305,9 @@ export class AudioEngine {
       }
     });
     this.sampleSources.clear();
+    this.sampleStartTimes.clear();
+    this.isPlaying = false;
+    this.startTime = 0;
   }
 
   /**
@@ -238,5 +326,36 @@ export class AudioEngine {
     } catch (error) {
       throw new Error(`サンプル${sampleId}の読み込みに失敗しました: ${(error as Error).message}`);
     }
+  }
+
+  /**
+   * サンプルの再生時間を取得
+   * @param {string} sampleId - サンプルID
+   * @returns {number} 再生時間（秒）
+   * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
+   */
+  public getSampleDuration(sampleId: string): number {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    const buffer = this.sampleBuffers.get(sampleId);
+    if (!buffer) {
+      throw new Error(`サンプル${sampleId}が見つかりません`);
+    }
+    return buffer.duration;
+  }
+
+  /**
+   * すべてのサンプルの最大再生時間を取得
+   * @returns {number} 最大再生時間（秒）
+   * @throws {Error} 初期化されていない場合
+   */
+  public getMaxDuration(): number {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    return Math.max(
+      ...Array.from(this.sampleBuffers.values()).map(buffer => buffer.duration)
+    );
   }
 } 

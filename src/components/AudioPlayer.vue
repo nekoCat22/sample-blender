@@ -163,10 +163,14 @@
 import { defineComponent, ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import WaveSurfer from 'wavesurfer.js'
 import type { WaveSurferInstance, KnobType, WaveSurferOptions } from '../types/audio'
+import { AudioEngine } from '../core/AudioEngine'
 
 export default defineComponent({
   name: 'AudioPlayer',
   setup() {
+    // AudioEngineのインスタンスを作成
+    const audioEngine = new AudioEngine()
+
     // 状態の定義
     const wavesurfers = ref<{ [key: number]: WaveSurferInstance | null }>({
       1: null,
@@ -214,21 +218,21 @@ export default defineComponent({
 
         const wavesurfer = WaveSurfer.create({
           container,
-          waveColor: '#a3cef1',
-          progressColor: '#4361ee',
+          waveColor: '#4361ee',  // 波形の色を濃く
           height: 80,
           minPxPerSec: 100,
           partialRender: true,
           normalize: true,
           responsive: true,
-          cursorColor: '#4361ee',
-          cursorWidth: 1,
+          cursorColor: 'transparent',  // カーソルを非表示
+          cursorWidth: 0,  // カーソルの幅を0に
           barWidth: 2,
           barGap: 1,
           barRadius: 0,
-          interact: true,
+          interact: false,
           hideScrollbar: true,
-          autoCenter: true
+          autoCenter: true,
+          progressColor: 'transparent'  // 再生位置の表示を無効化
         } as WaveSurferOptions) as WaveSurferInstance
 
         // イベントリスナーの設定
@@ -244,19 +248,6 @@ export default defineComponent({
         wavesurfer.on('ready', () => {
           errorMessage.value = null
           isLoading.value = false
-          wavesurfer.setVolume(volumes.value[sampleNumber])
-        })
-
-        wavesurfer.on('play', () => {
-          isPlaying.value = true
-        })
-
-        wavesurfer.on('pause', () => {
-          isPlaying.value = false
-        })
-
-        wavesurfer.on('finish', () => {
-          isPlaying.value = false
         })
 
         wavesurfers.value[sampleNumber] = wavesurfer
@@ -273,7 +264,13 @@ export default defineComponent({
             throw new Error(`HTTP error! status: ${response.status}`)
           }
           const blob = await response.blob()
+          const arrayBuffer = await blob.arrayBuffer()
+          
+          // WaveSurferで波形表示
           wavesurfers.value[sampleNumber]?.loadBlob(blob)
+          
+          // AudioEngineで音声データを読み込み
+          await audioEngine.loadSample(sampleNumber.toString(), arrayBuffer)
         }
       } catch (error) {
         handleError('音声ファイルの読み込みに失敗しました', error as Error)
@@ -287,42 +284,44 @@ export default defineComponent({
     }
 
     const resetPlayback = (): void => {
-      [1, 2, 3].forEach(sampleNumber => {
-        const wavesurfer = wavesurfers.value[sampleNumber]
-        if (wavesurfer) {
-          wavesurfer.stop()
-          wavesurfer.seekTo(0)
-        }
-      })
+      audioEngine.stopAll()
+      isPlaying.value = false
     }
 
     const playFromStart = (): void => {
       try {
-        if (wavesurfers.value[1] && wavesurfers.value[2] && wavesurfers.value[3]) {
-          resetPlayback()
-          
-          wavesurfers.value[1].play()
-          
-          if (timing.value[2] > 0) {
+        resetPlayback()
+        isPlaying.value = true
+        
+        // AudioEngineを使って再生
+        audioEngine.playSample('1')
+        
+        if (timing.value[2] > 0) {
+          setTimeout(() => {
+            audioEngine.playSample('2')
+          }, timing.value[2] * 1000)
+        } else {
+          audioEngine.playSample('2')
+        }
+        
+        if (isSample3Enabled.value) {
+          if (timing.value[3] > 0) {
             setTimeout(() => {
-              wavesurfers.value[2]?.play()
-            }, timing.value[2] * 1000)
+              audioEngine.playSample('3')
+            }, timing.value[3] * 1000)
           } else {
-            wavesurfers.value[2]?.play()
-          }
-          
-          if (isSample3Enabled.value) {
-            if (timing.value[3] > 0) {
-              setTimeout(() => {
-                wavesurfers.value[3]?.play()
-              }, timing.value[3] * 1000)
-            } else {
-              wavesurfers.value[3]?.play()
-            }
+            audioEngine.playSample('3')
           }
         }
+
+        // 再生が終了したら状態をリセット
+        const maxDuration = audioEngine.getMaxDuration()
+        setTimeout(() => {
+          isPlaying.value = false
+        }, maxDuration * 1000)
       } catch (error) {
         handleError('再生に失敗しました', error as Error)
+        isPlaying.value = false
       }
     }
 
@@ -342,6 +341,7 @@ export default defineComponent({
         newValue = Math.max(0, Math.min(0.5, newValue))
         const sampleNumber = parseInt(knob.replace('timing', ''))
         timing.value[sampleNumber] = newValue
+        updateTiming(sampleNumber)
         return
       }
 
@@ -413,9 +413,9 @@ export default defineComponent({
     const startMeterUpdate = (): void => {
       meterInterval.value = window.setInterval(() => {
         if (isPlaying.value) {
-          const level1 = wavesurfers.value[1]?.getVolume() || 0
-          const level2 = wavesurfers.value[2]?.getVolume() || 0
-          const level3 = wavesurfers.value[3]?.getVolume() || 0
+          const level1 = audioEngine.getSampleVolume('1')
+          const level2 = audioEngine.getSampleVolume('2')
+          const level3 = audioEngine.getSampleVolume('3')
           meterLevel.value = 20 * Math.log10((level1 + level2 + level3) / 3)
         } else {
           meterLevel.value = -60
@@ -432,11 +432,7 @@ export default defineComponent({
 
     const updateTiming = (sampleNumber: number): void => {
       try {
-        const wavesurfer = wavesurfers.value[sampleNumber]
-        if (wavesurfer) {
-          const currentTime = wavesurfer.getCurrentTime()
-          wavesurfer.seekTo(Math.max(0, currentTime + timing.value[sampleNumber]))
-        }
+        audioEngine.setTiming(sampleNumber.toString(), timing.value[sampleNumber])
       } catch (error) {
         handleError('タイミングの調整に失敗しました', error as Error)
       }
@@ -445,25 +441,18 @@ export default defineComponent({
     const resetTiming = (sampleNumber: number): void => {
       try {
         timing.value[sampleNumber] = 0
-        if (isPlaying.value) {
-          updateTiming(sampleNumber)
-        }
+        audioEngine.resetTiming(sampleNumber.toString())
       } catch (error) {
         handleError('タイミングのリセットに失敗しました', error as Error)
       }
     }
 
-    // 個別のボリューム更新
     const updateVolume = (sampleNumber: number): void => {
-      const wavesurfer = wavesurfers.value[sampleNumber]
-      if (!wavesurfer) return
-
-      const volume = volumes.value[sampleNumber] * masterVolume.value
-      wavesurfer.setVolume(volume)
-
-      // サンプル3が無効な場合は音量を0に
-      if (sampleNumber === 3 && !isSample3Enabled.value) {
-        wavesurfer.setVolume(0)
+      try {
+        const volume = volumes.value[sampleNumber] * masterVolume.value
+        audioEngine.setSampleVolume(sampleNumber.toString(), volume)
+      } catch (error) {
+        handleError('音量の更新に失敗しました', error as Error)
       }
     }
 
@@ -477,27 +466,28 @@ export default defineComponent({
     }
 
     // ライフサイクルフック
-    onMounted(() => {
+    onMounted(async () => {
       try {
+        // WaveSurferの初期化
         initializeWavesurfers()
-        loadAudioFiles()
-        document.addEventListener('keydown', handleKeyDown)
+        // 音声ファイルの読み込み
+        await loadAudioFiles()
+        // メーター更新の開始
         startMeterUpdate()
+        // キーボードイベントのリスナーを追加
+        window.addEventListener('keydown', handleKeyDown)
       } catch (error) {
         handleError('プレイヤーの初期化に失敗しました', error as Error)
       }
     })
 
     onBeforeUnmount(() => {
-      Object.values(wavesurfers.value).forEach(wavesurfer => {
-        if (wavesurfer) {
-          wavesurfer.destroy()
-        }
-      })
-
-      document.removeEventListener('keydown', handleKeyDown)
-
+      // メーター更新の停止
       stopMeterUpdate()
+      // キーボードイベントのリスナーを削除
+      window.removeEventListener('keydown', handleKeyDown)
+      // AudioEngineの破棄
+      audioEngine.dispose()
     })
 
     // ノブの回転角度を計算するcomputedプロパティ
@@ -548,6 +538,9 @@ div[ref="waveform1"],
 div[ref="waveform2"],
 div[ref="waveform3"] {
   margin-bottom: 1em;
+  background: #f0f4f8;  /* 背景色を少し暗く */
+  border-radius: 4px;
+  padding: 8px;
 }
 
 /* 波形のコンテナ内のキャンバス要素のスタイル */
@@ -556,6 +549,15 @@ div[ref="waveform2"] canvas,
 div[ref="waveform3"] canvas {
   width: 100% !important;
   height: auto !important;
+  border-radius: 2px;
+}
+
+/* 波形のコンテナのホバー効果 */
+div[ref="waveform1"]:hover,
+div[ref="waveform2"]:hover,
+div[ref="waveform3"]:hover {
+  background: #e2e8f0;  /* ホバー時の背景色も調整 */
+  transition: background-color 0.2s ease;
 }
 
 button {
