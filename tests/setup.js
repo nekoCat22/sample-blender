@@ -1,3 +1,59 @@
+/**
+ * @file setup.js
+ * @brief Jestのセットアップファイル
+ * @details
+ * - Web Audio APIのモックを設定
+ * - グローバルなテスト環境の設定
+ */
+
+// Web Audio APIのモック
+class MockGainNode {
+  constructor() {
+    this._gainValue = 1;
+    this.gain = {
+      value: this._gainValue,
+      setValueAtTime: jest.fn(),
+      linearRampToValueAtTime: jest.fn()
+    };
+  }
+
+  disconnect() {}
+  connect() {}
+}
+
+class MockAudioContext {
+  constructor() {
+    this._state = 'running';
+  }
+
+  createGain() {
+    return new MockGainNode();
+  }
+
+  async suspend() {
+    this._state = 'suspended';
+    return Promise.resolve();
+  }
+
+  async resume() {
+    this._state = 'running';
+    return Promise.resolve();
+  }
+
+  async close() {
+    this._state = 'closed';
+    return Promise.resolve();
+  }
+
+  get state() {
+    return this._state;
+  }
+}
+
+// グローバルにモックを設定
+global.AudioContext = MockAudioContext;
+global.window.AudioContext = MockAudioContext;
+
 // グローバルなfetchのモック
 global.fetch = jest.fn().mockImplementation(() =>
   Promise.resolve({
@@ -11,22 +67,6 @@ global.fetch = jest.fn().mockImplementation(() =>
     url: 'http://example.com'
   })
 )
-
-// AudioContextのモック
-global.AudioContext = jest.fn().mockImplementation(() => ({
-  createGain: jest.fn().mockReturnValue({
-    connect: jest.fn(),
-    gain: { value: 1 }
-  }),
-  createAnalyser: jest.fn().mockReturnValue({
-    connect: jest.fn(),
-    frequencyBinCount: 1024,
-    getByteFrequencyData: jest.fn()
-  }),
-  createMediaElementSource: jest.fn().mockReturnValue({
-    connect: jest.fn()
-  })
-}))
 
 // ResizeObserverのモック
 global.ResizeObserver = jest.fn().mockImplementation(() => ({

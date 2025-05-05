@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for src/types/audio.ts</title>
+    <title>Code coverage report for src/core/AudioEngine.ts</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/types</a> audio.ts</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/core</a> AudioEngine.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">81.81% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>27/33</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">75% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>15/20</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">87.5% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>7/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">81.81% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>27/33</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -144,7 +144,47 @@
 <a name='L79'></a><a href='#L79'>79</a>
 <a name='L80'></a><a href='#L80'>80</a>
 <a name='L81'></a><a href='#L81'>81</a>
-<a name='L82'></a><a href='#L82'>82</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -157,13 +197,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -173,7 +220,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -182,8 +232,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -192,7 +247,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -201,7 +259,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -209,7 +270,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -217,95 +281,151 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
- * @file audio.ts
- * @brief 音声プレイヤーで使用する型定義
+ * @file AudioEngine.ts
+ * @brief Web Audio APIのラッパークラス
+ * @details
+ * - 音声コンテキストの管理
+ * - マスターボリュームの制御
+ * - エフェクトチェーンの管理
+ * - エラー処理の統一
  */
 &nbsp;
-/**
- * WaveSurfer.jsのオプション型
- */
-export interface WaveSurferOptions {
-  container: HTMLElement;
-  waveColor: string;
-  progressColor: string;
-  height: number;
-  minPxPerSec: number;
-  partialRender: boolean;
-  normalize: boolean;
-  responsive: boolean;
-  cursorColor: string;
-  cursorWidth: number;
-  barWidth: number;
-  barGap: number;
-  barRadius: number;
-  interact: boolean;
-  hideScrollbar: boolean;
-  autoCenter: boolean;
-}
+export class AudioEngine {
+  private context: AudioContext;
+  private masterGain: GainNode;
+  private isInitialized: boolean = false;
 &nbsp;
-/**
- * WaveSurfer.jsのインスタンス型
- */
-export interface WaveSurferInstance {
-  on: (event: string, callback: (error?: Error) =&gt; void) =&gt; void;
-  loadBlob: (blob: Blob) =&gt; void;
-  play: () =&gt; void;
-  pause: () =&gt; void;
-  stop: () =&gt; void;
-  seekTo: (time: number) =&gt; void;
-  setVolume: (volume: number) =&gt; void;
-  getVolume: () =&gt; number;
-  getCurrentTime: () =&gt; number;
-  destroy: () =&gt; void;
-}
+  /**
+   * AudioEngineのコンストラクタ
+   * @throws {Error} Web Audio APIがサポートされていない場合
+   */
+  constructor() {
+    try {
+      this.context = new AudioContext();
+      this.masterGain = this.context.createGain();
+      this.masterGain.connect(this.context.destination);
+      this.isInitialized = true;
+    } catch (error: unknown) {
+<span class="cstat-no" title="statement not covered" >      throw new Error(`AudioEngineの初期化に失敗しました: ${(error as Error).message}`);</span>
+    }
+  }
 &nbsp;
-/**
- * 音声プレイヤーの状態型
- */
-export interface AudioPlayerState {
-  wavesurfers: {
-    [key: number]: WaveSurferInstance | null;
-  };
-  isPlaying: boolean;
-  error: string | null;
-  isLoading: boolean;
-  volumes: {
-    [key: number]: number;
-  };
-  masterVolume: number;
-  isDragging: boolean;
-  currentKnob: KnobType | null;
-  startY: number;
-  startVolume: number;
-  meterLevel: number;
-  meterInterval: number | null;
-  volumeUpdateTimeout: number | null;
-  timing: {
-    [key: number]: number;
-  };
-  isSample3Enabled: boolean;
-}
+  /**
+   * 音声コンテキストを取得
+   * @returns {AudioContext} 音声コンテキスト
+   * @throws {Error} 初期化されていない場合
+   */
+  public getContext(): AudioContext {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    return this.context;
+  }
 &nbsp;
-/**
- * ノブの種類を表す型
- */
-export type KnobType = number | 'master' | 'timing2' | 'timing3';
+  /**
+   * マスターボリュームを設定
+   * @param {number} volume - 0.0から1.0の範囲の音量値
+   * @throws {Error} 初期化されていない場合、または無効な音量値の場合
+   */
+  public setMasterVolume(volume: number): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    if (volume &lt; 0 || volume &gt; 1) {
+      throw new Error('音量は0.0から1.0の範囲で指定してください');
+    }
+    this.masterGain.gain.value = volume;
+  }
 &nbsp;
-/**
- * 音声プレイヤーのエラー型
- */
-export interface AudioError {
-  message: string;
-  error: Error;
+  /**
+   * マスターボリュームを取得
+   * @returns {number} 現在のマスターボリューム値
+   * @throws {Error} 初期化されていない場合
+   */
+  public getMasterVolume(): number {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    return this.masterGain.gain.value;
+  }
+&nbsp;
+  /**
+   * 音声ノードをマスターボリュームに接続
+   * @param {AudioNode} node - 接続する音声ノード
+   * @throws {Error} 初期化されていない場合
+   */
+<span class="fstat-no" title="function not covered" >  pu</span>blic connectToMaster(node: AudioNode): void {
+<span class="cstat-no" title="statement not covered" >    if (!this.isInitialized) {</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error('AudioEngineが初期化されていません');</span>
+    }
+<span class="cstat-no" title="statement not covered" >    node.connect(this.masterGain);</span>
+  }
+&nbsp;
+  /**
+   * 音声コンテキストを一時停止
+   * @throws {Error} 初期化されていない場合
+   */
+  public async suspend(): Promise&lt;void&gt; {
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!this.isInitialized) {
+<span class="cstat-no" title="statement not covered" >      throw new Error('AudioEngineが初期化されていません');</span>
+    }
+    await this.context.suspend();
+  }
+&nbsp;
+  /**
+   * 音声コンテキストを再開
+   * @throws {Error} 初期化されていない場合
+   */
+  public async resume(): Promise&lt;void&gt; {
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!this.isInitialized) {
+<span class="cstat-no" title="statement not covered" >      throw new Error('AudioEngineが初期化されていません');</span>
+    }
+    await this.context.resume();
+  }
+&nbsp;
+  /**
+   * 音声コンテキストを破棄
+   * @throws {Error} 初期化されていない場合
+   */
+  public async dispose(): Promise&lt;void&gt; {
+    // 既に破棄されている場合は何もしない
+    if (!this.isInitialized) {
+      return;
+    }
+    // 音声コンテキストを破棄する前に、すべての接続を切断
+    this.masterGain.disconnect();
+    // 音声コンテキストを破棄
+    <span class="missing-if-branch" title="else path not taken" >E</span>if (this.context.state !== 'closed') {
+      await this.context.close();
+    }
+    // 初期化フラグをリセット
+    this.isInitialized = false;
+  }
 } </pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
