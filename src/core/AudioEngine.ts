@@ -6,12 +6,18 @@
  * - マスターボリュームの制御
  * - エフェクトチェーンの管理
  * - エラー処理の統一
+ * - サンプルの再生タイミング制御
  */
 
 export class AudioEngine {
   private context: AudioContext;
   private masterGain: GainNode;
   private isInitialized: boolean = false;
+  private sampleTimings: Map<string, number> = new Map();
+  private static readonly MAX_TIMING = 0.5;
+  private isPlaying: boolean = false;
+  private sampleBuffers: Map<string, AudioBuffer> = new Map();
+  private sampleSources: Map<string, AudioBufferSourceNode> = new Map();
 
   /**
    * AudioEngineのコンストラクタ
@@ -118,5 +124,119 @@ export class AudioEngine {
     }
     // 初期化フラグをリセット
     this.isInitialized = false;
+  }
+
+  /**
+   * サンプルの再生タイミングを設定
+   * @param {string} sampleId - サンプルID
+   * @param {number} timing - 0.0から0.5秒の範囲のタイミング値
+   * @throws {Error} 初期化されていない場合、または無効なタイミング値の場合
+   */
+  public setTiming(sampleId: string, timing: number): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    if (timing < 0 || timing > AudioEngine.MAX_TIMING) {
+      throw new Error(`タイミングは0から${AudioEngine.MAX_TIMING}秒の間で指定してください`);
+    }
+    this.sampleTimings.set(sampleId, timing);
+  }
+
+  /**
+   * サンプルの再生タイミングを取得
+   * @param {string} sampleId - サンプルID
+   * @returns {number} 現在のタイミング値
+   * @throws {Error} 初期化されていない場合
+   */
+  public getTiming(sampleId: string): number {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    return this.sampleTimings.get(sampleId) || 0;
+  }
+
+  /**
+   * サンプルの再生タイミングをリセット
+   * @param {string} sampleId - サンプルID
+   * @throws {Error} 初期化されていない場合
+   */
+  public resetTiming(sampleId: string): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    this.sampleTimings.set(sampleId, 0);
+  }
+
+  /**
+   * サンプルを再生
+   * @param {string} sampleId - サンプルID
+   * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
+   */
+  public playSample(sampleId: string): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    const buffer = this.sampleBuffers.get(sampleId);
+    if (!buffer) {
+      throw new Error(`サンプル${sampleId}が見つかりません`);
+    }
+
+    // 既存のソースを停止
+    const existingSource = this.sampleSources.get(sampleId);
+    if (existingSource) {
+      existingSource.stop();
+    }
+
+    // 新しいソースを作成
+    const source = this.context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(this.masterGain);
+    this.sampleSources.set(sampleId, source);
+
+    // タイミングを考慮して再生
+    const timing = this.sampleTimings.get(sampleId) || 0;
+    if (timing > 0) {
+      setTimeout(() => {
+        source.start();
+      }, timing * 1000);
+    } else {
+      source.start();
+    }
+  }
+
+  /**
+   * すべてのサンプルを停止
+   * @throws {Error} 初期化されていない場合
+   */
+  public stopAll(): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    this.sampleSources.forEach(source => {
+      try {
+        source.stop();
+      } catch (error) {
+        // 既に停止している場合は無視
+      }
+    });
+    this.sampleSources.clear();
+  }
+
+  /**
+   * サンプルを読み込み
+   * @param {string} sampleId - サンプルID
+   * @param {ArrayBuffer} audioData - 音声データ
+   * @throws {Error} 初期化されていない場合、または音声データの読み込みに失敗した場合
+   */
+  public async loadSample(sampleId: string, audioData: ArrayBuffer): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    try {
+      const buffer = await this.context.decodeAudioData(audioData);
+      this.sampleBuffers.set(sampleId, buffer);
+    } catch (error) {
+      throw new Error(`サンプル${sampleId}の読み込みに失敗しました: ${(error as Error).message}`);
+    }
   }
 } 
