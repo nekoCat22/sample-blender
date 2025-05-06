@@ -11,7 +11,7 @@
  * - スペースキーでの再生制御機能
  * - マスターボリューム制御機能
  * - マスターボリュームの音量メーター表示機能（危険域の表示付き）
- * - サンプル2と3のタイミング調整機能（-0.5秒から+0.5秒）
+ * - サンプル2と3のタイミング調整機能（0秒から+0.5秒）
  * @limitations
  * - ファイル名は固定（sample1.wav, sample2.wav, sample3.wav）
  */
@@ -327,8 +327,6 @@ export default defineComponent({
           const level2 = audioEngine.getSampleVolume('2')
           const level3 = isSample3Enabled.value ? audioEngine.getSampleVolume('3') : 0
           volumeLevel.value = 20 * Math.log10((level1 + level2 + level3) / 3)
-        } else {
-          volumeLevel.value = -60
         }
       }, 1000 / 60)
     }
