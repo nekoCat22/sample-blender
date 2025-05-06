@@ -70,6 +70,16 @@ class MockAudioContext {
   get state() {
     return this._state;
   }
+
+  // decodeAudioDataメソッドを追加
+  async decodeAudioData(arrayBuffer) {
+    return Promise.resolve({
+      duration: 1,
+      sampleRate: 44100,
+      numberOfChannels: 2,
+      getChannelData: () => new Float32Array(44100)
+    });
+  }
 }
 
 // HTMLMediaElementのモック
@@ -149,4 +159,17 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),
   disconnect: jest.fn()
-})) 
+}))
+
+// HTMLMediaElementのモックを追加
+Object.defineProperty(window.HTMLMediaElement.prototype, 'load', {
+  configurable: true,
+  enumerable: true,
+  value: () => {},
+});
+
+Object.defineProperty(window.HTMLMediaElement.prototype, 'pause', {
+  configurable: true,
+  enumerable: true,
+  value: () => {},
+}); 
