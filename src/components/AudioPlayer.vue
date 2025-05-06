@@ -157,7 +157,10 @@
           </div>
           <div class="knob-label">Master</div>
         </div>
-        <VolumeMeter :level="meterLevel" />
+        <VolumeMeter 
+          :audio-engine="audioEngine"
+          :is-playing="isPlaying"
+        />
       </div>
     </div>
   </div>
@@ -194,9 +197,6 @@ export default defineComponent({
     const currentKnob = ref<KnobType | null>(null)
     const startY = ref(0)
     const startVolume = ref(0)
-    const meterLevel = ref(-60)
-    const meterInterval = ref<number | null>(null)
-    const volumeUpdateTimeout = ref<number | null>(null)
     const timing = ref<{ [key: number]: number }>({
       2: 0,
       3: 0
@@ -375,26 +375,6 @@ export default defineComponent({
       }
     }
 
-    const startMeterUpdate = (): void => {
-      meterInterval.value = window.setInterval(() => {
-        if (isPlaying.value) {
-          const level1 = audioEngine.getSampleVolume('1')
-          const level2 = audioEngine.getSampleVolume('2')
-          const level3 = audioEngine.getSampleVolume('3')
-          meterLevel.value = 20 * Math.log10((level1 + level2 + level3) / 3)
-        } else {
-          meterLevel.value = -60
-        }
-      }, 1000 / 60)
-    }
-
-    const stopMeterUpdate = (): void => {
-      if (meterInterval.value) {
-        clearInterval(meterInterval.value)
-        meterInterval.value = null
-      }
-    }
-
     const updateTiming = (sampleNumber: number): void => {
       try {
         audioEngine.setTiming(sampleNumber.toString(), timing.value[sampleNumber])
@@ -435,8 +415,6 @@ export default defineComponent({
       try {
         // 音声ファイルの読み込み
         await loadAudioFiles()
-        // メーター更新の開始
-        startMeterUpdate()
         // キーボードイベントのリスナーを追加
         window.addEventListener('keydown', handleKeyDown)
       } catch (error) {
@@ -445,8 +423,6 @@ export default defineComponent({
     })
 
     onBeforeUnmount(() => {
-      // メーター更新の停止
-      stopMeterUpdate()
       // キーボードイベントのリスナーを削除
       window.removeEventListener('keydown', handleKeyDown)
       // AudioEngineの破棄
@@ -463,12 +439,10 @@ export default defineComponent({
       currentKnob,
       startY,
       startVolume,
-      meterLevel,
-      meterInterval,
-      volumeUpdateTimeout,
       timing,
       isSample3Enabled,
       audioBlobs,
+      audioEngine,
       playFromStart,
       resetVolume,
       resetMasterVolume,

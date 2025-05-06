@@ -5,6 +5,7 @@
  * - 音量レベルを視覚的に表示
  * - 警告域と危険域の表示機能
  * - スムーズなアニメーション効果
+ * - 音量レベルの自動更新機能
  * @limitations
  * - 入力値は-60dBから0dBの範囲を想定
  */
@@ -27,20 +28,81 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { AudioEngine } from '../core/AudioEngine'
 
 export default defineComponent({
   name: 'VolumeMeter',
   props: {
     /**
-     * 音量レベル（dB）
-     * @type {number}
-     * @default -60
+     * 音声エンジンのインスタンス
+     * @type {AudioEngine}
      */
-    level: {
-      type: Number,
-      required: true,
-      default: -60
+    audioEngine: {
+      type: Object as () => AudioEngine,
+      required: true
+    },
+    /**
+     * 再生中かどうか
+     * @type {boolean}
+     */
+    isPlaying: {
+      type: Boolean,
+      required: true
+    }
+  },
+  setup(props) {
+    const level = ref(-60)
+    const meterInterval = ref<number | null>(null)
+
+    /**
+     * メーターの更新を開始する
+     */
+    const startMeterUpdate = (): void => {
+      meterInterval.value = window.setInterval(() => {
+        if (props.isPlaying) {
+          const level1 = props.audioEngine.getSampleVolume('1')
+          const level2 = props.audioEngine.getSampleVolume('2')
+          const level3 = props.audioEngine.getSampleVolume('3')
+          level.value = 20 * Math.log10((level1 + level2 + level3) / 3)
+        } else {
+          level.value = -60
+        }
+      }, 1000 / 60)
+    }
+
+    /**
+     * メーターの更新を停止する
+     */
+    const stopMeterUpdate = (): void => {
+      if (meterInterval.value) {
+        clearInterval(meterInterval.value)
+        meterInterval.value = null
+      }
+    }
+
+    // 再生状態が変更されたときにメーターの更新を制御
+    watch(() => props.isPlaying, (newValue) => {
+      if (newValue) {
+        startMeterUpdate()
+      } else {
+        stopMeterUpdate()
+        level.value = -60
+      }
+    })
+
+    onMounted(() => {
+      if (props.isPlaying) {
+        startMeterUpdate()
+      }
+    })
+
+    onBeforeUnmount(() => {
+      stopMeterUpdate()
+    })
+
+    return {
+      level
     }
   }
 })
