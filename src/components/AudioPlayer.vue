@@ -128,7 +128,7 @@
           @reset="resetMasterVolume"
         />
         <VolumeMeter 
-          :audio-engine="audioEngine"
+          :level="volumeLevel"
           :is-playing="isPlaying"
         />
       </div>
@@ -137,7 +137,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue'
+import { defineComponent, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { AudioEngine } from '../core/AudioEngine'
 import WaveformDisplay from './WaveformDisplay.vue'
 import VolumeMeter from './VolumeMeter.vue'
@@ -174,6 +174,8 @@ export default defineComponent({
       2: null,
       3: null
     })
+    const volumeLevel = ref(-60)
+    const meterInterval = ref<number | null>(null)
 
     // メソッドの定義
     const loadAudioFiles = async (): Promise<void> => {
@@ -225,13 +227,23 @@ export default defineComponent({
         resetPlayback()
         isPlaying.value = true
         
-        // AudioEngineを使って再生
-        audioEngine.playSample('1')
-        audioEngine.playSample('2')
-        
+        // 再生するサンプルIDの配列を作成
+        const sampleIds = ['1', '2']
         if (isSample3Enabled.value) {
-          audioEngine.playSample('3')
+          sampleIds.push('3')
         }
+
+        // タイミング情報を作成
+        const timings: { [key: string]: number } = {}
+        if (timing.value[2] !== 0) {
+          timings['2'] = timing.value[2]
+        }
+        if (timing.value[3] !== 0) {
+          timings['3'] = timing.value[3]
+        }
+
+        // AudioEngineを使って再生
+        audioEngine.playSamples(sampleIds, timings)
 
         // 再生が終了したら状態をリセット
         const maxDuration = audioEngine.getMaxDuration()
@@ -312,6 +324,38 @@ export default defineComponent({
       }
     }
 
+    // メーターの更新を開始する
+    const startMeterUpdate = (): void => {
+      meterInterval.value = window.setInterval(() => {
+        if (isPlaying.value) {
+          const level1 = audioEngine.getSampleVolume('1')
+          const level2 = audioEngine.getSampleVolume('2')
+          const level3 = isSample3Enabled.value ? audioEngine.getSampleVolume('3') : 0
+          volumeLevel.value = 20 * Math.log10((level1 + level2 + level3) / 3)
+        } else {
+          volumeLevel.value = -60
+        }
+      }, 1000 / 60)
+    }
+
+    // メーターの更新を停止する
+    const stopMeterUpdate = (): void => {
+      if (meterInterval.value) {
+        clearInterval(meterInterval.value)
+        meterInterval.value = null
+      }
+    }
+
+    // 再生状態が変更されたときにメーターの更新を制御
+    watch(() => isPlaying.value, (newValue) => {
+      if (newValue) {
+        startMeterUpdate()
+      } else {
+        stopMeterUpdate()
+        volumeLevel.value = -60
+      }
+    })
+
     // ライフサイクルフック
     onMounted(async () => {
       try {
@@ -327,6 +371,8 @@ export default defineComponent({
     onBeforeUnmount(() => {
       // キーボードイベントのリスナーを削除
       window.removeEventListener('keydown', handleKeyDown)
+      // メーターの更新を停止
+      stopMeterUpdate()
       // AudioEngineの破棄
       audioEngine.dispose()
     })
@@ -341,6 +387,7 @@ export default defineComponent({
       isSample3Enabled,
       audioBlobs,
       audioEngine,
+      volumeLevel,
       playFromStart,
       resetVolume,
       resetMasterVolume,

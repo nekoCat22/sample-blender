@@ -9,10 +9,60 @@
 
 import { AudioEngine } from '@/core/AudioEngine';
 
+// GainNodeのモックを作成
+const createGainNode = () => ({
+  gain: { value: 1 },
+  connect: jest.fn(),
+  disconnect: jest.fn()
+});
+
+// AudioBufferSourceNodeのモックを作成
+const createBufferSourceNode = () => ({
+  buffer: null,
+  connect: jest.fn(),
+  disconnect: jest.fn(),
+  start: jest.fn(),
+  stop: jest.fn()
+});
+
+// AudioContextのモックを作成
+const mockAudioContext = {
+  createBufferSource: jest.fn(() => createBufferSourceNode()),
+  createGain: jest.fn(() => createGainNode()),
+  decodeAudioData: jest.fn((arrayBuffer) => Promise.resolve({
+    duration: 1,
+    sampleRate: 44100,
+    numberOfChannels: 2,
+    length: 44100,
+    getChannelData: () => new Float32Array(44100),
+    copyFromChannel: () => {},
+    copyToChannel: () => {}
+  } as unknown as AudioBuffer)),
+  state: 'running',
+  suspend: jest.fn(() => {
+    mockAudioContext.state = 'suspended';
+    return Promise.resolve();
+  }),
+  resume: jest.fn(() => {
+    mockAudioContext.state = 'running';
+    return Promise.resolve();
+  }),
+  close: jest.fn(() => {
+    mockAudioContext.state = 'closed';
+    return Promise.resolve();
+  })
+};
+
+// AudioContextのグローバルモックを設定
+(window as any).AudioContext = jest.fn(() => mockAudioContext);
+
 describe('AudioEngine', () => {
   let audioEngine: AudioEngine;
 
   beforeEach(() => {
+    // 各テストの前にモックをリセット
+    jest.clearAllMocks();
+    mockAudioContext.state = 'running';
     audioEngine = new AudioEngine();
   });
 
@@ -72,6 +122,49 @@ describe('AudioEngine', () => {
     it('二重破棄してもエラーにならない', async () => {
       await audioEngine.dispose();
       await expect(audioEngine.dispose()).resolves.not.toThrow();
+    });
+  });
+
+  describe('サンプルの再生', () => {
+    beforeEach(async () => {
+      // テスト用のサンプルデータを作成
+      const mockBuffer = {
+        duration: 1,
+        sampleRate: 44100,
+        numberOfChannels: 2,
+        length: 44100,
+        getChannelData: () => new Float32Array(44100),
+        copyFromChannel: () => {},
+        copyToChannel: () => {}
+      } as unknown as AudioBuffer;
+
+      // サンプルを読み込む
+      await audioEngine.loadSample('1', new ArrayBuffer(0));
+      await audioEngine.loadSample('2', new ArrayBuffer(0));
+      await audioEngine.loadSample('3', new ArrayBuffer(0));
+    });
+
+    it('複数のサンプルを同時に再生できる', () => {
+      const sampleIds = ['1', '2'];
+      const timings = { '2': 0.1 };
+      
+      expect(() => audioEngine.playSamples(sampleIds, timings)).not.toThrow();
+    });
+
+    it('存在しないサンプルを再生しようとするとエラーになる', () => {
+      const sampleIds = ['1', '4'];
+      
+      expect(() => audioEngine.playSamples(sampleIds)).toThrow('サンプル 4 が見つかりません');
+    });
+
+    it('タイミングを指定して再生できる', () => {
+      const sampleIds = ['1', '2', '3'];
+      const timings = {
+        '2': 0.1,
+        '3': 0.2
+      };
+      
+      expect(() => audioEngine.playSamples(sampleIds, timings)).not.toThrow();
     });
   });
 }); 

@@ -341,4 +341,54 @@ export class AudioEngine {
     });
     return maxDuration;
   }
+
+  /**
+   * 複数のサンプルを同時に再生
+   * @param {string[]} sampleIds - 再生するサンプルIDの配列
+   * @param {{ [sampleId: string]: number }} timings - 各サンプルのタイミング調整値（秒）
+   * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
+   */
+  public playSamples(sampleIds: string[], timings: { [sampleId: string]: number } = {}): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+
+    // 既存の再生を停止
+    this.stopAll();
+
+    // 各サンプルを再生
+    sampleIds.forEach(sampleId => {
+      const buffer = this.sampleBuffers.get(sampleId);
+      if (!buffer) {
+        throw new Error(`サンプル ${sampleId} が見つかりません`);
+      }
+
+      // 新しいソースを作成
+      const source = this.context.createBufferSource();
+      source.buffer = buffer;
+
+      // ゲインノードを取得または作成
+      let gain = this.sampleGains.get(sampleId);
+      if (!gain) {
+        gain = this.context.createGain();
+        this.sampleGains.set(sampleId, gain);
+      }
+
+      // ノードを接続
+      source.connect(gain);
+      gain.connect(this.masterGain);
+
+      // タイミングを設定
+      const timing = timings[sampleId] || 0;
+      const startTime = this.context.currentTime + timing;
+
+      // 再生開始
+      source.start(startTime);
+      this.sampleSources.set(sampleId, source);
+      this.sampleStartTimes.set(sampleId, startTime);
+    });
+
+    // 再生状態を更新
+    this.isPlaying = true;
+  }
 } 
