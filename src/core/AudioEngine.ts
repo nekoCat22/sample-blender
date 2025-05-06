@@ -256,7 +256,12 @@ export class AudioEngine {
     // 既存のソースを停止
     const existingSource = this.sampleSources.get(sampleId);
     if (existingSource) {
-      existingSource.stop();
+      try {
+        existingSource.stop();
+      } catch (error) {
+        // 既に停止している場合は無視
+        console.warn(`サンプル${sampleId}の停止に失敗しました: ${(error as Error).message}`);
+      }
     }
 
     // 新しいソースを作成
