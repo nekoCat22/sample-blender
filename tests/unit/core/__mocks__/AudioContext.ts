@@ -7,8 +7,8 @@
  */
 
 class MockGainNode {
-  private _gainValue: number = 1;
-  private connected: boolean = true;
+  private _gainValue = 1;
+  private connected = true;
 
   constructor() {}
 

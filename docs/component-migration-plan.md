@@ -26,16 +26,21 @@ src/
 src/
   components/
     AudioPlayer.vue        # オーディオプレーヤーのUI
-    effects/
-      FilterKnob/
-        FilterKnob.vue     # フィルターノブのUI
-        FilterKnob.test.ts # フィルターノブのテスト
-      GainKnob/
-        GainKnob.vue      # ゲインノブのUI
-        GainKnob.test.ts  # ゲインノブのテスト
-      TimingKnob/
-        TimingKnob.vue    # タイミングノブのUI
-        TimingKnob.test.ts # タイミングノブのテスト
+    Knob/                  # ノブのUIコンポーネント
+      Knob.vue
+      Knob.test.ts
+    Waveform/             # 波形表示のUIコンポーネント
+      Waveform.vue
+      Waveform.test.ts
+    VolumeMeter/          # 音量メーターのUIコンポーネント
+      VolumeMeter.vue
+      VolumeMeter.test.ts
+  effects/                # 実際のエフェクト処理のロジック
+    base/
+      BaseEffect.ts
+    EffectChain.ts
+    Filter.ts
+    GainEffect.ts
   core/
     AudioEngine.ts         # オーディオ処理の中心（タイミング制御を含む）
   effects/
@@ -47,50 +52,48 @@ src/
   contexts/               # Reactコンテキスト
   hooks/                  # カスタムフック
   stores/
-    filter.ts             # フィルターの状態管理
-    gain.ts              # ゲインの状態管理
-    timing.ts            # タイミングの状態管理
+    knob.ts              # ノブの状態管理
+    waveform.ts          # 波形表示の状態管理
+    volumeMeter.ts       # 音量メーターの状態管理
   types/
     effect.ts             # エフェクト関連の型定義
+    knob.ts              # ノブ関連の型定義
   utils/
     error.ts              # エラー処理のユーティリティ
   styles/
     components/
-      _filter.scss        # フィルター関連のスタイル
-      _gain.scss         # ゲイン関連のスタイル
-      _timing.scss       # タイミング関連のスタイル
+      _knob.scss         # ノブのスタイル
+      _waveform.scss     # 波形表示のスタイル
+      _volumeMeter.scss  # 音量メーターのスタイル
 ```
 
 ## 3. 移行の優先順位
 
 ### フェーズ1: 基本コンポーネントの移行
-1. `FilterKnob`コンポーネント
-   - フィルターの基本操作
+1. コンポーネント構造の移行
+   - `components/effects/`ディレクトリの作成
+   - 既存のコンポーネントの移行
+   - 型定義の移行
+   - ストアの移行
+
+2. `Knob`コンポーネント
+   - ノブの基本機能
+   - ゲインとタイミングの両方に対応
    - ドラッグ操作の実装
+   - 値の範囲と回転角度の設定
    - 状態管理の実装
 
-2. `GainKnob`コンポーネント
-   - ゲインの基本操作
-   - ドラッグ操作の実装
+3. `Waveform`コンポーネント
+   - 波形表示の基本機能
+   - WaveSurferの初期化と設定
+   - エラー処理の実装
    - 状態管理の実装
 
-3. `TimingKnob`コンポーネント
-   - タイミングの基本操作
-   - ドラッグ操作の実装
+4. `VolumeMeter`コンポーネント
+   - 音量レベルの表示
+   - 警告域の表示（-12dB, -6dB）
+   - アニメーション効果
    - 状態管理の実装
-   - AudioEngineとの連携
-
-4. `EffectChain`コンポーネント
-   - エフェクトの管理
-   - エフェクトの追加/削除
-   - エフェクトの順序変更
-
-### フェーズ2: コア機能の移行
-1. `AudioEngine`クラス
-   - オーディオ処理の中心
-   - エフェクトの接続
-   - フィルター、ゲイン、タイミングの制御
-   - タイミング制御の実装確認
 
 ## 4. 各コンポーネントの移行手順
 
@@ -139,15 +142,12 @@ src/
 ## 6. 移行のタイムライン
 
 ### フェーズ1: 基本コンポーネントの移行（2週間）
-- Week 1 Day 1-2: `FilterKnob`の移行
-- Week 1 Day 3-4: `GainKnob`の移行
-- Week 1 Day 5: `TimingKnob`の移行
-- Week 2 Day 1-2: `EffectChain`の移行
-- Week 2 Day 3-5: テストとデバッグ
-
-### フェーズ2: コア機能の移行（1週間）
-- Day 1-3: `AudioEngine`の移行
-- Day 4-5: テストとデバッグ
+- Week 1 Day 1: コンポーネント構造の移行
+- Week 1 Day 2: `Knob`の移行
+- Week 1 Day 3: `Waveform`の移行
+- Week 1 Day 4: `VolumeMeter`の移行
+- Week 1 Day 5: テストとデバッグ
+- Week 2 Day 1-5: 統合テストとデバッグ
 
 ## 7. 移行後の検証
 

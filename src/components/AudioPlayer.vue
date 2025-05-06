@@ -4,7 +4,6 @@
  * @brief 音声ファイルの再生と波形表示を行うVueコンポーネント
  * @details
  * - 2つの音声ファイルを同時に再生
- * - wavesurfer.jsで波形を表示
  * - 再生ボタン付き（両方のサンプルを同時に制御、常に最初から再生）
  * - エラー処理とエラーメッセージ表示機能
  * - ローディング状態の表示機能
@@ -30,7 +29,13 @@
     <!-- サンプル1 -->
     <div class="sample-container">
       <h3>サンプル1</h3>
-      <div ref="waveform1"></div>
+      <WaveformDisplay
+        v-if="audioBlobs[1]"
+        :audio-blob="audioBlobs[1]"
+        @error="handleWaveformError"
+        @loading="handleWaveformLoading"
+        @ready="handleWaveformReady"
+      />
       <div class="knob-container">
         <div 
           class="knob" 
@@ -48,7 +53,13 @@
     <!-- サンプル2 -->
     <div class="sample-container">
       <h3>サンプル2</h3>
-      <div ref="waveform2"></div>
+      <WaveformDisplay
+        v-if="audioBlobs[2]"
+        :audio-blob="audioBlobs[2]"
+        @error="handleWaveformError"
+        @loading="handleWaveformLoading"
+        @ready="handleWaveformReady"
+      />
       <div class="knob-row">
         <div class="knob-container">
           <div 
@@ -80,7 +91,13 @@
     <!-- サンプル3 -->
     <div class="sample-container">
       <h3>サンプル3</h3>
-      <div ref="waveform3"></div>
+      <WaveformDisplay
+        v-if="audioBlobs[3]"
+        :audio-blob="audioBlobs[3]"
+        @error="handleWaveformError"
+        @loading="handleWaveformLoading"
+        @ready="handleWaveformReady"
+      />
       <div class="knob-row">
         <div class="toggle-container">
           <label class="toggle-switch">
@@ -160,23 +177,21 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, onBeforeUnmount, computed } from 'vue'
-import WaveSurfer from 'wavesurfer.js'
-import type { WaveSurferInstance, KnobType, WaveSurferOptions } from '../types/audio'
+import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue'
+import type { KnobType } from '../types/audio'
 import { AudioEngine } from '../core/AudioEngine'
+import WaveformDisplay from './WaveformDisplay.vue'
 
 export default defineComponent({
   name: 'AudioPlayer',
+  components: {
+    WaveformDisplay
+  },
   setup() {
     // AudioEngineのインスタンスを作成
     const audioEngine = new AudioEngine()
 
     // 状態の定義
-    const wavesurfers = ref<{ [key: number]: WaveSurferInstance | null }>({
-      1: null,
-      2: null,
-      3: null
-    })
     const isPlaying = ref(false)
     const errorMessage = ref<string | null>(null)
     const isLoading = ref(false)
@@ -198,62 +213,13 @@ export default defineComponent({
       3: 0
     })
     const isSample3Enabled = ref(false)
-
-    // DOM要素の参照
-    const waveform1 = ref<HTMLDivElement | null>(null)
-    const waveform2 = ref<HTMLDivElement | null>(null)
-    const waveform3 = ref<HTMLDivElement | null>(null)
+    const audioBlobs = ref<{ [key: number]: Blob | null }>({
+      1: null,
+      2: null,
+      3: null
+    })
 
     // メソッドの定義
-    const initializeWavesurfers = (): void => {
-      [1, 2, 3].forEach(sampleNumber => {
-        const container = sampleNumber === 1 ? waveform1.value :
-                         sampleNumber === 2 ? waveform2.value :
-                         waveform3.value
-
-        if (!container) {
-          handleError(`サンプル${sampleNumber}のコンテナが見つかりません`, new Error('Container not found'))
-          return
-        }
-
-        const wavesurfer = WaveSurfer.create({
-          container,
-          waveColor: '#4361ee',  // 波形の色を濃く
-          height: 80,
-          minPxPerSec: 100,
-          partialRender: true,
-          normalize: true,
-          responsive: true,
-          cursorColor: 'transparent',  // カーソルを非表示
-          cursorWidth: 0,  // カーソルの幅を0に
-          barWidth: 2,
-          barGap: 1,
-          barRadius: 0,
-          interact: false,
-          hideScrollbar: true,
-          autoCenter: true,
-          progressColor: 'transparent'  // 再生位置の表示を無効化
-        } as WaveSurferOptions) as WaveSurferInstance
-
-        // イベントリスナーの設定
-        wavesurfer.on('error', (error?: Error) => {
-          handleError(`サンプル${sampleNumber}の読み込みに失敗しました`, error || new Error('Unknown error'))
-        })
-
-        wavesurfer.on('loading', () => {
-          errorMessage.value = null
-          isLoading.value = true
-        })
-
-        wavesurfer.on('ready', () => {
-          errorMessage.value = null
-          isLoading.value = false
-        })
-
-        wavesurfers.value[sampleNumber] = wavesurfer
-      })
-    }
-
     const loadAudioFiles = async (): Promise<void> => {
       try {
         isLoading.value = true
@@ -264,12 +230,10 @@ export default defineComponent({
             throw new Error(`HTTP error! status: ${response.status}`)
           }
           const blob = await response.blob()
-          const arrayBuffer = await blob.arrayBuffer()
-          
-          // WaveSurferで波形表示
-          wavesurfers.value[sampleNumber]?.loadBlob(blob)
+          audioBlobs.value[sampleNumber] = blob
           
           // AudioEngineで音声データを読み込み
+          const arrayBuffer = await blob.arrayBuffer()
           await audioEngine.loadSample(sampleNumber.toString(), arrayBuffer)
         }
       } catch (error) {
@@ -280,6 +244,18 @@ export default defineComponent({
     const handleError = (message: string, err: Error): void => {
       console.error('Audio Player Error:', message, err)
       errorMessage.value = `${message}: ${err.message}`
+      isLoading.value = false
+    }
+
+    const handleWaveformError = (error: string): void => {
+      handleError('波形表示でエラーが発生しました', new Error(error))
+    }
+
+    const handleWaveformLoading = (): void => {
+      isLoading.value = true
+    }
+
+    const handleWaveformReady = (): void => {
       isLoading.value = false
     }
 
@@ -350,7 +326,7 @@ export default defineComponent({
       if (knob === 'master') {
         masterVolume.value = newValue
         // マスターボリュームが変更されたら、全てのサンプルの音量を更新
-        Object.keys(wavesurfers.value).forEach(key => {
+        Object.keys(volumes.value).forEach(key => {
           const sampleNumber = parseInt(key)
           updateVolume(sampleNumber)
         })
@@ -468,8 +444,6 @@ export default defineComponent({
     // ライフサイクルフック
     onMounted(async () => {
       try {
-        // WaveSurferの初期化
-        initializeWavesurfers()
         // 音声ファイルの読み込み
         await loadAudioFiles()
         // メーター更新の開始
@@ -490,18 +464,7 @@ export default defineComponent({
       audioEngine.dispose()
     })
 
-    // ノブの回転角度を計算するcomputedプロパティ
-    const knobRotations = {
-      master: computed(() => masterVolume.value * 270 - 135),
-      sample1: computed(() => volumes.value[1] * 270 - 135),
-      sample2: computed(() => volumes.value[2] * 270 - 135),
-      sample3: computed(() => volumes.value[3] * 270 - 135),
-      timing2: computed(() => timing.value[2] * 540 - 135),
-      timing3: computed(() => timing.value[3] * 540 - 135)
-    }
-
     return {
-      wavesurfers,
       isPlaying,
       error: errorMessage,
       isLoading,
@@ -516,9 +479,7 @@ export default defineComponent({
       volumeUpdateTimeout,
       timing,
       isSample3Enabled,
-      waveform1,
-      waveform2,
-      waveform3,
+      audioBlobs,
       playFromStart,
       resetVolume,
       resetMasterVolume,
@@ -526,7 +487,9 @@ export default defineComponent({
       startDragging,
       handleDrag,
       handleDocumentMouseUp,
-      knobRotations
+      handleWaveformError,
+      handleWaveformLoading,
+      handleWaveformReady
     }
   }
 })

@@ -1,0 +1,19 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Users\9cats\AppData\Roaming\npm\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.3.0
+2 info using node@v22.15.0
+3 silly config load:file:C:\Users\9cats\AppData\Roaming\npm\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\9cats\handicraft\Cursor\sample_blender\sample-blender\.npmrc
+5 silly config load:file:C:\Users\9cats\.npmrc
+6 silly config load:file:C:\Users\9cats\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm run lint
+8 verbose argv "run" "lint" "--cache" "--fix"
+9 verbose logfile logs-max:10 dir:C:\Users\9cats\handicraft\Cursor\sample_blender\sample-blender\--fix\_logs\2025-05-06T08_35_41_009Z-
+10 verbose logfile C:\Users\9cats\handicraft\Cursor\sample_blender\sample-blender\--fix\_logs\2025-05-06T08_35_41_009Z-debug-0.log
+11 silly logfile done cleaning log files
+12 http fetch GET 200 https://registry.npmjs.org/npm 170ms
+13 verbose cwd C:\Users\9cats\handicraft\Cursor\sample_blender\sample-blender
+14 verbose os Windows_NT 10.0.26100
+15 verbose node v22.15.0
+16 verbose npm  v11.3.0
+17 verbose exit 1
+18 verbose code 1
