@@ -8,10 +8,9 @@
  * - エフェクトチェーンの接続管理
  */
 
-import { BaseEffect } from './BaseEffect';
+import { BaseEffect } from '@/effects/base/BaseEffect';
 
 export class EffectChain {
-  private context: AudioContext;
   private effects: BaseEffect[] = [];
   private input: GainNode;
   private output: GainNode;
@@ -22,7 +21,6 @@ export class EffectChain {
    * @param {AudioContext} context - Web Audio APIのコンテキスト
    */
   constructor(context: AudioContext) {
-    this.context = context;
     this.input = context.createGain();
     this.output = context.createGain();
   }
@@ -66,47 +64,34 @@ export class EffectChain {
   }
 
   /**
-   * エフェクトチェーンを接続
-   * @param {AudioNode} destination - 接続先のノード
+   * エフェクトチェーンを再接続
    */
-  public connect(destination: AudioNode): void {
+  private reconnect(): void {
     if (this.isConnected) {
       this.disconnect();
     }
-    this.output.connect(destination);
+
+    let currentNode = this.input;
+    for (const effect of this.effects) {
+      if (effect.isEffectEnabled()) {
+        currentNode.connect(effect.getInput());
+        currentNode = effect.getOutput();
+      }
+    }
+    currentNode.connect(this.output);
     this.isConnected = true;
   }
 
   /**
    * エフェクトチェーンを切断
    */
-  public disconnect(): void {
-    if (this.isConnected) {
-      // すべてのノードの接続を切断
-      this.input.disconnect();
-      this.effects.forEach(effect => {
-        effect.getInput().disconnect();
-        effect.getOutput().disconnect();
-      });
-      this.output.disconnect();
-      this.isConnected = false;
+  private disconnect(): void {
+    this.input.disconnect();
+    for (const effect of this.effects) {
+      effect.getInput().disconnect();
+      effect.getOutput().disconnect();
     }
-  }
-
-  /**
-   * エフェクトチェーンの入力ノードを取得
-   * @returns {GainNode} 入力ノード
-   */
-  public getInput(): GainNode {
-    return this.input;
-  }
-
-  /**
-   * エフェクトチェーンの出力ノードを取得
-   * @returns {GainNode} 出力ノード
-   */
-  public getOutput(): GainNode {
-    return this.output;
+    this.isConnected = false;
   }
 
   /**
@@ -114,43 +99,9 @@ export class EffectChain {
    */
   public dispose(): void {
     this.disconnect();
-    this.effects.forEach(effect => effect.dispose());
-    this.effects = [];
-    this.input.disconnect();
-    this.output.disconnect();
-  }
-
-  /**
-   * エフェクトチェーンを再接続
-   * @public
-   */
-  public reconnect(): void {
-    // 既存の接続を切断
-    this.input.disconnect();
-    this.effects.forEach(effect => {
-      effect.getInput().disconnect();
-      effect.getOutput().disconnect();
-    });
-    this.output.disconnect();
-
-    // 新しい接続を確立
-    let currentNode: AudioNode = this.input;
-    let hasEnabledEffects = false;
-
-    // 有効なエフェクトを接続
     for (const effect of this.effects) {
-      if (effect.isEffectEnabled()) {
-        currentNode.connect(effect.getInput());
-        currentNode = effect.getOutput();
-        hasEnabledEffects = true;
-      }
+      effect.dispose();
     }
-
-    // 出力を接続
-    if (hasEnabledEffects) {
-      currentNode.connect(this.output);
-    } else {
-      this.input.connect(this.output);
-    }
+    this.effects = [];
   }
 } 

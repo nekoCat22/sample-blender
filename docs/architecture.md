@@ -14,7 +14,7 @@ src/
   │
   ├── effects/             # エフェクトモジュール
   │   ├── base/
-  │   │   └── BaseEffect.js # エフェクトの基底クラス
+  │   │   └── BaseEffect.js # エフェクトの基底クラス（AudioContext/AudioEngine対応）
   │   ├── GainEffect.js    # ゲイン調整
   │   ├── FilterEffect.js  # フィルター
   │   ├── PitchEffect.js   # ピッチ調整
@@ -57,8 +57,11 @@ src/
 ### 2. エフェクトモジュール
 #### BaseEffect.js
 - エフェクトの基底クラス
-- 入出力の管理
+- AudioContextとAudioEngineの両方に対応
+- 入出力ノードの管理
 - パラメータの制御
+- エラー処理の統一
+- 初期化状態の管理
 
 #### 各エフェクトクラス
 - GainEffect: ゲイン調整
@@ -114,7 +117,7 @@ src/
 - デバッグがしやすい
 
 ## 実装ステップ
-1. AudioEngineとBaseEffectの実装
+1. ✅ AudioEngineとBaseEffectの実装
 2. 波形表示部分の分離
 3. エフェクトチェーンの実装
 4. UIコンポーネントの実装

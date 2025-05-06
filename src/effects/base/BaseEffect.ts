@@ -6,6 +6,7 @@
  * - エフェクトの有効/無効制御
  * - パラメータの管理
  * - エラー処理
+ * - AudioContextとAudioEngineの両方に対応
  */
 
 import { AudioEngine } from '@/core/AudioEngine';
@@ -15,16 +16,22 @@ export abstract class BaseEffect {
   protected output!: GainNode;
   protected isEnabled: boolean = false;
   protected isInitialized: boolean = false;
+  protected parameters: Map<string, AudioParam> = new Map();
+  protected context: AudioContext;
 
-  constructor(protected audioEngine: AudioEngine) {
-    if (!audioEngine) {
-      throw new Error('音声エンジンが指定されていません');
+  constructor(audioEngineOrContext: AudioEngine | AudioContext) {
+    if (!audioEngineOrContext) {
+      throw new Error('音声エンジンまたはAudioContextが指定されていません');
     }
 
     try {
-      const context = audioEngine.getContext();
-      this.input = context.createGain();
-      this.output = context.createGain();
+      if (audioEngineOrContext instanceof AudioEngine) {
+        this.context = audioEngineOrContext.getContext();
+      } else {
+        this.context = audioEngineOrContext;
+      }
+      this.input = this.context.createGain();
+      this.output = this.context.createGain();
       this.isInitialized = true;
     } catch (error) {
       throw new Error(`エフェクトの初期化に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
@@ -32,13 +39,6 @@ export abstract class BaseEffect {
   }
 
   protected checkState(): void {
-    try {
-      this.audioEngine.getContext();
-    } catch (error) {
-      this.dispose();
-      throw new Error('音声エンジンが破棄されています');
-    }
-
     if (!this.isInitialized) {
       throw new Error('エフェクトが初期化されていません');
     }
@@ -58,6 +58,22 @@ export abstract class BaseEffect {
   public abstract disable(): void;
   public abstract setParameter(param: string, value: number): void;
   public abstract getParameter(param: string): number;
+
+  /**
+   * エフェクトの有効状態を取得
+   * @returns {boolean} エフェクトが有効かどうか
+   */
+  public isEffectEnabled(): boolean {
+    return this.isEnabled;
+  }
+
+  /**
+   * エフェクトのパラメータ一覧を取得
+   * @returns {string[]} パラメータ名の配列
+   */
+  public getParameterNames(): string[] {
+    return Array.from(this.parameters.keys());
+  }
 
   public dispose(): void {
     if (!this.isInitialized) {

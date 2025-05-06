@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">35.29% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>6/17</span>
+                <span class='fraction'>0/17</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">40% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>4/10</span>
+                <span class='fraction'>0/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">35.29% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>6/17</span>
+                <span class='fraction'>0/17</span>
             </div>
         
             
@@ -182,29 +182,29 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -212,7 +212,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -287,37 +287,37 @@ export abstract class BaseEffect {
   protected context: AudioContext;
   protected input!: AudioNode;
   protected output!: AudioNode;
-  protected isEnabled: boolean = true;
-  protected parameters: Map&lt;string, AudioParam&gt; = new Map();
+  protected isEnabled: boolean = <span class="cstat-no" title="statement not covered" >true;</span>
+  protected parameters: Map&lt;string, AudioParam&gt; = <span class="cstat-no" title="statement not covered" >new Map();</span>
 &nbsp;
   /**
    * エフェクトのコンストラクタ
    * @param {AudioContext} context - Web Audio APIのコンテキスト
    */
-  constructor(context: AudioContext) {
-    this.context = context;
+<span class="fstat-no" title="function not covered" >  co</span>nstructor(context: AudioContext) {
+<span class="cstat-no" title="statement not covered" >    this.context = context;</span>
   }
 &nbsp;
   /**
    * エフェクトを有効化
    */
-  public enable(): void {
-    this.isEnabled = true;
+<span class="fstat-no" title="function not covered" >  pu</span>blic enable(): void {
+<span class="cstat-no" title="statement not covered" >    this.isEnabled = true;</span>
   }
 &nbsp;
   /**
    * エフェクトを無効化
    */
-  public disable(): void {
-    this.isEnabled = false;
+<span class="fstat-no" title="function not covered" >  pu</span>blic disable(): void {
+<span class="cstat-no" title="statement not covered" >    this.isEnabled = false;</span>
   }
 &nbsp;
   /**
    * エフェクトの有効状態を取得
    * @returns {boolean} エフェクトが有効かどうか
    */
-  public isEffectEnabled(): boolean {
-    return this.isEnabled;
+<span class="fstat-no" title="function not covered" >  pu</span>blic isEffectEnabled(): boolean {
+<span class="cstat-no" title="statement not covered" >    return this.isEnabled;</span>
   }
 &nbsp;
   /**
@@ -385,7 +385,7 @@ export abstract class BaseEffect {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-05T12:40:15.899Z
+                at 2025-05-06T01:18:19.315Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
