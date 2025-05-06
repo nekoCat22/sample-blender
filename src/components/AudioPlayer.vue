@@ -157,20 +157,7 @@
           </div>
           <div class="knob-label">Master</div>
         </div>
-        <div class="meter-container">
-          <div class="meter">
-            <div 
-              class="meter-level" 
-              :style="{ width: `${Math.max(0, Math.min(100, (meterLevel + 60) * (100/60)))}%` }"
-              :class="{ 
-                'meter-level--warning': meterLevel > -12,
-                'meter-level--danger': meterLevel > -6
-              }"
-            ></div>
-            <div class="meter-danger-line"></div>
-          </div>
-          <div class="meter-label">Level</div>
-        </div>
+        <VolumeMeter :level="meterLevel" />
       </div>
     </div>
   </div>
@@ -181,11 +168,13 @@ import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue'
 import type { KnobType } from '../types/audio'
 import { AudioEngine } from '../core/AudioEngine'
 import WaveformDisplay from './WaveformDisplay.vue'
+import VolumeMeter from './VolumeMeter.vue'
 
 export default defineComponent({
   name: 'AudioPlayer',
   components: {
-    WaveformDisplay
+    WaveformDisplay,
+    VolumeMeter
   },
   setup() {
     // AudioEngineのインスタンスを作成
@@ -612,54 +601,6 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 2em;
-}
-
-.meter-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5em;
-}
-
-.meter {
-  width: 200px;
-  height: 8px;
-  background: #2b2b2b;
-  border-radius: 4px;
-  overflow: hidden;
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
-  position: relative;
-}
-
-.meter-level {
-  height: 100%;
-  background: #4CAF50;
-  transition: width 0.05s ease-out;
-}
-
-.meter-level--warning {
-  background: #FFC107;
-}
-
-.meter-level--danger {
-  background: #F44336;
-}
-
-.meter-danger-line {
-  position: absolute;
-  top: 0;
-  left: 90%;
-  width: 2px;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.5);
-  pointer-events: none;
-}
-
-.meter-label {
-  font-size: 0.8em;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
 }
 
 .toggle-container {
