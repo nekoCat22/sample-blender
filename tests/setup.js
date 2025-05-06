@@ -72,6 +72,54 @@ class MockAudioContext {
   }
 }
 
+// HTMLMediaElementのモック
+class MockHTMLMediaElement {
+  constructor() {
+    this._paused = true;
+    this._src = '';
+  }
+
+  pause() {
+    this._paused = true;
+  }
+
+  load() {
+    // 空の実装
+  }
+
+  play() {
+    this._paused = false;
+    return Promise.resolve();
+  }
+}
+
+global.HTMLMediaElement = MockHTMLMediaElement;
+global.HTMLAudioElement = class extends MockHTMLMediaElement {};
+
+// Blobのモック拡張
+const originalBlob = global.Blob;
+global.Blob = class extends originalBlob {
+  arrayBuffer() {
+    return Promise.resolve(new ArrayBuffer(0));
+  }
+}
+
+// WaveSurferのモック
+const mockWaveSurfer = {
+  loadBlob: jest.fn(),
+  destroy: jest.fn(),
+  on: jest.fn(),
+  off: jest.fn()
+}
+
+global.WaveSurfer = {
+  create: jest.fn(() => mockWaveSurfer)
+}
+
+// URLのモック
+global.URL.createObjectURL = jest.fn(() => 'mock-url')
+global.URL.revokeObjectURL = jest.fn()
+
 // グローバルにモックを設定
 global.AudioContext = MockAudioContext;
 global.AudioNode = MockAudioNode;
