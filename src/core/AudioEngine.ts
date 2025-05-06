@@ -54,17 +54,17 @@ export class AudioEngine {
 
   /**
    * マスターボリュームを設定
-   * @param {number} volume - 0.0から1.0の範囲の音量値
-   * @throws {Error} 初期化されていない場合、または無効な音量値の場合
+   * @param {number} value - マスターボリューム値（0.0 から 1.0）
+   * @throws {Error} 初期化されていない場合、または値が範囲外の場合
    */
-  public setMasterVolume(volume: number): void {
+  public setMasterVolume(value: number): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    if (volume < 0 || volume > 1) {
-      throw new Error('音量は0.0から1.0の範囲で指定してください');
+    if (value < 0 || value > 1) {
+      throw new Error('マスターボリュームは0.0から1.0の範囲で指定してください');
     }
-    this.masterGain.gain.value = volume;
+    this.masterGain.gain.value = value;
   }
 
   /**

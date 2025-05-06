@@ -312,14 +312,10 @@ export default defineComponent({
 
     const updateMasterVolume = (value: number): void => {
       try {
-        masterVolume.value = value
-        // マスターボリュームが変更されたら、全てのサンプルの音量を更新
-        Object.keys(volumes.value).forEach(key => {
-          const sampleNumber = parseInt(key)
-          updateVolume(sampleNumber, volumes.value[sampleNumber])
-        })
+        masterVolume.value = value;
+        audioEngine.setMasterVolume(value);
       } catch (error) {
-        handleError('マスターボリュームの更新に失敗しました', error as Error)
+        handleError('マスターボリュームの更新に失敗しました', error as Error);
       }
     }
 
