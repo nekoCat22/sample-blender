@@ -36,18 +36,12 @@
         @loading="handleWaveformLoading"
         @ready="handleWaveformReady"
       />
-      <div class="knob-container">
-        <div 
-          class="knob" 
-          @dblclick="resetVolume(1)"
-          @mousedown="startDragging(1, $event)"
-          @mousemove="handleDrag(1, $event)"
-          @mouseup="handleDocumentMouseUp"
-        >
-          <div class="knob-dial" :style="{ transform: `rotate(${volumes[1] * 270 - 135}deg)` }"></div>
-        </div>
-        <div class="knob-label">Gain</div>
-      </div>
+      <Knob
+        label="Gain"
+        :value="volumes[1]"
+        @update:value="(value) => updateVolume(1, value)"
+        @reset="resetVolume(1)"
+      />
     </div>
 
     <!-- サンプル2 -->
@@ -61,30 +55,21 @@
         @ready="handleWaveformReady"
       />
       <div class="knob-row">
-        <div class="knob-container">
-          <div 
-            class="knob" 
-            @dblclick="resetVolume(2)"
-            @mousedown="startDragging(2, $event)"
-            @mousemove="handleDrag(2, $event)"
-            @mouseup="handleDocumentMouseUp"
-          >
-            <div class="knob-dial" :style="{ transform: `rotate(${volumes[2] * 270 - 135}deg)` }"></div>
-          </div>
-          <div class="knob-label">Gain</div>
-        </div>
-        <div class="knob-container">
-          <div 
-            class="knob" 
-            @dblclick="resetTiming(2)"
-            @mousedown="startDragging('timing2', $event)"
-            @mousemove="handleDrag('timing2', $event)"
-            @mouseup="handleDocumentMouseUp"
-          >
-            <div class="knob-dial" :style="{ transform: `rotate(${timing[2] * 540 - 135}deg)` }"></div>
-          </div>
-          <div class="knob-label">Timing</div>
-        </div>
+        <Knob
+          label="Gain"
+          :value="volumes[2]"
+          @update:value="(value) => updateVolume(2, value)"
+          @reset="resetVolume(2)"
+        />
+        <Knob
+          label="Timing"
+          :value="timing[2]"
+          :min="-0.5"
+          :max="0.5"
+          :rotation-range="540"
+          @update:value="(value) => updateTiming(2, value)"
+          @reset="resetTiming(2)"
+        />
       </div>
     </div>
 
@@ -106,32 +91,23 @@
           </label>
           <div class="toggle-label">Enable</div>
         </div>
-        <div class="knob-container">
-          <div 
-            class="knob" 
-            @dblclick="resetVolume(3)"
-            @mousedown="startDragging(3, $event)"
-            @mousemove="handleDrag(3, $event)"
-            @mouseup="handleDocumentMouseUp"
-            :class="{ 'disabled': !isSample3Enabled }"
-          >
-            <div class="knob-dial" :style="{ transform: `rotate(${volumes[3] * 270 - 135}deg)` }"></div>
-          </div>
-          <div class="knob-label">Gain</div>
-        </div>
-        <div class="knob-container">
-          <div 
-            class="knob" 
-            @dblclick="resetTiming(3)"
-            @mousedown="startDragging('timing3', $event)"
-            @mousemove="handleDrag('timing3', $event)"
-            @mouseup="handleDocumentMouseUp"
-            :class="{ 'disabled': !isSample3Enabled }"
-          >
-            <div class="knob-dial" :style="{ transform: `rotate(${timing[3] * 540 - 135}deg)` }"></div>
-          </div>
-          <div class="knob-label">Timing</div>
-        </div>
+        <Knob
+          label="Gain"
+          :value="volumes[3]"
+          :is-disabled="!isSample3Enabled"
+          @update:value="(value) => updateVolume(3, value)"
+          @reset="resetVolume(3)"
+        />
+        <Knob
+          label="Timing"
+          :value="timing[3]"
+          :min="-0.5"
+          :max="0.5"
+          :rotation-range="540"
+          :is-disabled="!isSample3Enabled"
+          @update:value="(value) => updateTiming(3, value)"
+          @reset="resetTiming(3)"
+        />
       </div>
     </div>
 
@@ -145,18 +121,12 @@
     <!-- マスターボリューム -->
     <div class="master-volume-container">
       <div class="master-controls">
-        <div class="knob-container">
-          <div 
-            class="knob" 
-            @dblclick="resetMasterVolume"
-            @mousedown="startDragging('master', $event)"
-            @mousemove="handleDrag('master', $event)"
-            @mouseup="handleDocumentMouseUp"
-          >
-            <div class="knob-dial" :style="{ transform: `rotate(${masterVolume * 270 - 135}deg)` }"></div>
-          </div>
-          <div class="knob-label">Master</div>
-        </div>
+        <Knob
+          label="Master"
+          :value="masterVolume"
+          @update:value="(value) => updateMasterVolume(value)"
+          @reset="resetMasterVolume"
+        />
         <VolumeMeter 
           :audio-engine="audioEngine"
           :is-playing="isPlaying"
@@ -168,16 +138,17 @@
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue'
-import type { KnobType } from '../types/audio'
 import { AudioEngine } from '../core/AudioEngine'
 import WaveformDisplay from './WaveformDisplay.vue'
 import VolumeMeter from './VolumeMeter.vue'
+import Knob from './Knob.vue'
 
 export default defineComponent({
   name: 'AudioPlayer',
   components: {
     WaveformDisplay,
-    VolumeMeter
+    VolumeMeter,
+    Knob
   },
   setup() {
     // AudioEngineのインスタンスを作成
@@ -193,10 +164,6 @@ export default defineComponent({
       3: 0.5
     })
     const masterVolume = ref(0.8)
-    const isDragging = ref(false)
-    const currentKnob = ref<KnobType | null>(null)
-    const startY = ref(0)
-    const startVolume = ref(0)
     const timing = ref<{ [key: number]: number }>({
       2: 0,
       3: 0
@@ -290,73 +257,6 @@ export default defineComponent({
       }
     }
 
-    const handleDrag = (knob: KnobType, event: MouseEvent): void => {
-      if (!isDragging.value || currentKnob.value !== knob) return
-
-      const deltaY = startY.value - event.clientY
-      const sensitivity = 0.005
-      let newValue = startVolume.value + (deltaY * sensitivity)
-
-      // タイミング調整の場合は異なる範囲を使用
-      if (knob === 'timing2' || knob === 'timing3') {
-        // マウスの移動量から回転角度を計算（-135度から135度の範囲）
-        const angle = startVolume.value + (deltaY * sensitivity * 270)
-        // 回転角度を0から0.5の範囲に変換
-        newValue = (angle + 135) / 270 * 0.5
-        newValue = Math.max(0, Math.min(0.5, newValue))
-        const sampleNumber = parseInt(knob.replace('timing', ''))
-        timing.value[sampleNumber] = newValue
-        updateTiming(sampleNumber)
-        return
-      }
-
-      // ボリューム調整の場合
-      newValue = Math.max(0, Math.min(1, newValue))
-      if (knob === 'master') {
-        masterVolume.value = newValue
-        // マスターボリュームが変更されたら、全てのサンプルの音量を更新
-        Object.keys(volumes.value).forEach(key => {
-          const sampleNumber = parseInt(key)
-          updateVolume(sampleNumber)
-        })
-      } else {
-        volumes.value[knob as number] = newValue
-        updateVolume(knob as number)
-      }
-    }
-
-    const startDragging = (knob: KnobType, event: MouseEvent): void => {
-      event.preventDefault()
-      isDragging.value = true
-      currentKnob.value = knob
-      startY.value = event.clientY
-      startVolume.value = knob === 'master' 
-        ? masterVolume.value 
-        : knob === 'timing2' || knob === 'timing3'
-          ? timing.value[parseInt(knob.replace('timing', ''))] * 540 - 135  // タイミング値を回転角度に変換
-          : volumes.value[knob as number]
-
-      document.addEventListener('mousemove', handleDocumentMouseMove)
-      document.addEventListener('mouseup', handleDocumentMouseUp)
-    }
-
-    const handleDocumentMouseMove = (event: MouseEvent): void => {
-      if (isDragging.value && currentKnob.value) {
-        event.preventDefault()
-        document.body.style.cursor = 'pointer'
-        handleDrag(currentKnob.value, event)
-      }
-    }
-
-    const handleDocumentMouseUp = (event: MouseEvent): void => {
-      event.preventDefault()
-      isDragging.value = false
-      currentKnob.value = null
-      document.body.style.cursor = 'default'
-      document.removeEventListener('mousemove', handleDocumentMouseMove)
-      document.removeEventListener('mouseup', handleDocumentMouseUp)
-    }
-
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.code === 'Space') {
         event.preventDefault()
@@ -367,17 +267,18 @@ export default defineComponent({
     const resetMasterVolume = (): void => {
       try {
         masterVolume.value = 0.8
-        updateVolume(1)
-        updateVolume(2)
-        updateVolume(3)
+        updateVolume(1, 0.5)
+        updateVolume(2, 0.5)
+        updateVolume(3, 0.5)
       } catch (error) {
         handleError('マスターボリュームのリセットに失敗しました', error as Error)
       }
     }
 
-    const updateTiming = (sampleNumber: number): void => {
+    const updateTiming = (sampleNumber: number, value: number): void => {
       try {
-        audioEngine.setTiming(sampleNumber.toString(), timing.value[sampleNumber])
+        audioEngine.setTiming(sampleNumber.toString(), value)
+        timing.value[sampleNumber] = value
       } catch (error) {
         handleError('タイミングの調整に失敗しました', error as Error)
       }
@@ -392,10 +293,11 @@ export default defineComponent({
       }
     }
 
-    const updateVolume = (sampleNumber: number): void => {
+    const updateVolume = (sampleNumber: number, value: number): void => {
       try {
-        const volume = volumes.value[sampleNumber] * masterVolume.value
+        const volume = value * masterVolume.value
         audioEngine.setSampleVolume(sampleNumber.toString(), volume)
+        volumes.value[sampleNumber] = value
       } catch (error) {
         handleError('音量の更新に失敗しました', error as Error)
       }
@@ -404,9 +306,22 @@ export default defineComponent({
     const resetVolume = (sampleNumber: number): void => {
       try {
         volumes.value[sampleNumber] = 0.5
-        updateVolume(sampleNumber)
+        updateVolume(sampleNumber, 0.5)
       } catch (error) {
         handleError('音量のリセットに失敗しました', error as Error)
+      }
+    }
+
+    const updateMasterVolume = (value: number): void => {
+      try {
+        masterVolume.value = value
+        // マスターボリュームが変更されたら、全てのサンプルの音量を更新
+        Object.keys(volumes.value).forEach(key => {
+          const sampleNumber = parseInt(key)
+          updateVolume(sampleNumber, volumes.value[sampleNumber])
+        })
+      } catch (error) {
+        handleError('マスターボリュームの更新に失敗しました', error as Error)
       }
     }
 
@@ -435,10 +350,6 @@ export default defineComponent({
       isLoading,
       volumes,
       masterVolume,
-      isDragging,
-      currentKnob,
-      startY,
-      startVolume,
       timing,
       isSample3Enabled,
       audioBlobs,
@@ -447,12 +358,12 @@ export default defineComponent({
       resetVolume,
       resetMasterVolume,
       resetTiming,
-      startDragging,
-      handleDrag,
-      handleDocumentMouseUp,
       handleWaveformError,
       handleWaveformLoading,
-      handleWaveformReady
+      handleWaveformReady,
+      updateVolume,
+      updateTiming,
+      updateMasterVolume
     }
   }
 })
@@ -507,59 +418,6 @@ button:disabled {
   justify-content: center;
   gap: 2em;
   margin-top: 1em;
-}
-
-.knob-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5em;
-}
-
-.knob {
-  position: relative;
-  width: 50px;
-  height: 50px;
-  background: #2b2b2b;
-  border-radius: 50%;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
-  cursor: pointer;
-  transition: transform 0.1s ease;
-  user-select: none;
-}
-
-.knob:active {
-  transform: scale(0.95);
-}
-
-.knob-dial {
-  position: absolute;
-  width: 4px;
-  height: 20px;
-  background: #4361ee;
-  top: 5px;
-  left: 50%;
-  transform-origin: bottom center;
-  transform: translateX(-50%) rotate(-135deg);
-  border-radius: 2px;
-}
-
-.knob-input {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-  transform: rotate(-135deg);
-}
-
-.knob-label {
-  font-size: 0.8em;
-  color: #666;
-  margin-top: 0.5em;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
 }
 
 .master-volume-container {
@@ -635,11 +493,6 @@ input:checked + .toggle-slider {
 
 input:checked + .toggle-slider:before {
   transform: translateX(20px);
-}
-
-.disabled {
-  opacity: 0.5;
-  pointer-events: none;
 }
 </style>
 
