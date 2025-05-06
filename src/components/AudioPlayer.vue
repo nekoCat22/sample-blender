@@ -227,23 +227,10 @@ export default defineComponent({
         
         // AudioEngineを使って再生
         audioEngine.playSample('1')
-        
-        if (timing.value[2] > 0) {
-          setTimeout(() => {
-            audioEngine.playSample('2')
-          }, timing.value[2] * 1000)
-        } else {
-          audioEngine.playSample('2')
-        }
+        audioEngine.playSample('2')
         
         if (isSample3Enabled.value) {
-          if (timing.value[3] > 0) {
-            setTimeout(() => {
-              audioEngine.playSample('3')
-            }, timing.value[3] * 1000)
-          } else {
-            audioEngine.playSample('3')
-          }
+          audioEngine.playSample('3')
         }
 
         // 再生が終了したら状態をリセット
