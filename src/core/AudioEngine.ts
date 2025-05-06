@@ -7,6 +7,7 @@
  * - エフェクトチェーンの管理
  * - エラー処理の統一
  * - サンプルの再生タイミング制御
+ * - 再生終了イベントの通知
  */
 
 export class AudioEngine {
@@ -21,6 +22,8 @@ export class AudioEngine {
   private sampleGains: Map<string, GainNode> = new Map();
   private startTime = 0;
   private sampleStartTimes: Map<string, number> = new Map();
+  private onPlaybackEndCallback: (() => void) | null = null;
+  private activeSampleCount = 0;
 
   /**
    * AudioEngineのコンストラクタ
@@ -343,6 +346,14 @@ export class AudioEngine {
   }
 
   /**
+   * 再生終了時のコールバックを設定
+   * @param {() => void} callback - 再生終了時に呼び出されるコールバック関数
+   */
+  public setOnPlaybackEnd(callback: () => void): void {
+    this.onPlaybackEndCallback = callback;
+  }
+
+  /**
    * 複数のサンプルを同時に再生
    * @param {string[]} sampleIds - 再生するサンプルIDの配列
    * @param {{ [sampleId: string]: number }} timings - 各サンプルのタイミング調整値（秒）
@@ -355,6 +366,9 @@ export class AudioEngine {
 
     // 既存の再生を停止
     this.stopAll();
+
+    // アクティブなサンプル数をリセット
+    this.activeSampleCount = sampleIds.length;
 
     // 各サンプルを再生
     sampleIds.forEach(sampleId => {
@@ -381,6 +395,14 @@ export class AudioEngine {
       // タイミングを設定
       const timing = timings[sampleId] || 0;
       const startTime = this.context.currentTime + timing;
+
+      // 再生終了時のイベントを設定
+      source.onended = () => {
+        this.activeSampleCount--;
+        if (this.activeSampleCount === 0 && this.onPlaybackEndCallback) {
+          this.onPlaybackEndCallback();
+        }
+      };
 
       // 再生開始
       source.start(startTime);

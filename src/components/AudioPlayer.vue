@@ -194,6 +194,11 @@ export default defineComponent({
           const arrayBuffer = await blob.arrayBuffer()
           await audioEngine.loadSample(sampleNumber.toString(), arrayBuffer)
         }
+
+        // 再生終了時のコールバックを設定
+        audioEngine.setOnPlaybackEnd(() => {
+          isPlaying.value = false
+        })
       } catch (error) {
         handleError('音声ファイルの読み込みに失敗しました', error as Error)
       }
@@ -244,12 +249,6 @@ export default defineComponent({
 
         // AudioEngineを使って再生
         audioEngine.playSamples(sampleIds, timings)
-
-        // 再生が終了したら状態をリセット
-        const maxDuration = audioEngine.getMaxDuration()
-        setTimeout(() => {
-          isPlaying.value = false
-        }, maxDuration * 1000)
       } catch (error) {
         handleError('再生に失敗しました', error as Error)
         isPlaying.value = false
