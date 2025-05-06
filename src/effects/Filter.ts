@@ -158,6 +158,7 @@ export class Filter extends BaseEffect {
     this.setParameter('frequency', 1000);
     this.setParameter('Q', 1);
     this.bypassGain.gain.value = 1;
+    this.setEnabled(false);  // リセット時にフィルターを無効にする
   }
 
   /**

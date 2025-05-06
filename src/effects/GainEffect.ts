@@ -7,15 +7,14 @@
  * - デフォルト値へのリセット機能
  */
 
-import { AudioEngine } from '@/core/AudioEngine';
 import { BaseEffect } from './base/BaseEffect';
 
 export class GainEffect extends BaseEffect {
   private static readonly DEFAULT_GAIN = 0.5;
   private gain: number = GainEffect.DEFAULT_GAIN;
 
-  constructor(audioEngine: AudioEngine) {
-    super(audioEngine);
+  constructor(context: AudioContext) {
+    super(context);
     this.input.connect(this.output);
     this.setGain(this.gain);
     this.isEnabled = true;

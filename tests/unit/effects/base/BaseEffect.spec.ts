@@ -7,8 +7,18 @@
  * - エラー処理のテスト
  */
 
-import { AudioEngine } from '@/core/AudioEngine';
 import { BaseEffect } from '@/effects/base/BaseEffect';
+
+// AudioContextのモック
+class MockAudioContext {
+  createGain() {
+    return {
+      gain: { value: 1 },
+      disconnect: jest.fn(),
+      connect: jest.fn()
+    };
+  }
+}
 
 // テスト用の具象クラス
 class TestEffect extends BaseEffect {
@@ -34,16 +44,16 @@ class TestEffect extends BaseEffect {
 }
 
 describe('BaseEffect', () => {
-  let audioEngine: AudioEngine;
+  let context: AudioContext;
   let effect: TestEffect;
 
   beforeEach(() => {
-    audioEngine = new AudioEngine();
-    effect = new TestEffect(audioEngine);
+    context = new MockAudioContext() as unknown as AudioContext;
+    effect = new TestEffect(context);
   });
 
-  afterEach(async () => {
-    await audioEngine.dispose();
+  afterEach(() => {
+    effect.dispose();
   });
 
   describe('初期化', () => {
@@ -51,8 +61,8 @@ describe('BaseEffect', () => {
       expect(effect).toBeInstanceOf(TestEffect);
     });
 
-    it('音声エンジンなしでは初期化できない', () => {
-      expect(() => new TestEffect(null as unknown as AudioEngine)).toThrow();
+    it('AudioContextなしでは初期化できない', () => {
+      expect(() => new TestEffect(null as unknown as AudioContext)).toThrow();
     });
   });
 
@@ -75,30 +85,30 @@ describe('BaseEffect', () => {
   describe('エフェクトの制御', () => {
     it('有効化できる', () => {
       effect.enable();
-      expect(effect['isEnabled']).toBe(true);
+      expect(effect.isEffectEnabled()).toBe(true);
     });
 
     it('無効化できる', () => {
       effect.enable();
       effect.disable();
-      expect(effect['isEnabled']).toBe(false);
+      expect(effect.isEffectEnabled()).toBe(false);
     });
   });
 
   describe('エラー処理', () => {
-    it('破棄後に操作するとエラーになる', async () => {
-      await audioEngine.dispose();
-      expect(() => effect.getInput()).toThrow('音声エンジンが破棄されています');
-      expect(() => effect.getOutput()).toThrow('音声エンジンが破棄されています');
-      expect(() => effect.enable()).toThrow('音声エンジンが破棄されています');
-      expect(() => effect.disable()).toThrow('音声エンジンが破棄されています');
-      expect(() => effect.setParameter('test', 0)).toThrow('音声エンジンが破棄されています');
-      expect(() => effect.getParameter('test')).toThrow('音声エンジンが破棄されています');
+    it('破棄後に操作するとエラーになる', () => {
+      effect.dispose();
+      expect(() => effect.getInput()).toThrow('エフェクトが初期化されていません');
+      expect(() => effect.getOutput()).toThrow('エフェクトが初期化されていません');
+      expect(() => effect.enable()).toThrow('エフェクトが初期化されていません');
+      expect(() => effect.disable()).toThrow('エフェクトが初期化されていません');
+      expect(() => effect.setParameter('test', 0)).toThrow('エフェクトが初期化されていません');
+      expect(() => effect.getParameter('test')).toThrow('エフェクトが初期化されていません');
     });
 
-    it('二重破棄してもエラーにならない', async () => {
-      await audioEngine.dispose();
-      await expect(audioEngine.dispose()).resolves.not.toThrow();
+    it('二重破棄してもエラーにならない', () => {
+      effect.dispose();
+      expect(() => effect.dispose()).not.toThrow();
     });
   });
 }); 

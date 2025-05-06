@@ -12,7 +12,6 @@ export interface WaveSurferOptions {
   progressColor: string;
   height: number;
   minPxPerSec: number;
-  partialRender: boolean;
   normalize: boolean;
   responsive: boolean;
   cursorColor: string;

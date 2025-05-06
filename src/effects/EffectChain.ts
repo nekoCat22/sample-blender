@@ -69,7 +69,8 @@ export class EffectChain {
    * @returns {Filter | undefined} フィルターエフェクト
    */
   public getFilter(): Filter | undefined {
-    return this.effects.find(effect => effect instanceof Filter) as Filter | undefined;
+    const filter = this.effects.find(effect => effect.constructor.name === 'Filter');
+    return filter instanceof Filter ? filter : undefined;
   }
 
   /**

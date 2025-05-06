@@ -9,8 +9,6 @@
  * - AudioContextとAudioEngineの両方に対応
  */
 
-import { AudioEngine } from '@/core/AudioEngine';
-
 export abstract class BaseEffect {
   protected input!: GainNode;
   protected output!: GainNode;
@@ -19,17 +17,13 @@ export abstract class BaseEffect {
   protected parameters: Map<string, AudioParam> = new Map();
   protected context: AudioContext;
 
-  constructor(audioEngineOrContext: AudioEngine | AudioContext) {
-    if (!audioEngineOrContext) {
-      throw new Error('音声エンジンまたはAudioContextが指定されていません');
+  constructor(context: AudioContext) {
+    if (!context) {
+      throw new Error('AudioContextが指定されていません');
     }
 
     try {
-      if (audioEngineOrContext instanceof AudioEngine) {
-        this.context = audioEngineOrContext.getContext();
-      } else {
-        this.context = audioEngineOrContext;
-      }
+      this.context = context;
       this.input = this.context.createGain();
       this.output = this.context.createGain();
       this.isInitialized = true;

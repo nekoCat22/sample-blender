@@ -9,9 +9,6 @@
  * - サンプルの再生タイミング制御
  */
 
-import { EffectChain } from '@/effects/EffectChain';
-import { Filter } from '@/effects/Filter';
-
 export class AudioEngine {
   private context: AudioContext;
   private masterGain: GainNode;
@@ -24,7 +21,6 @@ export class AudioEngine {
   private sampleGains: Map<string, GainNode> = new Map();
   private startTime = 0;
   private sampleStartTimes: Map<string, number> = new Map();
-  private effectChains: Map<string, EffectChain> = new Map();
 
   /**
    * AudioEngineのコンストラクタ
@@ -126,9 +122,6 @@ export class AudioEngine {
     // 音声コンテキストを破棄する前に、すべての接続を切断
     this.masterGain.disconnect();
     this.sampleGains.forEach(gain => gain.disconnect());
-    // エフェクトチェーンの破棄を追加
-    this.effectChains.forEach(chain => chain.dispose());
-    this.effectChains.clear();
     // 音声コンテキストを破棄
     if (this.context.state !== 'closed') {
       await this.context.close();
@@ -250,68 +243,49 @@ export class AudioEngine {
     }
     const buffer = this.sampleBuffers.get(sampleId);
     if (!buffer) {
-      throw new Error(`サンプル${sampleId}が見つかりません`);
+      throw new Error(`サンプル ${sampleId} が見つかりません`);
     }
 
     // 既存のソースを停止
     const existingSource = this.sampleSources.get(sampleId);
     if (existingSource) {
-      try {
-        existingSource.stop();
-      } catch (error) {
-        // 既に停止している場合は無視
-        console.warn(`サンプル${sampleId}の停止に失敗しました: ${(error as Error).message}`);
-      }
+      existingSource.stop();
+      existingSource.disconnect();
     }
 
     // 新しいソースを作成
     const source = this.context.createBufferSource();
     source.buffer = buffer;
 
-    // ゲインノードを作成または取得
+    // ゲインノードを取得または作成
     let gain = this.sampleGains.get(sampleId);
     if (!gain) {
       gain = this.context.createGain();
       this.sampleGains.set(sampleId, gain);
     }
 
-    // 接続
+    // ノードを接続
     source.connect(gain);
     gain.connect(this.masterGain);
-    this.sampleSources.set(sampleId, source);
 
-    // タイミングを考慮して再生
+    // 再生開始
     const timing = this.sampleTimings.get(sampleId) || 0;
-    if (timing > 0) {
-      setTimeout(() => {
-        source.start();
-        if (!this.isPlaying) {
-          this.startTime = this.context.currentTime;
-          this.isPlaying = true;
-        }
-        this.sampleStartTimes.set(sampleId, this.context.currentTime);
-      }, timing * 1000);
-    } else {
-      source.start();
-      if (!this.isPlaying) {
-        this.startTime = this.context.currentTime;
-        this.isPlaying = true;
-      }
-      this.sampleStartTimes.set(sampleId, this.context.currentTime);
-    }
+    source.start(this.context.currentTime + timing);
+    this.sampleSources.set(sampleId, source);
+    this.sampleStartTimes.set(sampleId, this.context.currentTime);
+
+    // 再生状態を更新
+    this.isPlaying = true;
   }
 
   /**
    * すべてのサンプルを停止
-   * @throws {Error} 初期化されていない場合
    */
   public stopAll(): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
     this.sampleSources.forEach(source => {
       try {
         source.stop();
+        source.disconnect();
       } catch (error) {
         // 既に停止している場合は無視
       }
@@ -319,14 +293,12 @@ export class AudioEngine {
     this.sampleSources.clear();
     this.sampleStartTimes.clear();
     this.isPlaying = false;
-    this.startTime = 0;
   }
 
   /**
    * サンプルを読み込み
    * @param {string} sampleId - サンプルID
    * @param {ArrayBuffer} audioData - 音声データ
-   * @throws {Error} 初期化されていない場合、または音声データの読み込みに失敗した場合
    */
   public async loadSample(sampleId: string, audioData: ArrayBuffer): Promise<void> {
     if (!this.isInitialized) {
@@ -336,176 +308,37 @@ export class AudioEngine {
       const buffer = await this.context.decodeAudioData(audioData);
       this.sampleBuffers.set(sampleId, buffer);
     } catch (error) {
-      throw new Error(`サンプル${sampleId}の読み込みに失敗しました: ${(error as Error).message}`);
+      throw new Error(`サンプル ${sampleId} の読み込みに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   /**
-   * サンプルの再生時間を取得
+   * サンプルの長さを取得
    * @param {string} sampleId - サンプルID
-   * @returns {number} 再生時間（秒）
-   * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
+   * @returns {number} サンプルの長さ（秒）
    */
   public getSampleDuration(sampleId: string): number {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
     const buffer = this.sampleBuffers.get(sampleId);
-    if (!buffer) {
-      throw new Error(`サンプル${sampleId}が見つかりません`);
-    }
-    return buffer.duration;
+    return buffer ? buffer.duration : 0;
   }
 
   /**
-   * すべてのサンプルの最大再生時間を取得
-   * @returns {number} 最大再生時間（秒）
-   * @throws {Error} 初期化されていない場合
+   * 最長のサンプルの長さを取得
+   * @returns {number} 最長のサンプルの長さ（秒）
    */
   public getMaxDuration(): number {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    return Math.max(
-      ...Array.from(this.sampleBuffers.values()).map(buffer => buffer.duration)
-    );
-  }
-
-  /**
-   * サンプル用のエフェクトチェーンを作成
-   * @param {string} sampleId - サンプルID
-   * @returns {EffectChain} 作成されたエフェクトチェーン
-   * @throws {Error} 初期化されていない場合
-   */
-  public createEffectChain(sampleId: string): EffectChain {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    const chain = new EffectChain(this.context);
-    this.effectChains.set(sampleId, chain);
-    return chain;
-  }
-
-  /**
-   * サンプルのエフェクトチェーンを取得
-   * @param {string} sampleId - サンプルID
-   * @returns {EffectChain | undefined} エフェクトチェーン
-   * @throws {Error} 初期化されていない場合
-   */
-  public getEffectChain(sampleId: string): EffectChain | undefined {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    return this.effectChains.get(sampleId);
-  }
-
-  /**
-   * サンプルのエフェクトチェーンを削除
-   * @param {string} sampleId - サンプルID
-   * @throws {Error} 初期化されていない場合
-   */
-  public removeEffectChain(sampleId: string): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    const chain = this.effectChains.get(sampleId);
-    if (chain) {
-      chain.dispose();
-      this.effectChains.delete(sampleId);
-    }
-  }
-
-  /**
-   * サンプルのフィルター角度を設定
-   * @param {string} sampleId - サンプルID
-   * @param {number} angle - フィルターノブの回転角度（-135度〜135度）
-   * @throws {Error} 初期化されていない場合、または無効な角度値の場合
-   */
-  public setFilterAngle(sampleId: string, angle: number): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    if (angle < -135 || angle > 135) {
-      throw new Error('フィルター角度は-135度から135度の範囲で指定してください');
-    }
-    const chain = this.getEffectChain(sampleId);
-    if (chain) {
-      const filter = chain.getFilter();
-      if (filter) {
-        filter.setKnobAngle(angle);
+    let maxDuration = 0;
+    this.sampleBuffers.forEach(buffer => {
+      if (buffer.duration > maxDuration) {
+        maxDuration = buffer.duration;
       }
-    }
-  }
-
-  /**
-   * サンプルのフィルター角度を取得
-   * @param {string} sampleId - サンプルID
-   * @returns {number} 現在のフィルター角度
-   * @throws {Error} 初期化されていない場合
-   */
-  public getFilterAngle(sampleId: string): number {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    const chain = this.getEffectChain(sampleId);
-    if (chain) {
-      const filter = chain.getFilter();
-      if (filter) {
-        return filter.getState().knobAngle;
-      }
-    }
-    return 0;
-  }
-
-  /**
-   * サンプルのフィルターをリセット
-   * @param {string} sampleId - サンプルID
-   * @throws {Error} 初期化されていない場合
-   */
-  public resetFilter(sampleId: string): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    const chain = this.getEffectChain(sampleId);
-    if (chain) {
-      const filter = chain.getFilter();
-      if (filter) {
-        filter.reset();
-      }
-    }
-  }
-
-  /**
-   * サンプルにフィルターを追加
-   * @param {string} sampleId - サンプルID
-   * @throws {Error} 初期化されていない場合
-   */
-  public addFilter(sampleId: string): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    const chain = this.getEffectChain(sampleId);
-    if (chain) {
-      const filter = new Filter(this.context);
-      chain.addEffect(filter);
-    }
-  }
-
-  /**
-   * サンプルからフィルターを削除
-   * @param {string} sampleId - サンプルID
-   * @throws {Error} 初期化されていない場合
-   */
-  public removeFilter(sampleId: string): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    const chain = this.getEffectChain(sampleId);
-    if (chain) {
-      const filter = chain.getFilter();
-      if (filter) {
-        chain.removeEffect(filter);
-      }
-    }
+    });
+    return maxDuration;
   }
 } 

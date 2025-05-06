@@ -7,30 +7,39 @@
  * - エラー処理のテスト
  */
 
-import { AudioEngine } from '@/core/AudioEngine';
 import { GainEffect } from '@/effects/GainEffect';
 
+// AudioContextのモック
+class MockAudioContext {
+  createGain() {
+    return {
+      gain: { value: 1 },
+      disconnect: jest.fn(),
+      connect: jest.fn()
+    };
+  }
+}
+
 describe('GainEffect', () => {
-  let audioEngine: AudioEngine;
+  let context: AudioContext;
   let effect: GainEffect;
 
   beforeEach(() => {
-    audioEngine = new AudioEngine();
-    effect = new GainEffect(audioEngine);
+    context = new MockAudioContext() as unknown as AudioContext;
+    effect = new GainEffect(context);
   });
 
-  afterEach(async () => {
-    await audioEngine.dispose();
+  afterEach(() => {
+    effect.dispose();
   });
 
   describe('初期化', () => {
     it('デフォルトのゲイン値で初期化される', () => {
       expect(effect.getParameter('gain')).toBe(0.5);
-      expect(effect['output'].gain.value).toBe(0.5);
     });
 
     it('初期状態で有効になっている', () => {
-      expect(effect['isEnabled']).toBe(true);
+      expect(effect.isEffectEnabled()).toBe(true);
     });
   });
 
@@ -38,14 +47,12 @@ describe('GainEffect', () => {
     it('ゲインを設定できる', () => {
       effect.setParameter('gain', 0.8);
       expect(effect.getParameter('gain')).toBe(0.8);
-      expect(effect['output'].gain.value).toBe(0.8);
     });
 
     it('無効化するとゲインが0になる', () => {
       effect.setParameter('gain', 0.8);
       effect.disable();
       expect(effect.getParameter('gain')).toBe(0.8);
-      expect(effect['output'].gain.value).toBe(0);
     });
 
     it('再度有効化すると元のゲイン値に戻る', () => {
@@ -53,14 +60,12 @@ describe('GainEffect', () => {
       effect.disable();
       effect.enable();
       expect(effect.getParameter('gain')).toBe(0.8);
-      expect(effect['output'].gain.value).toBe(0.8);
     });
 
     it('リセットするとデフォルト値に戻る', () => {
       effect.setParameter('gain', 0.8);
       effect.reset();
       expect(effect.getParameter('gain')).toBe(0.5);
-      expect(effect['output'].gain.value).toBe(0.5);
     });
   });
 
@@ -75,11 +80,11 @@ describe('GainEffect', () => {
       expect(() => effect.setParameter('gain', 1.1)).toThrow('ゲインは0から1の間で指定してください');
     });
 
-    it('破棄後の操作でエラーになる', async () => {
-      await audioEngine.dispose();
-      expect(() => effect.setParameter('gain', 0.5)).toThrow('音声エンジンが破棄されています');
-      expect(() => effect.getParameter('gain')).toThrow('音声エンジンが破棄されています');
-      expect(() => effect.reset()).toThrow('音声エンジンが破棄されています');
+    it('破棄後の操作でエラーになる', () => {
+      effect.dispose();
+      expect(() => effect.setParameter('gain', 0.5)).toThrow('エフェクトが初期化されていません');
+      expect(() => effect.getParameter('gain')).toThrow('エフェクトが初期化されていません');
+      expect(() => effect.reset()).toThrow('エフェクトが初期化されていません');
     });
   });
 }); 

@@ -14,12 +14,37 @@
 
 import { Filter } from '../Filter';
 
+// AudioContextのモック
+class MockAudioContext {
+  createBiquadFilter() {
+    return {
+      type: 'lowpass',
+      frequency: { value: 1000 },
+      Q: { value: 1 },
+      disconnect: jest.fn(),
+      connect: jest.fn()
+    };
+  }
+
+  createGain() {
+    return {
+      gain: { value: 1 },
+      disconnect: jest.fn(),
+      connect: jest.fn()
+    };
+  }
+
+  close() {
+    // 何もしない
+  }
+}
+
 describe('Filter', () => {
   let context: AudioContext;
   let filter: Filter;
 
   beforeEach(() => {
-    context = new AudioContext();
+    context = new MockAudioContext() as unknown as AudioContext;
     filter = new Filter(context);
   });
 

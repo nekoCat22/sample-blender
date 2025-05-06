@@ -8,6 +8,27 @@ import AudioPlayer from '@/components/AudioPlayer.vue'
 import Knob from '@/components/Knob.vue'
 import { VueWrapper } from '@vue/test-utils'
 
+// WaveformDisplayコンポーネントをモック
+jest.mock('@/components/WaveformDisplay.vue', () => ({
+  name: 'WaveformDisplay',
+  template: '<div class="mock-waveform"></div>',
+  props: {
+    audioBlob: {
+      type: Object,
+      required: true
+    }
+  }
+}))
+
+// WaveSurferのエラーを無視する設定
+const originalConsoleError = console.error
+console.error = (...args: any[]) => {
+  if (args[0]?.includes('HTMLMediaElement')) {
+    return
+  }
+  originalConsoleError(...args)
+}
+
 describe('AudioPlayer.vue', () => {
   let wrapper: VueWrapper<any>
 

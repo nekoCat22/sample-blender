@@ -61,11 +61,10 @@ describe('Knob.vue', () => {
   })
 
   // イベントハンドリングのテスト
-  it('ダブルクリックでリセット値に戻る', async () => {
-    await wrapper.setProps({ value: 0.8 })
+  it('ダブルクリックでリセットイベントが発火する', async () => {
     const knob = wrapper.find('.knob')
     await knob.trigger('dblclick')
-    expect(wrapper.emitted('update:value')?.[0]).toEqual([0.5])
+    expect(wrapper.emitted('reset')).toBeTruthy()
   })
 
   it('ドラッグで値が更新される', async () => {
@@ -73,9 +72,10 @@ describe('Knob.vue', () => {
     await knob.trigger('mousedown', {
       clientY: 100
     })
-    await window.dispatchEvent(new MouseEvent('mousemove', {
+    await knob.trigger('mousemove', {
       clientY: 90
-    }))
+    })
+    await knob.trigger('mouseup')
     expect(wrapper.emitted('update:value')).toBeTruthy()
   })
 
@@ -85,15 +85,16 @@ describe('Knob.vue', () => {
     await knob.trigger('mousedown')
     await knob.trigger('dblclick')
     expect(wrapper.emitted('update:value')).toBeFalsy()
+    expect(wrapper.emitted('reset')).toBeFalsy()
   })
 
   // スタイルのテスト
-  it('無効化状態のときは適切なスタイルが適用される', () => {
-    const knob = wrapper.find('.knob')
-    expect(knob.classes()).not.toContain('disabled')
+  it('無効化状態のときは適切なスタイルが適用される', async () => {
+    const container = wrapper.find('.knob-container')
+    expect(container.classes()).not.toContain('disabled')
     
-    wrapper.setProps({ isDisabled: true })
-    expect(knob.classes()).toContain('disabled')
+    await wrapper.setProps({ isDisabled: true })
+    expect(container.classes()).toContain('disabled')
   })
 
   // 計算プロパティのテスト
