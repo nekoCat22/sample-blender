@@ -496,33 +496,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* 波形表示のスタイル */
-div[ref="waveform1"],
-div[ref="waveform2"],
-div[ref="waveform3"] {
-  margin-bottom: 1em;
-  background: #f0f4f8;  /* 背景色を少し暗く */
-  border-radius: 4px;
-  padding: 8px;
-}
-
-/* 波形のコンテナ内のキャンバス要素のスタイル */
-div[ref="waveform1"] canvas,
-div[ref="waveform2"] canvas,
-div[ref="waveform3"] canvas {
-  width: 100% !important;
-  height: auto !important;
-  border-radius: 2px;
-}
-
-/* 波形のコンテナのホバー効果 */
-div[ref="waveform1"]:hover,
-div[ref="waveform2"]:hover,
-div[ref="waveform3"]:hover {
-  background: #e2e8f0;  /* ホバー時の背景色も調整 */
-  transition: background-color 0.2s ease;
-}
-
 button {
   padding: 0.5em 1em;
   font-size: 1em;
@@ -589,7 +562,7 @@ button:disabled {
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
   cursor: pointer;
   transition: transform 0.1s ease;
-  user-select: none; /* ドラッグ時のテキスト選択を防止 */
+  user-select: none;
 }
 
 .knob:active {
@@ -660,22 +633,22 @@ button:disabled {
 
 .meter-level {
   height: 100%;
-  background: #4CAF50; /* 緑 */
+  background: #4CAF50;
   transition: width 0.05s ease-out;
 }
 
 .meter-level--warning {
-  background: #FFC107; /* 黄 */
+  background: #FFC107;
 }
 
 .meter-level--danger {
-  background: #F44336; /* 赤 */
+  background: #F44336;
 }
 
 .meter-danger-line {
   position: absolute;
   top: 0;
-  left: 90%; /* -6dBの位置（-60dBから0dBの範囲で90%の位置） */
+  left: 90%;
   width: 2px;
   height: 100%;
   background: rgba(255, 255, 255, 0.5);
