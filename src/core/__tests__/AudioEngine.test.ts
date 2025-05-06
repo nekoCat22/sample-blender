@@ -155,6 +155,16 @@ describe('AudioEngine', () => {
       expect(() => audioEngine.setMasterVolume(1.1)).toThrow()
     })
 
+    it('マスターボリュームを取得できること', () => {
+      audioEngine.setMasterVolume(0.5)
+      expect(audioEngine.getMasterVolume()).toBe(0.5)
+    })
+
+    it('初期化されていない状態でマスターボリュームを取得しようとするとエラーになること', async () => {
+      await audioEngine.dispose()
+      expect(() => audioEngine.getMasterVolume()).toThrow('AudioEngineが初期化されていません')
+    })
+
     it('サンプルの音量を設定できること', () => {
       expect(() => audioEngine.setSampleVolume('1', 0.5)).not.toThrow()
     })
