@@ -9,6 +9,7 @@
  */
 
 import { BaseEffect } from '@/effects/base/BaseEffect';
+import { Filter } from '@/effects/Filter';
 
 export class EffectChain {
   private effects: BaseEffect[] = [];
@@ -61,6 +62,14 @@ export class EffectChain {
     this.effects.splice(fromIndex, 1);
     this.effects.splice(toIndex, 0, effect);
     this.reconnect();
+  }
+
+  /**
+   * フィルターエフェクトを取得
+   * @returns {Filter | undefined} フィルターエフェクト
+   */
+  public getFilter(): Filter | undefined {
+    return this.effects.find(effect => effect instanceof Filter) as Filter | undefined;
   }
 
   /**

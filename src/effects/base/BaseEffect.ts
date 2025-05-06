@@ -14,8 +14,8 @@ import { AudioEngine } from '@/core/AudioEngine';
 export abstract class BaseEffect {
   protected input!: GainNode;
   protected output!: GainNode;
-  protected isEnabled: boolean = false;
-  protected isInitialized: boolean = false;
+  protected isEnabled = false;
+  protected isInitialized = false;
   protected parameters: Map<string, AudioParam> = new Map();
   protected context: AudioContext;
 

@@ -8,7 +8,7 @@
  */
 
 import { BaseEffect } from '@/effects/base/BaseEffect';
-import { EffectChain } from '@/core/effects/EffectChain';
+import { EffectChain } from '@/effects/EffectChain';
 
 // AudioContextの型定義
 declare global {

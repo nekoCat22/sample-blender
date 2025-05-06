@@ -9,7 +9,8 @@
  * - サンプルの再生タイミング制御
  */
 
-import { EffectChain } from './effects/EffectChain';
+import { EffectChain } from '@/effects/EffectChain';
+import { Filter } from '@/effects/Filter';
 
 export class AudioEngine {
   private context: AudioContext;
@@ -406,6 +407,100 @@ export class AudioEngine {
     if (chain) {
       chain.dispose();
       this.effectChains.delete(sampleId);
+    }
+  }
+
+  /**
+   * サンプルのフィルター角度を設定
+   * @param {string} sampleId - サンプルID
+   * @param {number} angle - フィルターノブの回転角度（-135度〜135度）
+   * @throws {Error} 初期化されていない場合、または無効な角度値の場合
+   */
+  public setFilterAngle(sampleId: string, angle: number): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    if (angle < -135 || angle > 135) {
+      throw new Error('フィルター角度は-135度から135度の範囲で指定してください');
+    }
+    const chain = this.getEffectChain(sampleId);
+    if (chain) {
+      const filter = chain.getFilter();
+      if (filter) {
+        filter.setKnobAngle(angle);
+      }
+    }
+  }
+
+  /**
+   * サンプルのフィルター角度を取得
+   * @param {string} sampleId - サンプルID
+   * @returns {number} 現在のフィルター角度
+   * @throws {Error} 初期化されていない場合
+   */
+  public getFilterAngle(sampleId: string): number {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    const chain = this.getEffectChain(sampleId);
+    if (chain) {
+      const filter = chain.getFilter();
+      if (filter) {
+        return filter.getState().knobAngle;
+      }
+    }
+    return 0;
+  }
+
+  /**
+   * サンプルのフィルターをリセット
+   * @param {string} sampleId - サンプルID
+   * @throws {Error} 初期化されていない場合
+   */
+  public resetFilter(sampleId: string): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    const chain = this.getEffectChain(sampleId);
+    if (chain) {
+      const filter = chain.getFilter();
+      if (filter) {
+        filter.reset();
+      }
+    }
+  }
+
+  /**
+   * サンプルにフィルターを追加
+   * @param {string} sampleId - サンプルID
+   * @throws {Error} 初期化されていない場合
+   */
+  public addFilter(sampleId: string): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    const chain = this.getEffectChain(sampleId);
+    if (chain) {
+      const filter = new Filter(this.context);
+      chain.addEffect(filter);
+    }
+  }
+
+  /**
+   * サンプルからフィルターを削除
+   * @param {string} sampleId - サンプルID
+   * @throws {Error} 初期化されていない場合
+   */
+  public removeFilter(sampleId: string): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    const chain = this.getEffectChain(sampleId);
+    if (chain) {
+      const filter = chain.getFilter();
+      if (filter) {
+        chain.removeEffect(filter);
+      }
     }
   }
 } 
