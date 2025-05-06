@@ -64,9 +64,9 @@
         <Knob
           label="Timing"
           :value="timing[2]"
-          :min="-0.5"
+          :min="0"
           :max="0.5"
-          :rotation-range="540"
+          :rotation-range="270"
           @update:value="(value) => updateTiming(2, value)"
           @reset="resetTiming(2)"
         />
@@ -101,9 +101,9 @@
         <Knob
           label="Timing"
           :value="timing[3]"
-          :min="-0.5"
+          :min="0"
           :max="0.5"
-          :rotation-range="540"
+          :rotation-range="270"
           :is-disabled="!isSample3Enabled"
           @update:value="(value) => updateTiming(3, value)"
           @reset="resetTiming(3)"
