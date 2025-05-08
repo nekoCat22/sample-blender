@@ -1,6 +1,6 @@
 /**
- * @file Filter.test.ts
- * @brief フィルターのテスト
+ * @file Filter.spec.ts
+ * @brief フィルターエフェクトのテスト
  * @details
  * - フィルターの初期化
  * - フィルターの有効/無効
@@ -12,7 +12,7 @@
  * - フィルターの破棄
  */
 
-import { Filter } from '../Filter';
+import { Filter } from '@/effects/Filter';
 
 // AudioContextのモック
 class MockAudioContext {

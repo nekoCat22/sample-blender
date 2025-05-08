@@ -14,7 +14,7 @@ import { BaseEffect } from '@/effects/base/BaseEffect';
 
 export class Filter extends BaseEffect {
   private filter: BiquadFilterNode;
-  private bypassGain: GainNode;  // バイパス用のGainNode
+  private filterGain: GainNode;  // フィルターパス用のゲイン
   private knobAngle: number;  // ノブの回転角度（-135度〜135度）
 
   // 定数
@@ -30,7 +30,7 @@ export class Filter extends BaseEffect {
   constructor(context: AudioContext) {
     super(context);
     this.filter = this.context.createBiquadFilter();
-    this.bypassGain = this.context.createGain();
+    this.filterGain = this.context.createGain();
     this.knobAngle = 0;  // 初期値は0度（フィルターOFF）
 
     // フィルターの初期設定
@@ -38,12 +38,29 @@ export class Filter extends BaseEffect {
     this.filter.frequency.value = 1000;
     this.filter.Q.value = 1;
 
-    // バイパス用のGainNodeの初期設定
-    this.bypassGain.gain.value = 1;
-
     // パラメータの登録
     this.parameters.set('frequency', this.filter.frequency);
     this.parameters.set('Q', this.filter.Q);
+
+    // 初期接続設定
+    this.setupConnections();
+  }
+
+  /**
+   * @brief 入出力の接続を設定
+   */
+  private setupConnections(): void {
+    // フィルターパス: input → filter → filterGain → output
+    this.input.connect(this.filter);
+    this.filter.connect(this.filterGain);
+    this.filterGain.connect(this.output);
+
+    // バイパスパス: input → output
+    this.input.connect(this.output);
+
+    // 初期状態ではバイパスを有効化
+    this.filterGain.gain.value = 0;
+    this.output.gain.value = 1;
   }
 
   /**
@@ -93,16 +110,14 @@ export class Filter extends BaseEffect {
   private setEnabled(enabled: boolean): void {
     this.isEnabled = enabled;
     
-    // フィルターの接続を更新
-    this.filter.disconnect();
-    this.bypassGain.disconnect();
-
     if (enabled) {
-      // フィルターを有効にする
-      this.filter.connect(this.bypassGain);
+      // フィルターを有効化
+      this.filterGain.gain.value = 1;
+      this.output.gain.value = 0;
     } else {
-      // フィルターをバイパス
-      this.bypassGain.gain.value = 1;
+      // バイパスを有効化
+      this.filterGain.gain.value = 0;
+      this.output.gain.value = 1;
     }
   }
 
@@ -157,7 +172,6 @@ export class Filter extends BaseEffect {
     this.filter.type = 'lowpass';
     this.setParameter('frequency', 1000);
     this.setParameter('Q', 1);
-    this.bypassGain.gain.value = 1;
     this.setEnabled(false);  // リセット時にフィルターを無効にする
   }
 
@@ -194,7 +208,7 @@ export class Filter extends BaseEffect {
    */
   dispose(): void {
     this.filter.disconnect();
-    this.bypassGain.disconnect();
+    this.filterGain.disconnect();
     super.dispose();
   }
 } 
