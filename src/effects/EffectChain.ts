@@ -4,8 +4,8 @@
  * @details
  * - 複数のエフェクトを順番に接続
  * - エフェクトの追加/削除/並び替え
- * - エフェクトの有効/無効の制御
- * - エフェクトチェーンの接続管理
+ * - エフェクトの有効/無効の制御は各エフェクトのバイパス機能を使用
+ * - エフェクトチェーンは静的な接続を維持
  */
 
 import { BaseEffect } from '@/effects/base/BaseEffect';
@@ -15,7 +15,6 @@ export class EffectChain {
   private effects: BaseEffect[] = [];
   private input: GainNode;
   private output: GainNode;
-  private isConnected = false;
 
   /**
    * エフェクトチェーンのコンストラクタ
@@ -32,7 +31,7 @@ export class EffectChain {
    */
   public addEffect(effect: BaseEffect): void {
     this.effects.push(effect);
-    this.reconnect();
+    this.connectEffect(effect);
   }
 
   /**
@@ -42,9 +41,9 @@ export class EffectChain {
   public removeEffect(effect: BaseEffect): void {
     const index = this.effects.indexOf(effect);
     if (index !== -1) {
+      this.disconnectEffect(effect);
       this.effects.splice(index, 1);
       effect.dispose();
-      this.reconnect();
     }
   }
 
@@ -58,10 +57,17 @@ export class EffectChain {
         toIndex < 0 || toIndex >= this.effects.length) {
       throw new Error('無効なインデックスです');
     }
+
+    // 一旦全ての接続を切断
+    this.disconnectAll();
+
+    // エフェクトの順序を変更
     const effect = this.effects[fromIndex];
     this.effects.splice(fromIndex, 1);
     this.effects.splice(toIndex, 0, effect);
-    this.reconnect();
+
+    // 新しい順序で再接続
+    this.connectAll();
   }
 
   /**
@@ -74,41 +80,78 @@ export class EffectChain {
   }
 
   /**
-   * エフェクトチェーンを再接続
+   * エフェクトを接続
+   * @param {BaseEffect} effect - 接続するエフェクト
    */
-  private reconnect(): void {
-    if (this.isConnected) {
-      this.disconnect();
+  private connectEffect(effect: BaseEffect): void {
+    const index = this.effects.indexOf(effect);
+    if (index === -1) return;
+
+    if (index === 0) {
+      // 最初のエフェクトの場合
+      this.input.connect(effect.getInput());
+    } else {
+      // 前のエフェクトに接続
+      this.effects[index - 1].getOutput().connect(effect.getInput());
     }
 
-    let currentNode = this.input;
-    for (const effect of this.effects) {
-      if (effect.isEffectEnabled()) {
-        currentNode.connect(effect.getInput());
-        currentNode = effect.getOutput();
-      }
+    if (index === this.effects.length - 1) {
+      // 最後のエフェクトの場合
+      effect.getOutput().connect(this.output);
     }
-    currentNode.connect(this.output);
-    this.isConnected = true;
   }
 
   /**
-   * エフェクトチェーンを切断
+   * エフェクトの接続を切断
+   * @param {BaseEffect} effect - 切断するエフェクト
    */
-  private disconnect(): void {
+  private disconnectEffect(effect: BaseEffect): void {
+    const index = this.effects.indexOf(effect);
+    if (index === -1) return;
+
+    if (index === 0) {
+      this.input.disconnect(effect.getInput());
+    } else {
+      this.effects[index - 1].getOutput().disconnect(effect.getInput());
+    }
+
+    if (index === this.effects.length - 1) {
+      effect.getOutput().disconnect(this.output);
+    }
+  }
+
+  /**
+   * 全てのエフェクトを接続
+   */
+  private connectAll(): void {
+    if (this.effects.length === 0) {
+      this.input.connect(this.output);
+      return;
+    }
+
+    this.input.connect(this.effects[0].getInput());
+    for (let i = 0; i < this.effects.length - 1; i++) {
+      this.effects[i].getOutput().connect(this.effects[i + 1].getInput());
+    }
+    this.effects[this.effects.length - 1].getOutput().connect(this.output);
+  }
+
+  /**
+   * 全てのエフェクトの接続を切断
+   */
+  private disconnectAll(): void {
     this.input.disconnect();
     for (const effect of this.effects) {
       effect.getInput().disconnect();
       effect.getOutput().disconnect();
     }
-    this.isConnected = false;
   }
 
   /**
    * エフェクトチェーンを破棄
    */
   public dispose(): void {
-    this.disconnect();
+    this.disconnectAll();
     for (const effect of this.effects) {
       effect.dispose();
     }
