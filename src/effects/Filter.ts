@@ -10,7 +10,7 @@
  * - カットオフ周波数は20Hz〜20000Hzの範囲に制限
  */
 
-import { BaseEffect } from '@/effects/base/BaseEffect';
+import { BaseEffect } from './base/BaseEffect';
 
 export class Filter extends BaseEffect {
   private filter: BiquadFilterNode;

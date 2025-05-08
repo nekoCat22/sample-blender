@@ -4,7 +4,7 @@
  * @details
  * - 音声コンテキストの管理
  * - マスターボリュームの制御
- * - エフェクトチェーンの管理
+ * - サンプルの再生管理
  * - エラー処理の統一
  * - サンプルの再生タイミング制御
  * - 再生終了イベントの通知
@@ -412,5 +412,18 @@ export class AudioEngine {
 
     // 再生状態を更新
     this.isPlaying = true;
+  }
+
+  /**
+   * サンプルのゲインノードを取得
+   * @param {string} sampleId - サンプルID
+   * @returns {GainNode | undefined} ゲインノード
+   * @throws {Error} 初期化されていない場合
+   */
+  public getSampleGain(sampleId: string): GainNode | undefined {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    return this.sampleGains.get(sampleId);
   }
 } 

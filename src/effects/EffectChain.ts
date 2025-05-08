@@ -8,8 +8,8 @@
  * - エフェクトチェーンは静的な接続を維持
  */
 
-import { BaseEffect } from '@/effects/base/BaseEffect';
-import { Filter } from '@/effects/Filter';
+import { BaseEffect } from './base/BaseEffect';
+import { Filter } from './Filter';
 
 export class EffectChain {
   private effects: BaseEffect[] = [];
@@ -23,6 +23,22 @@ export class EffectChain {
   constructor(context: AudioContext) {
     this.input = context.createGain();
     this.output = context.createGain();
+  }
+
+  /**
+   * エフェクトチェーンの入力ノードを取得
+   * @returns {GainNode} 入力ノード
+   */
+  public getInput(): GainNode {
+    return this.input;
+  }
+
+  /**
+   * エフェクトチェーンの出力ノードを取得
+   * @returns {GainNode} 出力ノード
+   */
+  public getOutput(): GainNode {
+    return this.output;
   }
 
   /**

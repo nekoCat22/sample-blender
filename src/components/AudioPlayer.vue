@@ -36,12 +36,23 @@
         @loading="handleWaveformLoading"
         @ready="handleWaveformReady"
       />
-      <Knob
-        label="Gain"
-        :value="volumes[1]"
-        @update:value="(value) => updateVolume(1, value)"
-        @reset="resetVolume(1)"
-      />
+      <div class="knob-row">
+        <Knob
+          label="Gain"
+          :value="volumes[1]"
+          @update:value="(value) => updateVolume(1, value)"
+          @reset="resetVolume(1)"
+        />
+        <Knob
+          label="Filter"
+          :value="filterAngle"
+          :min="-135"
+          :max="135"
+          :rotation-range="270"
+          @update:value="(value) => updateFilter(value)"
+          @reset="resetFilter"
+        />
+      </div>
     </div>
 
     <!-- サンプル2 -->
@@ -142,6 +153,9 @@ import { AudioEngine } from '../core/AudioEngine'
 import WaveformDisplay from './WaveformDisplay.vue'
 import VolumeMeter from './VolumeMeter.vue'
 import Knob from './Knob.vue'
+import { Filter } from '@/effects/Filter'
+import { EffectChain } from '@/effects/EffectChain'
+import { BaseEffect } from '@/effects/base/BaseEffect'
 
 export default defineComponent({
   name: 'AudioPlayer',
@@ -176,6 +190,9 @@ export default defineComponent({
     })
     const volumeLevel = ref(-60)
     const meterInterval = ref<number | null>(null)
+    const filterAngle = ref(0)
+    const effectChain = ref<EffectChain | null>(null)
+    const filter = ref<Filter | null>(null)
 
     // メソッドの定義
     const loadAudioFiles = async (): Promise<void> => {
@@ -249,6 +266,15 @@ export default defineComponent({
 
         // AudioEngineを使って再生
         audioEngine.playSamples(sampleIds, timings)
+
+        // フィルターを再接続
+        if (effectChain.value) {
+          const sample1Gain = audioEngine.getSampleGain('1')
+          if (sample1Gain) {
+            sample1Gain.disconnect()
+            sample1Gain.connect(effectChain.value.getInput())
+          }
+        }
       } catch (error) {
         handleError('再生に失敗しました', error as Error)
         isPlaying.value = false
@@ -349,11 +375,61 @@ export default defineComponent({
       }
     })
 
+    // フィルターの初期化
+    const initFilter = () => {
+      try {
+        // EffectChainの初期化
+        effectChain.value = new EffectChain(audioEngine.getContext())
+        
+        // フィルターの作成と追加
+        filter.value = new Filter(audioEngine.getContext())
+        effectChain.value.addEffect(filter.value as unknown as BaseEffect)
+        
+        // EffectChainの出力をマスターに接続
+        effectChain.value.getOutput().connect(audioEngine.getContext().destination)
+        
+        // サンプル1の出力をEffectChainに接続
+        const sample1Gain = audioEngine.getSampleGain('1')
+        if (sample1Gain) {
+          sample1Gain.disconnect()
+          sample1Gain.connect(effectChain.value.getInput())
+        }
+      } catch (error) {
+        handleError('フィルターの初期化に失敗しました', error as Error)
+      }
+    }
+
+    // フィルターの更新
+    const updateFilter = (angle: number) => {
+      try {
+        if (filter.value) {
+          filter.value.setKnobAngle(angle)
+          filterAngle.value = angle
+        }
+      } catch (error) {
+        handleError('フィルターの更新に失敗しました', error as Error)
+      }
+    }
+
+    // フィルターのリセット
+    const resetFilter = () => {
+      try {
+        if (filter.value) {
+          filter.value.reset()
+          filterAngle.value = 0
+        }
+      } catch (error) {
+        handleError('フィルターのリセットに失敗しました', error as Error)
+      }
+    }
+
     // ライフサイクルフック
     onMounted(async () => {
       try {
         // 音声ファイルの読み込み
         await loadAudioFiles()
+        // フィルターの初期化
+        initFilter()
         // キーボードイベントのリスナーを追加
         window.addEventListener('keydown', handleKeyDown)
       } catch (error) {
@@ -368,6 +444,10 @@ export default defineComponent({
       stopMeterUpdate()
       // AudioEngineの破棄
       audioEngine.dispose()
+      // EffectChainの破棄
+      if (effectChain.value) {
+        effectChain.value.dispose()
+      }
     })
 
     return {
@@ -390,7 +470,10 @@ export default defineComponent({
       handleWaveformReady,
       updateVolume,
       updateTiming,
-      updateMasterVolume
+      updateMasterVolume,
+      filterAngle,
+      updateFilter,
+      resetFilter
     }
   }
 })
