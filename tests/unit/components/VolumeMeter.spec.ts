@@ -5,7 +5,7 @@
 
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import VolumeMeter from '../VolumeMeter.vue'
+import VolumeMeter from '@/components/VolumeMeter.vue'
 
 describe('VolumeMeter', () => {
   let wrapper: any

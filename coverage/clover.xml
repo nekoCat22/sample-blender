@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1746711720066" clover="3.2.0">
-  <project timestamp="1746711720066" name="All files">
+<coverage generated="1746711965849" clover="3.2.0">
+  <project timestamp="1746711965849" name="All files">
     <metrics statements="706" coveredstatements="468" conditionals="370" coveredconditionals="237" methods="146" coveredmethods="87" elements="1222" coveredelements="792" complexity="0" loc="706" ncloc="706" packages="6" files="12" classes="12"/>
     <package name="src">
       <metrics statements="15" coveredstatements="0" conditionals="7" coveredconditionals="0" methods="2" coveredmethods="0"/>
@@ -355,18 +355,18 @@
       </file>
       <file name="VolumeMeter.vue" path="C:\Users\9cats\handicraft\Cursor\sample_blender\sample-blender\src\components\VolumeMeter.vue">
         <metrics statements="12" coveredstatements="12" conditionals="4" coveredconditionals="4" methods="1" coveredmethods="1"/>
-        <line num="3" count="1" type="stmt"/>
-        <line num="6" count="1" type="stmt"/>
-        <line num="7" count="1" type="stmt"/>
-        <line num="21" count="1" type="stmt"/>
-        <line num="22" count="1" type="stmt"/>
-        <line num="23" count="1" type="stmt"/>
-        <line num="24" count="1" type="stmt"/>
-        <line num="25" count="1" type="stmt"/>
-        <line num="26" count="1" type="stmt"/>
-        <line num="28" count="5" type="stmt"/>
-        <line num="42" count="1" type="stmt"/>
-        <line num="43" count="1" type="stmt"/>
+        <line num="3" count="2" type="stmt"/>
+        <line num="6" count="2" type="stmt"/>
+        <line num="7" count="2" type="stmt"/>
+        <line num="21" count="2" type="stmt"/>
+        <line num="22" count="2" type="stmt"/>
+        <line num="23" count="2" type="stmt"/>
+        <line num="24" count="2" type="stmt"/>
+        <line num="25" count="2" type="stmt"/>
+        <line num="26" count="2" type="stmt"/>
+        <line num="28" count="15" type="stmt"/>
+        <line num="42" count="2" type="stmt"/>
+        <line num="43" count="2" type="stmt"/>
       </file>
       <file name="WaveformDisplay.vue" path="C:\Users\9cats\handicraft\Cursor\sample_blender\sample-blender\src\components\WaveformDisplay.vue">
         <metrics statements="50" coveredstatements="0" conditionals="19" coveredconditionals="0" methods="10" coveredmethods="0"/>
