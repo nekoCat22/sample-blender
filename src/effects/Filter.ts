@@ -15,6 +15,7 @@ import { BaseEffect } from '@/effects/base/BaseEffect';
 export class Filter extends BaseEffect {
   private filter: BiquadFilterNode;
   private filterGain: GainNode;  // フィルターパス用のゲイン
+  private bypassGain: GainNode;  // バイパスパス用のゲイン
   private knobAngle: number;  // ノブの回転角度（-135度〜135度）
 
   // 定数
@@ -31,6 +32,7 @@ export class Filter extends BaseEffect {
     super(context);
     this.filter = this.context.createBiquadFilter();
     this.filterGain = this.context.createGain();
+    this.bypassGain = this.context.createGain();
     this.knobAngle = 0;  // 初期値は0度（フィルターOFF）
 
     // フィルターの初期設定
@@ -55,12 +57,13 @@ export class Filter extends BaseEffect {
     this.filter.connect(this.filterGain);
     this.filterGain.connect(this.output);
 
-    // バイパスパス: input → output
-    this.input.connect(this.output);
+    // バイパスパス: input → bypassGain → output
+    this.input.connect(this.bypassGain);
+    this.bypassGain.connect(this.output);
 
     // 初期状態ではバイパスを有効化
     this.filterGain.gain.value = 0;
-    this.output.gain.value = 1;
+    this.bypassGain.gain.value = 1;
   }
 
   /**
@@ -113,11 +116,11 @@ export class Filter extends BaseEffect {
     if (enabled) {
       // フィルターを有効化
       this.filterGain.gain.value = 1;
-      this.output.gain.value = 0;
+      this.bypassGain.gain.value = 0;
     } else {
       // バイパスを有効化
       this.filterGain.gain.value = 0;
-      this.output.gain.value = 1;
+      this.bypassGain.gain.value = 1;
     }
   }
 
@@ -209,6 +212,7 @@ export class Filter extends BaseEffect {
   dispose(): void {
     this.filter.disconnect();
     this.filterGain.disconnect();
+    this.bypassGain.disconnect();
     super.dispose();
   }
 } 
