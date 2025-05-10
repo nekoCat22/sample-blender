@@ -3,10 +3,49 @@
  * 基本的なUI要素のテストケース
  */
 
-import { mount } from '@vue/test-utils'
+import { mount, VueWrapper, DOMWrapper } from '@vue/test-utils'
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import Knob from '@/components/Knob.vue'
-import { VueWrapper } from '@vue/test-utils'
+
+// Web Audio APIのモック
+const mockGainNode = {
+  connect: jest.fn(),
+  disconnect: jest.fn(),
+  gain: { value: 1 }
+}
+
+const mockBiquadFilter = {
+  connect: jest.fn(),
+  disconnect: jest.fn(),
+  frequency: { value: 1000 },
+  Q: { value: 1 },
+  gain: { value: 0 },
+  type: 'lowpass'
+}
+
+const mockAnalyser = {
+  connect: jest.fn(),
+  disconnect: jest.fn(),
+  getByteFrequencyData: jest.fn()
+}
+
+const mockAudioContext = {
+  createGain: jest.fn().mockReturnValue(mockGainNode),
+  createBiquadFilter: jest.fn().mockReturnValue(mockBiquadFilter),
+  createAnalyser: jest.fn().mockReturnValue(mockAnalyser),
+  destination: {},
+  close: jest.fn().mockResolvedValue(undefined),
+  decodeAudioData: jest.fn().mockResolvedValue({
+    duration: 1.0,
+    numberOfChannels: 2,
+    sampleRate: 44100,
+    getChannelData: jest.fn().mockReturnValue(new Float32Array(44100))
+  })
+}
+
+// グローバルなAudioContextをモック
+declare const global: { AudioContext: jest.Mock }
+global.AudioContext = jest.fn().mockImplementation(() => mockAudioContext)
 
 // WaveformDisplayコンポーネントをモック
 jest.mock('@/components/WaveformDisplay.vue', () => ({
@@ -53,7 +92,7 @@ describe('AudioPlayer.vue', () => {
   })
 
   it('初期状態でマスターボリュームノブが表示される', () => {
-    const masterVolumeKnob = wrapper.findAllComponents(Knob).find(knob => 
+    const masterVolumeKnob = wrapper.findAllComponents(Knob).find((knob: VueWrapper<any>) => 
       knob.props('label') === 'Master'
     )
     expect(masterVolumeKnob).toBeTruthy()
@@ -61,12 +100,12 @@ describe('AudioPlayer.vue', () => {
 
   it('各サンプルのノブが正しく表示される', () => {
     const knobs = wrapper.findAllComponents(Knob)
-    expect(knobs).toHaveLength(6) // マスター + サンプル1のGain + サンプル2のGain/Timing + サンプル3のGain/Timing
+    expect(knobs).toHaveLength(7) // マスター + サンプル1のGain/Filter + サンプル2のGain/Timing + サンプル3のGain/Timing
   })
 
   it('サンプル3のノブは初期状態で無効化されている', () => {
     // サンプル3のコンテナを探す
-    const sample3Container = wrapper.findAll('.sample-container').find(container => 
+    const sample3Container = wrapper.findAll('.sample-container').find((container: DOMWrapper<Element>) => 
       container.find('h3').text() === 'サンプル3'
     )
     
