@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">55.22% </span>
+                <span class="strong">54.26% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>185/335</span>
+                <span class='fraction'>178/328</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">71.29% </span>
+                <span class="strong">71.14% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>149/209</span>
+                <span class='fraction'>143/201</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">38.35% </span>
+                <span class="strong">36.61% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>28/73</span>
+                <span class='fraction'>26/71</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">55.79% </span>
+                <span class="strong">54.8% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>178/319</span>
+                <span class='fraction'>171/312</span>
             </div>
         
             
@@ -732,23 +732,10 @@
 <a name='L667'></a><a href='#L667'>667</a>
 <a name='L668'></a><a href='#L668'>668</a>
 <a name='L669'></a><a href='#L669'>669</a>
-<a name='L670'></a><a href='#L670'>670</a>
-<a name='L671'></a><a href='#L671'>671</a>
-<a name='L672'></a><a href='#L672'>672</a>
-<a name='L673'></a><a href='#L673'>673</a>
-<a name='L674'></a><a href='#L674'>674</a>
-<a name='L675'></a><a href='#L675'>675</a>
-<a name='L676'></a><a href='#L676'>676</a>
-<a name='L677'></a><a href='#L677'>677</a>
-<a name='L678'></a><a href='#L678'>678</a>
-<a name='L679'></a><a href='#L679'>679</a>
-<a name='L680'></a><a href='#L680'>680</a>
-<a name='L681'></a><a href='#L681'>681</a>
-<a name='L682'></a><a href='#L682'>682</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L670'></a><a href='#L670'>670</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">65x</span>
@@ -1212,18 +1199,6 @@
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1425,30 +1400,31 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * @file AudioPlayer.vue
  * @brief 音声ファイルの再生と波形表示を行うVueコンポーネント
  * @details
  * - 3つの音声ファイルを同時に再生可能（サンプル3はEnable/Disable機能付き）
  * - 再生ボタン付き（全てのサンプルを同時に制御、常に最初から再生）
- * - エラー処理とエラーメッセージ表示機能
- * - ローディング状態の表示機能<span class="fstat-no" title="function not covered" ><span class="branch-1 cbranch-no" title="branch not covered" ></span></span>
- * - 各<span class="cstat-no" title="statement not covered" >サンプルのノブによる音量調整機能</span>（ダブルクリックで初期値にリセット）
+ * - エラー処理とエラーメッセージ表示機能<span class="fstat-no" title="function not covered" ><span class="branch-1 cbranch-no" title="branch not covered" ></span></span>
+ * - ロ<span class="cstat-no" title="statement not covered" >ーディング状態の表示機能</span>
+ * - 各サンプルのノブによる音量調整機能（ダブルクリックで初期値にリセット）
  * - スペースキーでの再生制御機能
  * - マスターボリューム制御機能
  * - マスターボリュームの音量メーター表示機能（危険域の表示付き）
  * - サンプル2と3のタイミング調整機能（0秒から+0.5秒）
  * @limitations
  * - ファイル名は固定（sample1.wav, sample2.wav, sample3.wav）
- */
-<span class="cstat-no" title="statement not covered" ></span>
+ */<span class="cstat-no" title="statement not covered" ></span>
+&nbsp;
 &lt;template&gt;
-  &lt;div&gt;
-    &lt;h2&gt;サンプル音<span class="fstat-no" title="function not covered" >声プレイヤー&lt;/h</span>2&gt;
-    &lt;d<span class="cstat-no" title="statement not covered" >iv v-if="error" class="error-message"&gt;</span>
-      {{<span class="cstat-no" title="statement not covered" > error }}</span>
-    &lt;/div&gt;
-    &lt;div<span class="cstat-no" title="statement not covered" > v-if="isLo</span>ading" class="loading-message"&gt;
+  &lt;div&gt;<span class="fstat-no" title="function not covered" ></span>
+    &lt;h<span class="cstat-no" title="statement not covered" >2&gt;サンプル音声プレイヤー&lt;/h2&gt;</span>
+    &lt;div<span class="cstat-no" title="statement not covered" > v-if="error" class="error-messag</span>e"&gt;
+      {{ error }}
+    &lt;/di<span class="cstat-no" title="statement not covered" >v&gt;</span>
+    &lt;div v-if="isLoading" class="loading-message"&gt;
       読み込み中...
     &lt;/div&gt;
 &nbsp;
@@ -1460,8 +1436,8 @@
         :audio-blob="audioBlobs[1]"
         @error="handleWaveformError"
         @loading="handleWaveformLoading"
-        @ready="handleWaveformReady"
-      /&gt;<span class="cstat-no" title="statement not covered" ><span class="missing-if-branch" title="if path not taken" >I</span></span>
+        <span class="missing-if-branch" title="if path not taken" >I</span>@ready="handle<span class="cstat-no" title="statement not covered" >WaveformRead</span>y"
+      /&gt;
       &lt;div class="knob-row"&gt;
         &lt;Knob
           label="Gain"
@@ -1474,20 +1450,20 @@
           :sub-label="filterSubLabel"
           :value="filterAngles[0]"
           :min="-135"
-          :max="135"
-          :rotation-range="270"<span class="fstat-no" title="function not covered" ></span>
-<span class="cstat-no" title="statement not covered" >          @update</span>:value="(value) =&gt; updateFilter(0, value)"
+          :max="135"<span class="fstat-no" title="function not covered" ></span>
+<span class="cstat-no" title="statement not covered" >          :rotati</span>on-range="270"
+          @update:value="(value) =&gt; updateFilter(0, value)"
           @reset="resetFilter(0)"
         /&gt;
       &lt;/div&gt;
     &lt;/div&gt;
 &nbsp;
     &lt;!-- サンプル2 --&gt;
-    &lt;div class="sample-container"&gt;
-    <span class="missing-if-branch" title="if path not taken" >I</span>  &lt;h3&gt;サ<span class="cstat-no" title="statement not covered" >ンプル2&lt;/h3&gt;</span>
-      &lt;WaveformDisplay<span class="branch-1 cbranch-no" title="branch not covered" ></span>
-      <span class="missing-if-branch" title="if path not taken" >I</span>  v-if="audioBlob<span class="branch-1 cbranch-no" title="branch not covered" >s[2]"<span class="cstat-no" title="statement not covered" ><span class="branch-2 cbranch-no" title="branch not covered" ></span></span></span>
-      <span class="missing-if-branch" title="if path not taken" >I</span>  :audio-blob=<span class="cstat-no" title="statement not covered" >"audioBlobs[2]"</span>
+    <span class="missing-if-branch" title="if path not taken" >I</span>&lt;div cl<span class="cstat-no" title="statement not covered" >ass="sample-container"&gt;</span>
+      &lt;h3&gt;サンプル2&lt;/h3&gt;<span class="branch-1 cbranch-no" title="branch not covered" ></span>
+      <span class="missing-if-branch" title="if path not taken" >I</span>&lt;WaveformDisplay<span class="cstat-no" title="statement not covered" ><span class="branch-2 cbranch-no" title="branch not covered" ><span class="branch-1 cbranch-no" title="branch not covered" ></span></span></span>
+      <span class="missing-if-branch" title="if path not taken" >I</span>  v-if="audioB<span class="cstat-no" title="statement not covered" >lobs[2]"</span>
+        :audio-blob="audioBlobs[2]"
         @error="handleWaveformError"
         @loading="handleWaveformLoading"
         @ready="handleWaveformReady"
@@ -1498,16 +1474,16 @@
           :value="volumes[2]"
           @update:value="(value) =&gt; updateVolume(2, value)"
           @reset="resetVolume(2)"
-        /&gt;
-<span class="branch-3 cbranch-no" title="branch not covered" >        &lt;Knob</span>
+<span class="branch-3 cbranch-no" title="branch not covered" >        /&gt;</span>
+        &lt;K<span class="cstat-no" title="statement not covered" >nob</span>
 <span class="cstat-no" title="statement not covered" >          label="Filt</span>er"
-<span class="cstat-no" title="statement not covered" >          :sub-label=</span>"filterSubLabels[1]"
+<span class="cstat-no" title="statement not covered" >          :sub-label</span>="filterSubLabels[1]"
 <span class="cstat-no" title="statement not covered" >          :value="fi</span>lterAngles[1]"
-<span class="cstat-no" title="statement not covered" >          :min="-135</span>"
-<span class="branch-4 cbranch-no" title="branch not covered" >          :max="135"</span>
-<span class="cstat-no" title="statement not covered" >          :rotation-range="2</span>70"
-<span class="cstat-no" title="statement not covered" >          @update:value=</span>"(value) =&gt; updateFilter(1, value)"
-<span class="cstat-no" title="statement not covered" >          @reset="re</span>setFilter(1)"
+<span class="branch-4 cbranch-no" title="branch not covered" >          :min="-135"</span>
+<span class="cstat-no" title="statement not covered" >          :max="135"</span>
+<span class="cstat-no" title="statement not covered" >          :rotation-rang</span>e="270"
+<span class="cstat-no" title="statement not covered" >          @update:va</span>lue="(value) =&gt; updateFilter(1, value)"
+          @reset="resetFilter(1)"
         /&gt;
         &lt;Knob
           label="Timing"
@@ -1516,31 +1492,31 @@
           :max="0.5"
           :rotation-range="270"
           @update:value="(value) =&gt; updateTiming(2, value)"
-          @reset="resetTiming(2)"
-        /&gt;<span class="branch-1 cbranch-no" title="branch not covered" ><span class="missing-if-branch" title="if path not taken" >I</span></span>
+          <span class="missing-if-branch" title="if path not taken" >I</span>@reset="resetTiming<span class="branch-1 cbranch-no" title="branch not covered" >(2)"</span>
+        /&gt;<span class="cstat-no" title="statement not covered" ></span>
       &lt;/div&gt;<span class="cstat-no" title="statement not covered" ></span>
     &lt;/div&gt;<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" ></span>
-    &lt;!-- サンプル3 --&gt;
-    &lt;div c<span class="missing-if-branch" title="if path not taken" >I</span>lass="sample-container"&gt;
+&nbsp;
+    &lt;!-- サ<span class="missing-if-branch" title="if path not taken" >I</span>ンプル3 --&gt;
+    &lt;div cla<span class="cstat-no" title="statement not covered" >ss="sample-conta</span>iner"&gt;
       &lt;h3&gt;サン<span class="cstat-no" title="statement not covered" >プル3&lt;/h3&gt;</span>
-      &lt;Wavef<span class="cstat-no" title="statement not covered" >ormDisplay</span>
-        v-if<span class="cstat-no" title="statement not covered" >="audio</span>Blobs[3]"
-        :audio-blob="audioBlobs[3]"
-        @e<span class="missing-if-branch" title="if path not taken" >I</span>rror="hand<span class="cstat-no" title="statement not covered" >leWaveformErr</span>or"
+      &lt;Wavef<span class="cstat-no" title="statement not covered" >ormDisp</span>lay
+        v-if="audioBlobs[3]"
+        :a<span class="missing-if-branch" title="if path not taken" >I</span>udio-blob=<span class="cstat-no" title="statement not covered" >"audioBlobs[3</span>]"
+        @error="handleWaveformError"
         @loading="handleWaveformLoading"
         @ready="handleWaveformReady"
       /&gt;
       &lt;div class="knob-row"&gt;
-        &lt;div class="toggle-container"&gt;
-<span class="cstat-no" title="statement not covered" >          &lt;label cl</span>ass="toggle-switch"&gt;
-<span class="cstat-no" title="statement not covered" >            &lt;</span>input type="checkbox" v-model="isSample3Enabled"&gt;
+<span class="cstat-no" title="statement not covered" >        &lt;div class=</span>"toggle-container"&gt;
+<span class="cstat-no" title="statement not covered" >          &lt;la</span>bel class="toggle-switch"&gt;
+            &lt;input type="checkbox" v-model="isSample3Enabled"&gt;
             &lt;span class="toggle-slider"&gt;&lt;/span&gt;
           &lt;/label&gt;
-          &lt;div class="toggle-label"&gt;Enable&lt;/div&gt;
-    <span class="missing-if-branch" title="if path not taken" >I</span>    &lt;/div&gt;<span class="cstat-no" title="statement not covered" ></span>
-        &lt;Knob
-          label="Gain"<span class="branch-1 cbranch-no" title="branch not covered" ></span>
+    <span class="missing-if-branch" title="if path not taken" >I</span>      &lt;div clas<span class="cstat-no" title="statement not covered" >s="toggle-lab</span>el"&gt;Enable&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;Knob<span class="branch-1 cbranch-no" title="branch not covered" ></span>
+          label="Gain"
           :value="volumes[3]"
           :is-disabled="!isSample3Enabled"
           @update:value="(value) =&gt; updateVolume(3, value)"
@@ -1599,19 +1575,19 @@
         &lt;VolumeMeter 
           :level="volumeLevel"
           :is-playing="isPlaying"
-        /&gt;
-      <span class="missing-if-branch" title="else path not taken" >E</span>&lt;/div&gt;
-    &lt;/<span class="cstat-no" title="statement not covered" >div&gt;<span class="cstat-no" title="statement not covered" ></span></span>
-  &lt;/di<span class="cstat-no" title="statement not covered" >v&gt;</span>
+      <span class="missing-if-branch" title="else path not taken" >E</span>  /&gt;
+<span class="cstat-no" title="statement not covered" >      &lt;/div&gt;<span class="cstat-no" title="statement not covered" ></span></span>
+    &lt;/<span class="cstat-no" title="statement not covered" >div&gt;</span>
+  &lt;/div&gt;
 &lt;/template&gt;
 &nbsp;
 &lt;script lang="ts"&gt;
 import { defineComponent, ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import { AudioEngine } from '../core/AudioEngine'
-import WaveformDisplay from './WaveformDisplay.vue'
-import V<span class="missing-if-branch" title="else path not taken" >E</span>olumeMeter from './VolumeMeter.vue'
-import K<span class="cstat-no" title="statement not covered" >nob from './Kno<span class="cstat-no" title="statement not covered" >b.vue'</span></span>
-import {<span class="cstat-no" title="statement not covered" > Filter } fro</span>m '@/effects/Filter'
+import W<span class="missing-if-branch" title="else path not taken" >E</span>aveformDisplay from './WaveformDisplay.vue'
+import V<span class="cstat-no" title="statement not covered" >olumeMeter from<span class="cstat-no" title="statement not covered" > './VolumeMet</span></span>er.vue'
+import K<span class="cstat-no" title="statement not covered" >nob from './K</span>nob.vue'
+import { Filter } from '@/effects/Filter'
 import { EffectChain } from '@/effects/EffectChain'
 import { BaseEffect } from '@/effects/base/BaseEffect'
 &nbsp;
@@ -1630,9 +1606,9 @@ export default defineComponent({
     const isPlaying = ref(false)
     const errorMessage = ref&lt;string | null&gt;(null)
     const isLoading = ref(false)
-    const volumes = ref&lt;{ [key: number]: number }&gt;({
-      1: 0.8,<span class="missing-if-branch" title="if path not taken" >I</span>
-      2: 0.8,<span class="cstat-no" title="statement not covered" ></span>
+    const volu<span class="missing-if-branch" title="if path not taken" >I</span>mes = ref&lt;{ [key: number]: number }&gt;({
+      1: 0.8,<span class="cstat-no" title="statement not covered" ></span>
+      2: 0.8,
       3: 0.8
     })
     const masterVolume = ref(0.8)
@@ -1649,164 +1625,164 @@ export default defineComponent({
     const volumeLevel = ref(-60)
     const meterInterval = ref&lt;number | null&gt;(null)
     const filters = ref&lt;Filter[]&gt;([])
-    const effectChains = ref&lt;EffectChain[]&gt;([])
-    const filterAngles = ref&lt;number[]&gt;([0, <span class="fstat-no" title="function not covered" >0,</span> 0, 0])  // サンプル1,2,3とマスター用
-<span class="cstat-no" title="statement not covered" ></span>
+    const effectChains = ref&lt;EffectChain[]&gt;<span class="fstat-no" title="function not covered" >([</span>])
+    const filter<span class="cstat-no" title="statement not covered" >Angles = ref&lt;number[]&gt;([0</span>, 0, 0, 0])  // サンプル1,2,3とマスター用
+&nbsp;
     // フィルターのサブラベルを計算
-    const filterSubLabel = computed(() =&gt; {
-      if (!f<span class="branch-8 cbranch-no" title="branch not covered" >ilters.value[0]) return 'BYPASS'</span>
-      const by<span class="cstat-no" title="statement not covered" >passRange = filters.v</span>alue[0].getBypassAngleRange()
-      if (Math<span class="cstat-no" title="statement not covered" >.abs(filterAngles.value[0]) &lt;= bypassRange) </span>return 'BYPASS'
-      if (filt<span class="cstat-no" title="statement not covered" >erAngles.value[0] &gt; 0) re</span>turn 'HP'
+    const fi<span class="branch-8 cbranch-no" title="branch not covered" >lterSubLabel = computed(() =&gt; {</span>
+      if (!fil<span class="cstat-no" title="statement not covered" >ters.value[0]) return</span> 'BYPASS'
+      const by<span class="cstat-no" title="statement not covered" >passRange = filters.value[0].getBypassAngleR</span>ange()
+      if (Math<span class="cstat-no" title="statement not covered" >.abs(filterAngles.value[0</span>]) &lt;= bypassRange) return 'BYPASS'
+      if (filterAngles.value[0] &gt; 0) return 'HP'
       return 'LP'
     })
 &nbsp;
     // 各フィルターのサブラベルを計算
     const filterSubLabels = computed(() =&gt; {
-      return filterAngles.value.map((angle, index) =&gt; {
-        if (!filters.v<span class="fstat-no" title="function not covered" >al</span>ue[index]) return 'BYPASS'
-<span class="cstat-no" title="statement not covered" >        const bypassRange = filters.value[index].getBypass</span>AngleRange()
-<span class="cstat-no" title="statement not covered" >        if (Math.abs(angle) &lt;= bypassRange) return 'BYPASS'</span>
-<span class="cstat-no" title="statement not covered" >        if (angle &gt; 0) return '</span>HP'
-        return 'LP'
-      })<span class="fstat-no" title="function not covered" ></span>
-    })<span class="cstat-no" title="statement not covered" ></span>
+      return filterAng<span class="fstat-no" title="function not covered" >le</span>s.value.map((angle, index) =&gt; {
+<span class="cstat-no" title="statement not covered" >        if (!filters.value[index]) return 'BYPASS'</span>
+<span class="cstat-no" title="statement not covered" >        const bypassRange = filters.value[index].getBypassAngleRange()</span>
+<span class="cstat-no" title="statement not covered" >        if (Math.abs(angle) &lt;= </span>bypassRange) return 'BYPASS'
+        if (angle &gt; 0) return 'HP'
+        return 'LP'<span class="fstat-no" title="function not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      })</span>
+    })
+<span class="fstat-no" title="function not covered" ></span>
+    //<span class="cstat-no" title="statement not covered" > メソッドの定義</span>
+    const loadAudioFiles = async (): Promise&lt;void&gt; =&gt; {
+      try {<span class="fstat-no" title="function not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        isLoading.value = true</span>
 &nbsp;
-    // メソッドの定義<span class="fstat-no" title="function not covered" ></span>
-    co<span class="cstat-no" title="statement not covered" >nst loadAudioFiles = asy</span>nc (): Promise&lt;void&gt; =&gt; {
-      try {
-        isLoading.value = true<span class="fstat-no" title="function not covered" ></span>
-<span class="cstat-no" title="statement not covered" ></span>
-        for (let sampleNumber of [1, 2, 3]) {
-          const response<span class="fstat-no" title="function not covered" > =</span> await fetch(`/sample${sampleNumber}.wav`)
+        for (let sampleN<span class="fstat-no" title="function not covered" >um</span>ber of [1, 2, 3]) {
+<span class="cstat-no" title="statement not covered" >          const response = aw</span>ait fetch(`/sample${sampleNumber}.wav`)
 <span class="cstat-no" title="statement not covered" >          if (!response.ok) {</span>
-<span class="cstat-no" title="statement not covered" >            throw new Error(`HT</span>TP error! status: ${response.status}`)
+            throw new Error(`HTTP error! status: ${response.status}`)
           }
-          const blob = await response.blob()
-          audioBlobs.value[sampleNumb<span class="fstat-no" title="function not covered" >er</span>] = blob
-      <span class="cstat-no" title="statement not covered" >    </span>
-          // AudioEngineで<span class="cstat-no" title="statement not covered" >音声データを読み込み</span>
-<span class="cstat-no" title="statement not covered" >          const arrayBuffer = await blob.arrayBuffer()</span>
-<span class="cstat-no" title="statement not covered" >          await audioEngine.loadSam</span>ple(sampleNumber.toString(), arrayBuffer)
-        }
-<span class="cstat-no" title="statement not covered" ></span>
-        // 再生終了時のコールバックを設定
-        au<span class="cstat-no" title="statement not covered" >dioEngine.setOnPlaybackEnd(() =&gt; {</span>
+          const blob = await response<span class="fstat-no" title="function not covered" >.b</span>lob()
+<span class="cstat-no" title="statement not covered" >          audioBlobs.value[sampleNumber] = blob</span>
+          <span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >          // AudioEngineで音声データを読み込み</span>
+<span class="cstat-no" title="statement not covered" >          const arrayBuffer = await</span> blob.arrayBuffer()
+          await audioEngine.loadSample(sampleNumber.toString(), arrayBuffer)
+        }<span class="cstat-no" title="statement not covered" ></span>
+&nbsp;
+        //<span class="cstat-no" title="statement not covered" > 再生終了時のコールバックを設定</span>
+        audioEngine.setOnPlaybackEnd(() =&gt; {
           isPlaying.value = false
-        })
-      } <span class="cstat-no" title="statement not covered" >catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >        })</span>
+      } catch (error) {
         handleError('音声ファイルの読み込みに失敗しました', error as Error)
-      }
-    }<span class="fstat-no" title="function not covered" ></span>
-<span class="cstat-no" title="statement not covered" ></span>
-    cons<span class="cstat-no" title="statement not covered" >t handleError = (</span>message: string, err: Error): void =&gt; {
-      co<span class="cstat-no" title="statement not covered" >nsole.error('Audio Playe</span>r Error:', message, err)
-      errorMessage.value = `${message}: ${err.message}`
-      isLoading.value = <span class="cstat-no" title="statement not covered" >false</span>
+      }<span class="fstat-no" title="function not covered" ></span>
     }<span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" ></span>
-    const handleWaveformError = (error: string): void =&gt; {
-      handleError('波形表示でエラーが発生しました', new Error(error))
-    }<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" ></span>
-    const <span class="cstat-no" title="statement not covered" >handleWaveformLoading = (): void</span> =&gt; {
-      isLoading.value = true
-    }<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" ></span>
-    const handleWaveformReady = (): void =&gt; {
-      isLoading.value = false
+    cons<span class="cstat-no" title="statement not covered" >t handleError = (message</span>: string, err: Error): void =&gt; {
+      console.error('Audio Player Error:', message, err)
+      errorMessage.value<span class="cstat-no" title="statement not covered" > = `${messa</span>ge}: ${err.message}`
+      is<span class="cstat-no" title="statement not covered" >Loading.value = false</span>
     }<span class="cstat-no" title="statement not covered" ></span>
 &nbsp;
-    cons<span class="cstat-no" title="statement not covered" >t resetPlayback = <span class="fstat-no" title="function not covered" >()</span>: void =&gt; {</span>
-      audi<span class="cstat-no" title="statement not covered" >oEngine.stopAll()</span>
-      isPlaying.value = false
-    }
+    const handleWaveformError = (error: string): void =&gt; {
+      handleError('波形表<span class="cstat-no" title="statement not covered" >示でエ</span>ラーが発生しました', new Error(error))
+    }<span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" ></span>
-    // サ<span class="cstat-no" title="statement not covered" >ンプルの接続を管理する関数</span>
+    const handleWaveformLoading = (): void =&gt; {
+      is<span class="cstat-no" title="statement not covered" >Loading.value = true</span>
+    }<span class="cstat-no" title="statement not covered" ></span>
+&nbsp;
+    const handleWaveformReady = (): void =&gt; {
+      is<span class="cstat-no" title="statement not covered" >Loading.value = false</span>
+    }
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
+    const <span class="cstat-no" title="statement not covered" >resetPlayback = (): void =&gt; {</span>
+      audioEngine.stopAll()
+      isPlaying.value = false
+    }<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" ></span>
+    // サンプルの接続を管理する関数
     const connectSampleToEffectChain = (sampleNumber: number) =&gt; {
-      try {
-        const sampleGain<span class="fstat-no" title="function not covered" > =</span> audioEngine.getSampleGain(sampleNumber.toString())
+      try {<span class="fstat-no" title="function not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        const sampleGain = audioEngine.getSampleGain(sampleNumber.toString())</span>
 <span class="cstat-no" title="statement not covered" >        if (sampleGain) {</span>
-<span class="cstat-no" title="statement not covered" >          sampleGain.disconnect(</span>)
-<span class="cstat-no" title="statement not covered" >          // サンプルの出力を対応する</span>EffectChainに接続
+<span class="cstat-no" title="statement not covered" >          sampleGain.disc</span>onnect()
+          // サンプルの出力を対応するEffectChainに接続
           sampleGain.connect(effectChains.value[sampleNumber - 1].getInput())
-          // EffectChainの出力をマスターのEffectChainに接続
-          effectChains.value<span class="fstat-no" title="function not covered" >[s</span>ampleNumber - 1].getOutput().connect(effectChains.value[3].getInput())
+          // EffectChainの出力を<span class="fstat-no" title="function not covered" >マス</span>ターのEffectChainに接続
+<span class="cstat-no" title="statement not covered" >          effectChains.value[sampleNumber - 1].getOutput().connect(effectChains.value[3].getInput())</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
       } <span class="cstat-no" title="statement not covered" >catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >        handleError(`サンプル${sampleNumber}の接</span>続に失敗しました`, error as Error)
-      }
-    }<span class="cstat-no" title="statement not covered" ></span>
+        handleError(`サンプル${sampleNumber}の接続に失敗しました`, error as Error)
+      }<span class="cstat-no" title="statement not covered" ></span>
+    }
 &nbsp;
-    const playFromStart = (): void =&gt; {
-      try {<span class="fstat-no" title="function not covered" ></span>
+    const playFromStart<span class="fstat-no" title="function not covered" > =</span> (): void =&gt; {
+<span class="cstat-no" title="statement not covered" >      try {</span>
 <span class="cstat-no" title="statement not covered" >        resetPlayback()</span>
 <span class="cstat-no" title="statement not covered" >        isPlaying.value = true</span>
-        <span class="cstat-no" title="statement not covered" ></span>
-        // 再生するサンプルIDの配列を作成
-<span class="cstat-no" title="statement not covered" >        const sampleIds = ['1', '2']</span>
+        
+<span class="cstat-no" title="statement not covered" >        // 再生するサンプルIDの配列を作成</span>
+        const sampleIds = ['1', '2']
         if (isSample3Enabled.value) {
-          sampleIds.push('3')
-        }<span class="fstat-no" title="function not covered" ></span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        // タイミング情報を作成</span>
-<span class="cstat-no" title="statement not covered" >        const timings: { [key: string]: number } = {}</span>
-        if (timing.value[2] !== 0) {
-<span class="cstat-no" title="statement not covered" >          timings['2'] = timing.value[2]</span>
-        }
-        if (timing.value[3] !== 0) {
-          timings['3'] <span class="fstat-no" title="function not covered" >= </span>timing.value[3]
+          sampleIds.pu<span class="fstat-no" title="function not covered" >sh</span>('3')
 <span class="cstat-no" title="statement not covered" >        }</span>
 <span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        // タイミング情報を作成</span>
+        const timings: { [key: string]: number } = {}
+<span class="cstat-no" title="statement not covered" >        if (timing.value[2] !== 0) {</span>
+          timings['2'] = timing.value[2]
+        }
+        if (timing.valu<span class="fstat-no" title="function not covered" >e[</span>3] !== 0) {
+<span class="cstat-no" title="statement not covered" >          timings['3'] = timing.value[3]</span>
+        }<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >        // AudioEngineを使って再生</span>
-<span class="cstat-no" title="statement not covered" >        audioEngine.playSamples(sampleIds, ti</span>mings)
-&nbsp;
-<span class="cstat-no" title="statement not covered" >        // 各サンプルをEffectChainに接続</span>
+        audioEngine.playSamples(sampleIds, timings)
+<span class="cstat-no" title="statement not covered" ></span>
+        // 各サンプルをEffectChainに接続
         sampleIds.forEach(sampleId =&gt; {
-          connectSampleToEffectChain(parseInt(sampleId))
-        })<span class="fstat-no" title="function not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >        handleError('再生に失敗しました', error as E</span>rror)
-<span class="cstat-no" title="statement not covered" >        isPlaying.value = false</span>
+          connectSampl<span class="fstat-no" title="function not covered" >eT</span>oEffectChain(parseInt(sampleId))
+<span class="cstat-no" title="statement not covered" >        })</span>
+      } <span class="cstat-no" title="statement not covered" >catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >        handleError('再生に失敗しました', error as</span> Error)
+        isPlaying.value = false
+      }<span class="cstat-no" title="statement not covered" ></span>
+    }
+&nbsp;
+    const handleKeyDown = (ev<span class="fstat-no" title="function not covered" >en</span>t: KeyboardEvent): void =&gt; {
+<span class="cstat-no" title="statement not covered" >      if (event.code === 'Space') {</span>
+<span class="cstat-no" title="statement not covered" >        event.preventDefault()</span>
+<span class="cstat-no" title="statement not covered" >        playFromStart()</span>
       }
     }<span class="cstat-no" title="statement not covered" ></span>
 &nbsp;
-    const handleKeyDown = (event: KeyboardEvent): void =&gt; {
-      if (event.code === 'Spa<span class="fstat-no" title="function not covered" >ce</span>') {
-<span class="cstat-no" title="statement not covered" >        event.preventDefault()</span>
-<span class="cstat-no" title="statement not covered" >        playFromStart()</span>
-      }<span class="cstat-no" title="statement not covered" ></span>
-    }
-<span class="cstat-no" title="statement not covered" ></span>
     const resetMasterVolume = (): void =&gt; {
       try {
-        masterVolume.value = 0.8
-        audioEngine.setMast<span class="fstat-no" title="function not covered" >er</span>Volume(0.8)
-<span class="cstat-no" title="statement not covered" >      } catch (error) {<span class="fstat-no" title="function not covered" ></span></span>
-<span class="cstat-no" title="statement not covered" >        handleError('マスターボリュームのリセットに失敗しました', error as Error)</span>
+        masterVolume.value <span class="fstat-no" title="function not covered" >= </span>0.8
+<span class="cstat-no" title="statement not covered" >        audioEngine.setMasterVolume(0.8)<span class="fstat-no" title="function not covered" ></span></span>
+      } <span class="cstat-no" title="statement not covered" >catch (error) {</span>
+        handleError('マス<span class="cstat-no" title="statement not covered" >ターボリュームのリセットに失敗しました', error as Er</span>ror)
       }<span class="cstat-no" title="statement not covered" ></span>
     }<span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" ></span>
-    const <span class="cstat-no" title="statement not covered" >updateTiming = (sampleNumber: number, value: number): void =&gt; {</span>
+    const updateTiming = (sampleNumber: number, value: number): void =&gt; {
       try {
         audioEngine.setTiming(sampleNumber.toString(), value)
         timing.value[sampleNumber] = value
       } catch (error) {
-        handleError('タイミングの調整に失敗しました', error as Error)
-      <span class="missing-if-branch" title="if path not taken" >I</span>}
+      <span class="missing-if-branch" title="if path not taken" >I</span>  handleError('タイミングの調整に失敗しました', error as Error)
+      }<span class="cstat-no" title="statement not covered" ></span>
     }<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" ></span>
+&nbsp;
     const resetTiming = (sampleNumber: number): void =&gt; {
       try {
         timing.value[sampleNumber] = 0
         audioEngine.resetTiming(sampleNumber.toString())
-      } catch (error) {
-<span class="fstat-no" title="function not covered" >        h</span>andleError('タイミングのリセットに失敗しました', error as Error)
-<span class="cstat-no" title="statement not covered" >      }</span>
-    }<span class="cstat-no" title="statement not covered" ></span>
-&nbsp;
-    cons<span class="cstat-no" title="statement not covered" >t updateVolume = (s</span>ampleNumber: number, value: number): void =&gt; {
-      tr<span class="cstat-no" title="statement not covered" >y {</span>
+      }<span class="fstat-no" title="function not covered" > c</span>atch (error) {
+<span class="cstat-no" title="statement not covered" >        handleError('タイミングのリセットに失敗しました', error as Error)</span>
+      }<span class="cstat-no" title="statement not covered" ></span>
+    }
+<span class="cstat-no" title="statement not covered" ></span>
+    cons<span class="cstat-no" title="statement not covered" >t updateVolume = (sampleN</span>umber: number, value: number): void =&gt; {
+      try {
         const volume = value * masterVolume.value
         audioEngine.setSampleVolume(sampleNumber.toString(), volume)
         volumes.value[sampleNumber] = value
@@ -1823,35 +1799,35 @@ export default defineComponent({
         handleError('音量のリセットに失敗しました', error as Error)
       }
     }
-&nbsp;
-    cons<span class="missing-if-branch" title="if path not taken" >I</span>t updateMasterVolume = (value: number): void =&gt; {
+<span class="missing-if-branch" title="if path not taken" >I</span>
+    const <span class="cstat-no" title="statement not covered" >updateMasterVolume = (valu</span>e: number): void =&gt; {
       try <span class="cstat-no" title="statement not covered" >{</span>
-        ma<span class="cstat-no" title="statement not covered" >sterVolume.value = value;</span>
+        masterVolume.value = value;
         audioEngine.setMasterVolume(value);
-      } catch (error) {
-<span class="cstat-no" title="statement not covered" >        handleError('マスターボリュームの更新に失敗しました', error</span> as Error);
+      } <span class="cstat-no" title="statement not covered" >catch (error) {</span>
+        handleError('マスターボリュームの更新に失敗しました', error as Error);
       }
-    }
-&nbsp;
-    // メーターの更新を開始する<span class="fstat-no" title="function not covered" ></span>
-    co<span class="cstat-no" title="statement not covered" >nst startMeterUpdate = (): void =&gt; {</span>
-      me<span class="cstat-no" title="statement not covered" >terInterval.value = window.setInterval(() =&gt; {</span>
-        if<span class="cstat-no" title="statement not covered" > (isPlaying.value) {</span>
-<span class="cstat-no" title="statement not covered" >          const level1 = audioEngine.getSampl</span>eVolume('1')
-          const level2 = audioEngine.getSampleVolume('2')
-          const level3 = isSample3Enabled.value ? audioEngine.getSampleVolume('3') : 0
-<span class="cstat-no" title="statement not covered" >          volumeLevel.value = 20 * Math.log10((</span>level1 + level2 + level3) / 3)
-        }
-      }, 1000 / 60)
     }
 <span class="fstat-no" title="function not covered" ></span>
-    //<span class="cstat-no" title="statement not covered" > メーターの更新を停止する</span>
-    cons<span class="cstat-no" title="statement not covered" >t stopMeterUpdate = (): void =&gt; {</span>
+    //<span class="cstat-no" title="statement not covered" > メーターの更新を開始する</span>
+    cons<span class="cstat-no" title="statement not covered" >t startMeterUpdate = (): void =&gt; {</span>
+      mete<span class="cstat-no" title="statement not covered" >rInterval.value = window.setInterval(() =&gt;</span> {
+        if<span class="cstat-no" title="statement not covered" > (isPlaying.value) {</span>
+          const level1 = audioEngine.getSampleVolume('1')
+          const level2 = audioEngine.getSampleVolume('2')
+<span class="cstat-no" title="statement not covered" >          const level3 = isSample3Enabled.value</span> ? audioEngine.getSampleVolume('3') : 0
+          volumeLevel.value = 20 * Math.log10((level1 + level2 + level3) / 3)
+        }
+      }, 1000 / 60)
+    }<span class="fstat-no" title="function not covered" ></span>
+<span class="cstat-no" title="statement not covered" ></span>
+    // メ<span class="cstat-no" title="statement not covered" >ーターの更新を停止する</span>
+    const <span class="cstat-no" title="statement not covered" >stopMeterUpdate = (): void =&gt; </span>{
       if (<span class="cstat-no" title="statement not covered" >meterInterval.value) {</span>
-        cl<span class="cstat-no" title="statement not covered" >earInterval(meterInterval.value</span>)
+        clearInterval(meterInterval.value)
         meterInterval.value = null
-      }
-    }<span class="cstat-no" title="statement not covered" ></span>
+      }<span class="cstat-no" title="statement not covered" ></span>
+    }
 &nbsp;
     // 再生状態が変更されたときにメーターの更新を制御
     watch(() =&gt; isPlaying.value, (newValue) =&gt; {
@@ -1873,11 +1849,11 @@ export default defineComponent({
           effectChain.addEffect(filter as unknown as BaseEffect)
           filters.value.push(filter)
           effectChains.value.push(effectChain)
-        }
-        <span class="branch-2 cbranch-no" title="branch not covered" ></span>
-        // マスタ<span class="cstat-no" title="statement not covered" >ーのEffectChainを出力に接続</span>
-        effect<span class="cstat-no" title="statement not covered" >Chains.value[3].getOutput().connect(audioE</span>ngine.getContext().destination)
+        }<span class="branch-2 cbranch-no" title="branch not covered" ></span>
         <span class="cstat-no" title="statement not covered" ></span>
+        // マスタ<span class="cstat-no" title="statement not covered" >ーのEffectChainを出力に接続</span>
+        effect<span class="cstat-no" title="statement not covered" >Chains.value[3].getOutput</span>().connect(audioEngine.getContext().destination)
+        
         // サンプル1の出力をEffectChainに接続（既存の動作を維持）
         const sample1Gain = audioEngine.getSampleGain('1')
         if (sample1Gain) {
@@ -1893,13 +1869,13 @@ export default defineComponent({
     const updateFilter = (index: number, angle: number) =&gt; {
       try {
         if (filters.value[index]) {
-        <span class="missing-if-branch" title="else path not taken" >E</span>  filters.value[index].setKnobAngle(angle)
+          filters.value[index].setKnobAngle(angle)
           filterAngles.value[index] = angle
         }
       } catch (error) {
         handleError('フィルターの更新に失敗しました', error as Error)
       }
-    }<span class="missing-if-branch" title="else path not taken" >E</span>
+    }
 &nbsp;
     // フィルターのリセット
     const resetFilter = (index: number) =&gt; {
@@ -1932,20 +1908,8 @@ export default defineComponent({
       window.removeEventListener('keydown', handleKeyDown)
       // メーターの更新を停止
       stopMeterUpdate()
-      // AudioEngineの破棄
-      audioEngine.dispose()
-      // EffectChainの破棄
-      effectChains.value.forEach(chain =&gt; {
-        if (chain &amp;&amp; typeof chain.dispose === 'function') {
-          chain.dispose()
-        }
-      })
-      // フィルターの破棄
-      filters.value.forEach(filter =&gt; {
-        if (filter &amp;&amp; typeof filter.dispose === 'function') {
-          filter.dispose()
-        }
-      })
+      // AudioEngineの破棄を呼び出す（これにより、エフェクトチェーンとフィルターも破棄される）
+      audioEngine.dispose();
     })
 &nbsp;
     return {
@@ -1963,8 +1927,8 @@ export default defineComponent({
       resetVolume,
       resetMasterVolume,
       resetTiming,
-      handleWaveformError,
-      handleWav<span class="branch-0 cbranch-no" title="branch not covered" >eformLoading,</span>
+      handleWav<span class="branch-0 cbranch-no" title="branch not covered" >eformError,</span>
+      handleWaveformLoading,
       handleWaveformReady,
       updateVolume,
       updateTiming,
@@ -1984,9 +1948,9 @@ button {
   padding: 0.5em 1em;
   font-size: 1em;
 }
-&nbsp;
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
 button:disabled {<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
-  opacity: 0.5;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
+  opacity: 0.5;
   cursor: not-allowed;
 }
 &nbsp;
@@ -1994,9 +1958,9 @@ button:disabled {<span class="cstat-no" title="statement not covered" ><span cla
   color: rgb(255, 29, 52);
   background-color: #f8d7da;
   padding: 0.5em;
-  margin-bottom: 1em;
+  margin-bottom: 1em;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
   border-radius: 4px;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
-}<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
+}
 &nbsp;
 .loading-message {
   color: #4361ee;
@@ -2015,9 +1979,9 @@ button:disabled {<span class="cstat-no" title="statement not covered" ><span cla
 &nbsp;
 .sample-container h3 {
   margin-top: 0;
-  margin-bottom: 1em;
+  margin-bottom: 1em;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
 }<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
+&nbsp;
 .control-container {
   margin-top: 1em;
   text-align: center;
@@ -2025,18 +1989,18 @@ button:disabled {<span class="cstat-no" title="statement not covered" ><span cla
 &nbsp;
 .knob-row {
   display: flex;
-  justify-content: center;
+  justify-content: center;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
   gap: 2em;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
-  margin-top: 1em;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
+  margin-top: 1em;
 }
 &nbsp;
 .master-volume-container {
   margin-top: 2em;
   padding: 1em;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 4px;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
   text-align: center;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
-}<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
+}
 &nbsp;
 .master-controls {
   display: flex;
@@ -2056,8 +2020,8 @@ button:disabled {<span class="cstat-no" title="statement not covered" ><span cla
   font-size: 0.8em;
   color: #666;
   margin-top: 0.5em;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
+  text-transform: uppercase;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
+  letter-spacing: 0.1em;
 }
 &nbsp;
 .toggle-switch {
@@ -2068,9 +2032,9 @@ button:disabled {<span class="cstat-no" title="statement not covered" ><span cla
 }
 &nbsp;
 .toggle-switch input {
-  opacity: 0;
+  opacity: 0;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
   width: 0;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
-  height: 0;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
+  height: 0;
 }
 &nbsp;
 .toggle-slider {
@@ -2079,9 +2043,9 @@ button:disabled {<span class="cstat-no" title="statement not covered" ><span cla
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: 0;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
   background-color: #ccc;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
-  transition: .4s;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
+  transition: .4s;
   border-radius: 20px;
 }
 &nbsp;
@@ -2089,9 +2053,9 @@ button:disabled {<span class="cstat-no" title="statement not covered" ><span cla
   position: absolute;
   content: "";
   height: 16px;
-  width: 16px;
+  width: 16px;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
   left: 2px;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
-  bottom: 2px;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
+  bottom: 2px;
   background-color: white;
   transition: .4s;
   border-radius: 50%;
@@ -2099,13 +2063,13 @@ button:disabled {<span class="cstat-no" title="statement not covered" ><span cla
 &nbsp;
 input:checked + .toggle-slider {
   background-color: #4361ee;
-}
-<span class="fstat-no" title="function not covered" ></span>
-input:checked + .toggle-slider:befo<span class="cstat-no" title="statement not covered" >re </span>{
-  transform: translateX(<span class="cstat-no" title="statement not covered" >20px);<span class="cstat-no" title="statement not covered" ></span></span>
-}<span class="cstat-no" title="statement not covered" ></span>
-&lt;/style&gt;
+}<span class="fstat-no" title="function not covered" ></span>
 <span class="cstat-no" title="statement not covered" ></span>
+input:checked + .toggle-<span class="cstat-no" title="statement not covered" >slider:before <span class="cstat-no" title="statement not covered" >{</span></span>
+  transform: translateX(20px<span class="cstat-no" title="statement not covered" >);</span>
+}
+&lt;/style&gt;<span class="cstat-no" title="statement not covered" ></span>
+&nbsp;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -2113,7 +2077,7 @@ input:checked + .toggle-slider:befo<span class="cstat-no" title="statement not c
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-10T09:22:27.553Z
+                at 2025-05-10T09:30:06.412Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

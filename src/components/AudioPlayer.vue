@@ -505,20 +505,8 @@ export default defineComponent({
       window.removeEventListener('keydown', handleKeyDown)
       // メーターの更新を停止
       stopMeterUpdate()
-      // AudioEngineの破棄
-      audioEngine.dispose()
-      // EffectChainの破棄
-      effectChains.value.forEach(chain => {
-        if (chain && typeof chain.dispose === 'function') {
-          chain.dispose()
-        }
-      })
-      // フィルターの破棄
-      filters.value.forEach(filter => {
-        if (filter && typeof filter.dispose === 'function') {
-          filter.dispose()
-        }
-      })
+      // AudioEngineの破棄を呼び出す（これにより、エフェクトチェーンとフィルターも破棄される）
+      audioEngine.dispose();
     })
 
     return {

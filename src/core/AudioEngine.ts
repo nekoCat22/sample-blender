@@ -8,7 +8,12 @@
  * - エラー処理の統一
  * - サンプルの再生タイミング制御
  * - 再生終了イベントの通知
+ * - エフェクトチェーンとフィルターの管理
  */
+
+import { EffectChain } from '@/effects/EffectChain'
+import { Filter } from '@/effects/Filter'
+import { BaseEffect } from '@/effects/base/BaseEffect'
 
 export class AudioEngine {
   private context: AudioContext;
@@ -24,6 +29,8 @@ export class AudioEngine {
   private sampleStartTimes: Map<string, number> = new Map();
   private onPlaybackEndCallback: (() => void) | null = null;
   private activeSampleCount = 0;
+  private effectChains: EffectChain[] = [];
+  private filters: Filter[] = [];
 
   /**
    * AudioEngineのコンストラクタ
@@ -122,13 +129,32 @@ export class AudioEngine {
     if (!this.isInitialized) {
       return;
     }
+
+    // エフェクトチェーンを破棄
+    this.effectChains.forEach(chain => {
+      if (chain && typeof chain.dispose === 'function') {
+        chain.dispose();
+      }
+    });
+    this.effectChains = [];
+
+    // フィルターを破棄
+    this.filters.forEach(filter => {
+      if (filter && typeof filter.dispose === 'function') {
+        filter.dispose();
+      }
+    });
+    this.filters = [];
+
     // 音声コンテキストを破棄する前に、すべての接続を切断
     this.masterGain.disconnect();
     this.sampleGains.forEach(gain => gain.disconnect());
+
     // 音声コンテキストを破棄
     if (this.context.state !== 'closed') {
       await this.context.close();
     }
+
     // 初期化フラグをリセット
     this.isInitialized = false;
   }
@@ -425,5 +451,29 @@ export class AudioEngine {
       throw new Error('AudioEngineが初期化されていません');
     }
     return this.sampleGains.get(sampleId);
+  }
+
+  /**
+   * エフェクトチェーンを追加
+   * @param {EffectChain} effectChain - 追加するエフェクトチェーン
+   * @throws {Error} 初期化されていない場合
+   */
+  public addEffectChain(effectChain: EffectChain): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    this.effectChains.push(effectChain);
+  }
+
+  /**
+   * フィルターを追加
+   * @param {Filter} filter - 追加するフィルター
+   * @throws {Error} 初期化されていない場合
+   */
+  public addFilter(filter: Filter): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    this.filters.push(filter);
   }
 } 
