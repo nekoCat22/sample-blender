@@ -205,9 +205,9 @@ export default defineComponent({
     const errorMessage = ref<string | null>(null)
     const isLoading = ref(false)
     const volumes = ref<{ [key: number]: number }>({
-      1: 0.5,
-      2: 0.5,
-      3: 0.5
+      1: 0.8,
+      2: 0.8,
+      3: 0.8
     })
     const masterVolume = ref(0.8)
     const timing = ref<{ [key: number]: number }>({
@@ -355,9 +355,7 @@ export default defineComponent({
     const resetMasterVolume = (): void => {
       try {
         masterVolume.value = 0.8
-        updateVolume(1, 0.5)
-        updateVolume(2, 0.5)
-        updateVolume(3, 0.5)
+        audioEngine.setMasterVolume(0.8)
       } catch (error) {
         handleError('マスターボリュームのリセットに失敗しました', error as Error)
       }
@@ -393,8 +391,8 @@ export default defineComponent({
 
     const resetVolume = (sampleNumber: number): void => {
       try {
-        volumes.value[sampleNumber] = 0.5
-        updateVolume(sampleNumber, 0.5)
+        volumes.value[sampleNumber] = 0.8
+        updateVolume(sampleNumber, 0.8)
       } catch (error) {
         handleError('音量のリセットに失敗しました', error as Error)
       }

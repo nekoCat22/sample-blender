@@ -160,7 +160,7 @@ export default defineComponent({
       if (props.isDisabled) return;
       event.preventDefault();
       
-      const wheelSensitivity = 0.0001;
+      const wheelSensitivity = 0.0001
       const delta = -event.deltaY * wheelSensitivity * (props.max - props.min);
       let newValue = props.value + delta;
       
