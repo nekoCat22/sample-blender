@@ -8,6 +8,7 @@
  * - 無効化状態のサポート
  * - スムーズなアニメーション
  * - 2行のラベル表示機能（AudioPlayer.vueから渡されたデータを表示するだけ）
+ * - マウスホイールによる値の調整
  */
 
 <template>
@@ -21,6 +22,7 @@
       @mousedown="startDrag"
       @mousemove="handleDrag"
       @mouseup="stopDrag"
+      @wheel="handleWheel"
     >
       <div class="knob-dial" :style="{ transform: `rotate(${rotation}deg)` }"></div>
     </div>
@@ -154,6 +156,18 @@ export default defineComponent({
       stopDrag();
     };
 
+    const handleWheel = (event: WheelEvent) => {
+      if (props.isDisabled) return;
+      event.preventDefault();
+      
+      const wheelSensitivity = 0.0001;
+      const delta = -event.deltaY * wheelSensitivity * (props.max - props.min);
+      let newValue = props.value + delta;
+      
+      newValue = Math.max(props.min, Math.min(props.max, newValue));
+      emit('update:value', parseFloat(newValue.toFixed(3)));
+    };
+
     onBeforeUnmount(() => {
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
@@ -164,7 +178,8 @@ export default defineComponent({
       startDrag,
       handleDrag,
       stopDrag,
-      handleDoubleClick
+      handleDoubleClick,
+      handleWheel
     };
   }
 });
