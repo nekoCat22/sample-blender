@@ -7,6 +7,7 @@
  * - カスタマイズ可能な回転範囲と初期オフセット
  * - 無効化状態のサポート
  * - スムーズなアニメーション
+ * - 2行のラベル表示機能
  */
 
 <template>
@@ -23,7 +24,10 @@
     >
       <div class="knob-dial" :style="{ transform: `rotate(${rotation}deg)` }"></div>
     </div>
-    <div class="knob-label">{{ label }}</div>
+    <div class="knob-labels">
+      <div class="knob-label">{{ label }}</div>
+      <div class="knob-sub-label">{{ subLabel }}</div>
+    </div>
   </div>
 </template>
 
@@ -32,6 +36,7 @@ import { defineComponent, ref, computed, onBeforeUnmount } from 'vue';
 
 interface KnobProps {
   label: string;
+  subLabel: string;
   value: number;
   min: number;
   max: number;
@@ -48,6 +53,10 @@ export default defineComponent({
     label: {
       type: String,
       required: true
+    },
+    subLabel: {
+      type: String,
+      default: ''
     },
     value: {
       type: Number,
@@ -86,6 +95,7 @@ export default defineComponent({
   setup(props: KnobProps, { emit }) {
     const isDragging = ref(false);
     const startY = ref(0);
+    const startX = ref(0);
     const startValue = ref(0);
 
     const rotation = computed(() => {
@@ -103,6 +113,7 @@ export default defineComponent({
       event.preventDefault();
       isDragging.value = true;
       startY.value = event.clientY;
+      startX.value = event.clientX;
       startValue.value = props.value;
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onMouseUp);
@@ -113,10 +124,15 @@ export default defineComponent({
       if (!isDragging.value) return;
       event.preventDefault();
       const deltaY = startY.value - event.clientY;
+      const deltaX = event.clientX - startX.value;
       const sensitivity = 0.005;
-      let newValue = startValue.value + (deltaY * sensitivity * (props.max - props.min));
+      
+      let newValue = startValue.value;
+      newValue += deltaY * sensitivity * (props.max - props.min);
+      newValue += deltaX * sensitivity * (props.max - props.min);
+      
       newValue = Math.max(props.min, Math.min(props.max, newValue));
-      emit('update:value', parseFloat(newValue.toFixed(3))); // 小数点以下3桁でemit
+      emit('update:value', parseFloat(newValue.toFixed(3)));
     };
 
     const stopDrag = () => {
@@ -190,10 +206,23 @@ export default defineComponent({
   border-radius: 2px;
 }
 
+.knob-labels {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2em;
+}
+
 .knob-label {
   font-size: 0.8em;
   color: #666;
-  margin-top: 0.5em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.knob-sub-label {
+  font-size: 0.7em;
+  color: #4361ee;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }

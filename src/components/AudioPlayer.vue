@@ -45,6 +45,7 @@
         />
         <Knob
           label="Filter"
+          :sub-label="filterSubLabel"
           :value="filterAngle"
           :min="-135"
           :max="135"
@@ -148,7 +149,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { defineComponent, ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import { AudioEngine } from '../core/AudioEngine'
 import WaveformDisplay from './WaveformDisplay.vue'
 import VolumeMeter from './VolumeMeter.vue'
@@ -193,6 +194,13 @@ export default defineComponent({
     const filterAngle = ref(0)
     const effectChain = ref<EffectChain | null>(null)
     const filter = ref<Filter | null>(null)
+
+    // フィルターのサブラベルを計算
+    const filterSubLabel = computed(() => {
+      if (filterAngle.value === 0) return 'BYPASS'
+      if (filterAngle.value > 0) return 'HP'
+      return 'LP'
+    })
 
     // メソッドの定義
     const loadAudioFiles = async (): Promise<void> => {
@@ -472,6 +480,7 @@ export default defineComponent({
       updateTiming,
       updateMasterVolume,
       filterAngle,
+      filterSubLabel,
       updateFilter,
       resetFilter
     }

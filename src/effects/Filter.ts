@@ -4,7 +4,7 @@
  * @details
  * - ローパスフィルターとハイパスフィルターの実装
  * - ノブの回転角度に応じてフィルターの種類とカットオフ周波数を制御
- * - 0度の時はフィルターをバイパス
+ * - -3度から3度の範囲ではフィルターをバイパス
  * - 負の角度でローパス、正の角度でハイパスとして動作
  * @limitations
  * - カットオフ周波数は20Hz〜20000Hzの範囲に制限
@@ -23,6 +23,7 @@ export class Filter extends BaseEffect {
   private readonly MAX_FREQUENCY = 20000; // 最高周波数（Hz）
   private readonly MIN_ANGLE = -135;      // 最小角度（度）
   private readonly MAX_ANGLE = 135;       // 最大角度（度）
+  private readonly BYPASS_ANGLE_RANGE = 90; // バイパス範囲（度）
 
   /**
    * @brief フィルターのコンストラクタ
@@ -182,8 +183,8 @@ export class Filter extends BaseEffect {
    * @brief フィルターの設定を更新
    */
   private updateFilter(): void {
-    if (this.knobAngle === 0) {
-      // 0度の時はフィルターをバイパス
+    if (Math.abs(this.knobAngle) <= this.BYPASS_ANGLE_RANGE) {
+      // -90度から90度の範囲ではフィルターをバイパス
       this.setEnabled(false);
       return;
     }
@@ -195,15 +196,15 @@ export class Filter extends BaseEffect {
     if (this.knobAngle < 0) {
       // 負の角度でローパス
       this.setFilterType('lowpass');
-      // ローパスの場合、-135度で最低周波数、-1度で最高周波数になるように
-      const normalizedAngle = (this.knobAngle - this.MIN_ANGLE) / (0 - this.MIN_ANGLE);
+      // ローパスの場合、-135度で最低周波数、-90度で最高周波数になるように
+      const normalizedAngle = (this.knobAngle - this.MIN_ANGLE) / (-this.BYPASS_ANGLE_RANGE - this.MIN_ANGLE);
       const frequency = this.MIN_FREQUENCY + (this.MAX_FREQUENCY - this.MIN_FREQUENCY) * normalizedAngle;
       this.setCutoffFrequency(frequency);
     } else {
       // 正の角度でハイパス
       this.setFilterType('highpass');
-      // ハイパスの場合、1度で最低周波数、135度で最高周波数になるように
-      const normalizedAngle = this.knobAngle / this.MAX_ANGLE;
+      // ハイパスの場合、90度で最低周波数、135度で最高周波数になるように
+      const normalizedAngle = (this.knobAngle - this.BYPASS_ANGLE_RANGE) / (this.MAX_ANGLE - this.BYPASS_ANGLE_RANGE);
       const frequency = this.MIN_FREQUENCY + (this.MAX_FREQUENCY - this.MIN_FREQUENCY) * normalizedAngle;
       this.setCutoffFrequency(frequency);
     }
