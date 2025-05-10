@@ -100,7 +100,7 @@ describe('AudioPlayer.vue', () => {
 
   it('各サンプルのノブが正しく表示される', () => {
     const knobs = wrapper.findAllComponents(Knob)
-    expect(knobs).toHaveLength(7) // マスター + サンプル1のGain/Filter + サンプル2のGain/Timing + サンプル3のGain/Timing
+    expect(knobs).toHaveLength(10) // マスター(Gain/Filter) + サンプル1(Gain/Filter) + サンプル2(Gain/Filter/Timing) + サンプル3(Gain/Filter/Timing)
   })
 
   it('サンプル3のノブは初期状態で無効化されている', () => {
@@ -115,8 +115,8 @@ describe('AudioPlayer.vue', () => {
 
     const sample3Knobs = sample3Container.findAllComponents(Knob)
     
-    // Gainノブとタイミングノブの両方が無効化されていることを確認
-    expect(sample3Knobs).toHaveLength(2)
+    // Gain/Filter/Timingノブの全てが無効化されていることを確認
+    expect(sample3Knobs).toHaveLength(3)
     sample3Knobs.forEach((knob: VueWrapper<any>) => {
       expect(knob.props('isDisabled')).toBe(true)
     })

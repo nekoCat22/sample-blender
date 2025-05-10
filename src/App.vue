@@ -1,4 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * @file App.vue
+ * @brief アプリケーションのルートコンポーネント
+ */
+
 <template>
   <div id="app">
     <AudioPlayer />

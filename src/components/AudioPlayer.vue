@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * @file AudioPlayer.vue
  * @brief 音声ファイルの再生と波形表示を行うVueコンポーネント
