@@ -195,15 +195,18 @@ export class Filter extends BaseEffect {
     if (this.knobAngle < 0) {
       // 負の角度でローパス
       this.setFilterType('lowpass');
+      // ローパスの場合、-135度で最低周波数、-1度で最高周波数になるように
+      const normalizedAngle = (this.knobAngle - this.MIN_ANGLE) / (0 - this.MIN_ANGLE);
+      const frequency = this.MIN_FREQUENCY + (this.MAX_FREQUENCY - this.MIN_FREQUENCY) * normalizedAngle;
+      this.setCutoffFrequency(frequency);
     } else {
       // 正の角度でハイパス
       this.setFilterType('highpass');
+      // ハイパスの場合、1度で最低周波数、135度で最高周波数になるように
+      const normalizedAngle = this.knobAngle / this.MAX_ANGLE;
+      const frequency = this.MIN_FREQUENCY + (this.MAX_FREQUENCY - this.MIN_FREQUENCY) * normalizedAngle;
+      this.setCutoffFrequency(frequency);
     }
-
-    // 角度の絶対値に応じてカットオフ周波数を設定
-    const normalizedAngle = Math.abs(this.knobAngle) / this.MAX_ANGLE;
-    const frequency = this.MIN_FREQUENCY + (this.MAX_FREQUENCY - this.MIN_FREQUENCY) * normalizedAngle;
-    this.setCutoffFrequency(frequency);
   }
 
   /**
