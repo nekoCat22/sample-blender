@@ -46,12 +46,12 @@
         <Knob
           label="Filter"
           :sub-label="filterSubLabel"
-          :value="filterAngle"
+          :value="filterAngles[0]"
           :min="-135"
           :max="135"
           :rotation-range="270"
-          @update:value="(value) => updateFilter(value)"
-          @reset="resetFilter"
+          @update:value="(value) => updateFilter(0, value)"
+          @reset="resetFilter(0)"
         />
       </div>
     </div>
@@ -72,6 +72,16 @@
           :value="volumes[2]"
           @update:value="(value) => updateVolume(2, value)"
           @reset="resetVolume(2)"
+        />
+        <Knob
+          label="Filter"
+          :sub-label="filterSubLabels[1]"
+          :value="filterAngles[1]"
+          :min="-135"
+          :max="135"
+          :rotation-range="270"
+          @update:value="(value) => updateFilter(1, value)"
+          @reset="resetFilter(1)"
         />
         <Knob
           label="Timing"
@@ -111,6 +121,17 @@
           @reset="resetVolume(3)"
         />
         <Knob
+          label="Filter"
+          :sub-label="filterSubLabels[2]"
+          :value="filterAngles[2]"
+          :min="-135"
+          :max="135"
+          :rotation-range="270"
+          :is-disabled="!isSample3Enabled"
+          @update:value="(value) => updateFilter(2, value)"
+          @reset="resetFilter(2)"
+        />
+        <Knob
           label="Timing"
           :value="timing[3]"
           :min="0"
@@ -138,6 +159,16 @@
           :value="masterVolume"
           @update:value="(value) => updateMasterVolume(value)"
           @reset="resetMasterVolume"
+        />
+        <Knob
+          label="Filter"
+          :sub-label="filterSubLabels[3]"
+          :value="filterAngles[3]"
+          :min="-135"
+          :max="135"
+          :rotation-range="270"
+          @update:value="(value) => updateFilter(3, value)"
+          @reset="resetFilter(3)"
         />
         <VolumeMeter 
           :level="volumeLevel"
@@ -191,17 +222,28 @@ export default defineComponent({
     })
     const volumeLevel = ref(-60)
     const meterInterval = ref<number | null>(null)
-    const filterAngle = ref(0)
-    const effectChain = ref<EffectChain | null>(null)
-    const filter = ref<Filter | null>(null)
+    const filters = ref<Filter[]>([])
+    const effectChains = ref<EffectChain[]>([])
+    const filterAngles = ref<number[]>([0, 0, 0, 0])  // サンプル1,2,3とマスター用
 
     // フィルターのサブラベルを計算
     const filterSubLabel = computed(() => {
-      if (!filter.value) return 'BYPASS'
-      const bypassRange = filter.value.getBypassAngleRange()
-      if (Math.abs(filterAngle.value) <= bypassRange) return 'BYPASS'
-      if (filterAngle.value > 0) return 'HP'
+      if (!filters.value[0]) return 'BYPASS'
+      const bypassRange = filters.value[0].getBypassAngleRange()
+      if (Math.abs(filterAngles.value[0]) <= bypassRange) return 'BYPASS'
+      if (filterAngles.value[0] > 0) return 'HP'
       return 'LP'
+    })
+
+    // 各フィルターのサブラベルを計算
+    const filterSubLabels = computed(() => {
+      return filterAngles.value.map((angle, index) => {
+        if (!filters.value[index]) return 'BYPASS'
+        const bypassRange = filters.value[index].getBypassAngleRange()
+        if (Math.abs(angle) <= bypassRange) return 'BYPASS'
+        if (angle > 0) return 'HP'
+        return 'LP'
+      })
     })
 
     // メソッドの定義
@@ -254,6 +296,22 @@ export default defineComponent({
       isPlaying.value = false
     }
 
+    // サンプルの接続を管理する関数
+    const connectSampleToEffectChain = (sampleNumber: number) => {
+      try {
+        const sampleGain = audioEngine.getSampleGain(sampleNumber.toString())
+        if (sampleGain) {
+          sampleGain.disconnect()
+          // サンプルの出力を対応するEffectChainに接続
+          sampleGain.connect(effectChains.value[sampleNumber - 1].getInput())
+          // EffectChainの出力をマスターのEffectChainに接続
+          effectChains.value[sampleNumber - 1].getOutput().connect(effectChains.value[3].getInput())
+        }
+      } catch (error) {
+        handleError(`サンプル${sampleNumber}の接続に失敗しました`, error as Error)
+      }
+    }
+
     const playFromStart = (): void => {
       try {
         resetPlayback()
@@ -277,14 +335,10 @@ export default defineComponent({
         // AudioEngineを使って再生
         audioEngine.playSamples(sampleIds, timings)
 
-        // フィルターを再接続
-        if (effectChain.value) {
-          const sample1Gain = audioEngine.getSampleGain('1')
-          if (sample1Gain) {
-            sample1Gain.disconnect()
-            sample1Gain.connect(effectChain.value.getInput())
-          }
-        }
+        // 各サンプルをEffectChainに接続
+        sampleIds.forEach(sampleId => {
+          connectSampleToEffectChain(parseInt(sampleId))
+        })
       } catch (error) {
         handleError('再生に失敗しました', error as Error)
         isPlaying.value = false
@@ -388,21 +442,23 @@ export default defineComponent({
     // フィルターの初期化
     const initFilter = () => {
       try {
-        // EffectChainの初期化
-        effectChain.value = new EffectChain(audioEngine.getContext())
+        // サンプル1,2,3とマスター用のフィルターを作成
+        for (let i = 0; i < 4; i++) {
+          const filter = new Filter(audioEngine.getContext())
+          const effectChain = new EffectChain(audioEngine.getContext())
+          effectChain.addEffect(filter as unknown as BaseEffect)
+          filters.value.push(filter)
+          effectChains.value.push(effectChain)
+        }
         
-        // フィルターの作成と追加
-        filter.value = new Filter(audioEngine.getContext())
-        effectChain.value.addEffect(filter.value as unknown as BaseEffect)
+        // マスターのEffectChainを出力に接続
+        effectChains.value[3].getOutput().connect(audioEngine.getContext().destination)
         
-        // EffectChainの出力をマスターに接続
-        effectChain.value.getOutput().connect(audioEngine.getContext().destination)
-        
-        // サンプル1の出力をEffectChainに接続
+        // サンプル1の出力をEffectChainに接続（既存の動作を維持）
         const sample1Gain = audioEngine.getSampleGain('1')
         if (sample1Gain) {
           sample1Gain.disconnect()
-          sample1Gain.connect(effectChain.value.getInput())
+          sample1Gain.connect(effectChains.value[0].getInput())
         }
       } catch (error) {
         handleError('フィルターの初期化に失敗しました', error as Error)
@@ -410,11 +466,11 @@ export default defineComponent({
     }
 
     // フィルターの更新
-    const updateFilter = (angle: number) => {
+    const updateFilter = (index: number, angle: number) => {
       try {
-        if (filter.value) {
-          filter.value.setKnobAngle(angle)
-          filterAngle.value = angle
+        if (filters.value[index]) {
+          filters.value[index].setKnobAngle(angle)
+          filterAngles.value[index] = angle
         }
       } catch (error) {
         handleError('フィルターの更新に失敗しました', error as Error)
@@ -422,11 +478,11 @@ export default defineComponent({
     }
 
     // フィルターのリセット
-    const resetFilter = () => {
+    const resetFilter = (index: number) => {
       try {
-        if (filter.value) {
-          filter.value.reset()
-          filterAngle.value = 0
+        if (filters.value[index]) {
+          filters.value[index].reset()
+          filterAngles.value[index] = 0
         }
       } catch (error) {
         handleError('フィルターのリセットに失敗しました', error as Error)
@@ -455,9 +511,17 @@ export default defineComponent({
       // AudioEngineの破棄
       audioEngine.dispose()
       // EffectChainの破棄
-      if (effectChain.value) {
-        effectChain.value.dispose()
-      }
+      effectChains.value.forEach(chain => {
+        if (chain && typeof chain.dispose === 'function') {
+          chain.dispose()
+        }
+      })
+      // フィルターの破棄
+      filters.value.forEach(filter => {
+        if (filter && typeof filter.dispose === 'function') {
+          filter.dispose()
+        }
+      })
     })
 
     return {
@@ -481,8 +545,9 @@ export default defineComponent({
       updateVolume,
       updateTiming,
       updateMasterVolume,
-      filterAngle,
+      filterAngles,
       filterSubLabel,
+      filterSubLabels,
       updateFilter,
       resetFilter
     }
