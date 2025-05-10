@@ -197,7 +197,9 @@ export default defineComponent({
 
     // フィルターのサブラベルを計算
     const filterSubLabel = computed(() => {
-      if (filterAngle.value === 0) return 'BYPASS'
+      if (!filter.value) return 'BYPASS'
+      const bypassRange = filter.value.getBypassAngleRange()
+      if (Math.abs(filterAngle.value) <= bypassRange) return 'BYPASS'
       if (filterAngle.value > 0) return 'HP'
       return 'LP'
     })

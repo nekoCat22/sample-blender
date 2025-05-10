@@ -23,7 +23,15 @@ export class Filter extends BaseEffect {
   private readonly MAX_FREQUENCY = 20000; // 最高周波数（Hz）
   private readonly MIN_ANGLE = -135;      // 最小角度（度）
   private readonly MAX_ANGLE = 135;       // 最大角度（度）
-  private readonly BYPASS_ANGLE_RANGE = 90; // バイパス範囲（度）
+  private readonly BYPASS_ANGLE_RANGE = 5; // バイパス範囲（度）
+
+  /**
+   * @brief バイパス範囲を取得
+   * @returns バイパス範囲（度）
+   */
+  public getBypassAngleRange(): number {
+    return this.BYPASS_ANGLE_RANGE;
+  }
 
   /**
    * @brief フィルターのコンストラクタ
