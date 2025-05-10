@@ -503,10 +503,27 @@ export default defineComponent({
     onBeforeUnmount(() => {
       // キーボードイベントのリスナーを削除
       window.removeEventListener('keydown', handleKeyDown)
+      
       // メーターの更新を停止
       stopMeterUpdate()
+      
       // AudioEngineの破棄を呼び出す（これにより、エフェクトチェーンとフィルターも破棄される）
       audioEngine.dispose();
+      
+      // 状態のクリーンアップ
+      audioBlobs.value = { 1: null, 2: null, 3: null }
+      volumes.value = { 1: 0.8, 2: 0.8, 3: 0.8 }
+      timing.value = { 2: 0, 3: 0 }
+      filterAngles.value = [0, 0, 0, 0]
+      isSample3Enabled.value = false
+      isPlaying.value = false
+      errorMessage.value = null
+      isLoading.value = false
+      volumeLevel.value = -60
+      
+      // 参照のクリーンアップ
+      filters.value = []
+      effectChains.value = []
     })
 
     return {
