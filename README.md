@@ -75,7 +75,7 @@ A web application for creating new audio samples by layering existing ones
    - ✅ UIとの連携
      - ✅ ノブの回転角度とフィルター制御の連携
      - ✅ 動作確認とデバッグ
-3. ピッチ調整
+3. ✅ ピッチ調整
 4. ADSR実装
 
 ### Phase 4: UI/UX改善
