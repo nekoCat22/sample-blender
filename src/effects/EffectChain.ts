@@ -10,6 +10,7 @@
 
 import { BaseEffect } from './base/BaseEffect';
 import { Filter } from './Filter';
+import { PitchShifter } from './PitchShifter';
 
 export class EffectChain {
   private effects: BaseEffect[] = [];
@@ -93,6 +94,15 @@ export class EffectChain {
   public getFilter(): Filter | undefined {
     const filter = this.effects.find(effect => effect.constructor.name === 'Filter');
     return filter instanceof Filter ? filter : undefined;
+  }
+
+  /**
+   * ピッチシフターエフェクトを取得
+   * @returns {PitchShifter | undefined} ピッチシフターエフェクト
+   */
+  public getPitchShifter(): PitchShifter | undefined {
+    const pitchShifter = this.effects.find(effect => effect.constructor.name === 'PitchShifter');
+    return pitchShifter instanceof PitchShifter ? pitchShifter : undefined;
   }
 
   /**
