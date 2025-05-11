@@ -194,6 +194,19 @@ src/
 - TypeScriptによる型安全な実装
 - テスト容易性を考慮した構造
 
+## わかってる問題
+```
+- audioplayer.vueとfilter.ts両方回転角度幅の設定をしている
+- 音量メーターがゴミ
+　　原因はエフェクトチェーンの型らしい、要件等。AIからの提案↓
+　　// 間違っていた実装
+　　private effectChains: EffectChain[] = [];  // 配列として定義
+
+　　// 正しい実装
+　　private effectChains: Map<string, EffectChain> = new Map();  // Mapとして定義
+
+
+
 ## カスタマイズ
 設定の詳細については [Configuration Reference](https://cli.vuejs.org/config/) を参照してください。
 ```

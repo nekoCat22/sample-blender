@@ -52,6 +52,16 @@
           @update:value="(value) => updateFilter(0, value)"
           @reset="resetFilter(0)"
         />
+        <Knob
+          label="Pitch"
+          :value="pitches[1]"
+          :min="-135"
+          :max="135"
+          :rotation-range="270"
+          :initial-rotation-offset="-135"
+          @update:value="(value) => updatePitch(1, value)"
+          @reset="resetPitch(1)"
+        />
       </div>
     </div>
 
@@ -212,6 +222,11 @@ export default defineComponent({
     const timing = ref<{ [key: number]: number }>({
       2: 0,
       3: 0
+    })
+    const pitches = ref<{ [key: number]: number }>({
+      1: 1.0,
+      2: 1.0,
+      3: 1.0
     })
     const isSample3Enabled = ref(false)
     const audioBlobs = ref<{ [key: number]: Blob | null }>({
@@ -406,6 +421,24 @@ export default defineComponent({
       }
     }
 
+    const updatePitch = (sampleNumber: number, value: number): void => {
+      try {
+        audioEngine.setSamplePitch(sampleNumber.toString(), value)
+        pitches.value[sampleNumber] = value
+      } catch (error) {
+        handleError('ピッチの更新に失敗しました', error as Error)
+      }
+    }
+
+    const resetPitch = (sampleNumber: number): void => {
+      try {
+        pitches.value[sampleNumber] = 1.0
+        audioEngine.setSamplePitch(sampleNumber.toString(), 1.0, true)
+      } catch (error) {
+        handleError('ピッチのリセットに失敗しました', error as Error)
+      }
+    }
+
     // メーターの更新を開始する
     const startMeterUpdate = (): void => {
       meterInterval.value = window.setInterval(() => {
@@ -533,6 +566,7 @@ export default defineComponent({
       volumes,
       masterVolume,
       timing,
+      pitches,
       isSample3Enabled,
       audioBlobs,
       audioEngine,
@@ -541,12 +575,14 @@ export default defineComponent({
       resetVolume,
       resetMasterVolume,
       resetTiming,
+      resetPitch,
       handleWaveformError,
       handleWaveformLoading,
       handleWaveformReady,
       updateVolume,
       updateTiming,
       updateMasterVolume,
+      updatePitch,
       filterAngles,
       filterSubLabel,
       filterSubLabels,

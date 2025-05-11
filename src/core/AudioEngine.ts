@@ -9,6 +9,7 @@
  * - サンプルの再生タイミング制御
  * - 再生終了イベントの通知
  * - エフェクトチェーンとフィルターの管理
+ * - サンプルのピッチ制御
  */
 
 import { EffectChain } from '@/effects/EffectChain'
@@ -33,6 +34,10 @@ export class AudioEngine {
   private activeSampleCount = 0;
   private effectChains: EffectChain[] = [];
   private filters: Filter[] = [];
+  private samplePitches: Map<string, number> = new Map();
+  private static readonly MIN_PITCH = 0.5;
+  private static readonly MAX_PITCH = 2.0;
+  private static readonly DEFAULT_PITCH = 1.0;
 
   /**
    * AudioEngineのコンストラクタ
@@ -264,6 +269,79 @@ export class AudioEngine {
   }
 
   /**
+   * サンプルのピッチを設定
+   * @param {string} sampleId - サンプルID
+   * @param {number} value - ノブの角度（-135から135）または直接のピッチ値（0.5から2.0）
+   * @param {boolean} isDirectPitch - valueが直接のピッチ値かどうか
+   * @throws {Error} 初期化されていない場合、または無効なピッチ値の場合
+   */
+  public setSamplePitch(sampleId: string, value: number, isDirectPitch = false): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+
+    let pitch: number;
+    if (isDirectPitch) {
+      // 直接のピッチ値の場合
+      if (value < AudioEngine.MIN_PITCH || value > AudioEngine.MAX_PITCH) {
+        throw new Error(`ピッチは${AudioEngine.MIN_PITCH}から${AudioEngine.MAX_PITCH}の範囲で指定してください`);
+      }
+      pitch = value;
+    } else {
+      // ノブの角度の場合
+      const knobAngle = value;
+      pitch = 1.0; // 基準値
+
+      if (knobAngle > 0) {
+        // 正の角度の場合：1.0から2.0までの範囲
+        const positiveRange = 1.0; // 2.0 - 1.0
+        const positiveStep = positiveRange / 135; // 1度あたりの変化量
+        pitch = 1.0 + (knobAngle * positiveStep);
+      } else if (knobAngle < 0) {
+        // 負の角度の場合：0.5から1.0までの範囲
+        const negativeRange = 0.5; // 1.0 - 0.5
+        const negativeStep = negativeRange / 135; // 1度あたりの変化量
+        pitch = 1.0 + (knobAngle * negativeStep);
+      }
+    }
+
+    // 現在再生中のソースのピッチを更新
+    const source = this.sampleSources.get(sampleId);
+    if (source) {
+      source.playbackRate.value = pitch;
+    }
+
+    // ピッチ値を保存
+    this.samplePitches.set(sampleId, pitch);
+  }
+
+  /**
+   * サンプルのピッチを取得
+   * @param {string} sampleId - サンプルID
+   * @returns {number} 現在のピッチ値
+   * @throws {Error} 初期化されていない場合
+   */
+  public getSamplePitch(sampleId: string): number {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    return this.samplePitches.get(sampleId) || AudioEngine.DEFAULT_PITCH;
+  }
+
+  /**
+   * サンプルのピッチをリセット
+   * @param {string} sampleId - サンプルID
+   * @throws {Error} 初期化されていない場合
+   */
+  public resetSamplePitch(sampleId: string): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    // 直接ピッチ値を1.0に設定
+    this.setSamplePitch(sampleId, 1.0, true);
+  }
+
+  /**
    * サンプルを再生
    * @param {string} sampleId - サンプルID
    * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
@@ -287,6 +365,7 @@ export class AudioEngine {
     // 新しいソースを作成
     const source = this.context.createBufferSource();
     source.buffer = buffer;
+    source.playbackRate.value = this.getSamplePitch(sampleId);
 
     // ゲインノードを取得または作成
     let gain = this.sampleGains.get(sampleId);
@@ -408,6 +487,7 @@ export class AudioEngine {
       // 新しいソースを作成
       const source = this.context.createBufferSource();
       source.buffer = buffer;
+      source.playbackRate.value = this.getSamplePitch(sampleId);
 
       // ゲインノードを取得または作成
       let gain = this.sampleGains.get(sampleId);
