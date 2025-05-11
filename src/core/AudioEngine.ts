@@ -280,6 +280,11 @@ export class AudioEngine {
       throw new Error('AudioEngineが初期化されていません');
     }
 
+    // サンプルの存在チェックを追加
+    if (!this.sampleBuffers.has(sampleId)) {
+      throw new Error(`サンプル ${sampleId} が見つかりません`);
+    }
+
     let pitch: number;
     if (isDirectPitch) {
       // 直接のピッチ値の場合
@@ -325,6 +330,10 @@ export class AudioEngine {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
+    // サンプルの存在チェックを追加
+    if (!this.sampleBuffers.has(sampleId)) {
+      throw new Error(`サンプル ${sampleId} が見つかりません`);
+    }
     return this.samplePitches.get(sampleId) || AudioEngine.DEFAULT_PITCH;
   }
 
@@ -336,6 +345,10 @@ export class AudioEngine {
   public resetSamplePitch(sampleId: string): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
+    }
+    // サンプルの存在チェックを追加
+    if (!this.sampleBuffers.has(sampleId)) {
+      throw new Error(`サンプル ${sampleId} が見つかりません`);
     }
     // 直接ピッチ値を1.0に設定
     this.setSamplePitch(sampleId, 1.0, true);

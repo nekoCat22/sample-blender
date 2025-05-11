@@ -22,7 +22,8 @@ const createBufferSourceNode = () => ({
   connect: jest.fn(),
   disconnect: jest.fn(),
   start: jest.fn(),
-  stop: jest.fn()
+  stop: jest.fn(),
+  playbackRate: { value: 1.0 }
 });
 
 // AudioContextのモックを作成
@@ -165,6 +166,54 @@ describe('AudioEngine', () => {
       };
       
       expect(() => audioEngine.playSamples(sampleIds, timings)).not.toThrow();
+    });
+  });
+
+  describe('ピッチシフター', () => {
+    beforeEach(async () => {
+      // テスト用のサンプルデータを作成
+      await audioEngine.loadSample('1', new ArrayBuffer(0));
+    });
+
+    it('ピッチを設定して取得できる', () => {
+      const testPitch = 1.5;
+      audioEngine.setSamplePitch('1', testPitch, true);
+      expect(audioEngine.getSamplePitch('1')).toBe(testPitch);
+    });
+
+    it('ノブの角度からピッチを設定できる', () => {
+      // 正の角度（1.0から2.0の範囲）
+      audioEngine.setSamplePitch('1', 135);
+      expect(audioEngine.getSamplePitch('1')).toBe(2.0);
+
+      // 負の角度（0.5から1.0の範囲）
+      audioEngine.setSamplePitch('1', -135);
+      expect(audioEngine.getSamplePitch('1')).toBe(0.5);
+
+      // 中間の角度
+      audioEngine.setSamplePitch('1', 0);
+      expect(audioEngine.getSamplePitch('1')).toBe(1.0);
+    });
+
+    it('無効なピッチ値を設定するとエラーになる', () => {
+      expect(() => audioEngine.setSamplePitch('1', 0.4, true)).toThrow();
+      expect(() => audioEngine.setSamplePitch('1', 2.1, true)).toThrow();
+    });
+
+    it('ピッチをリセットできる', () => {
+      // まずピッチを変更
+      audioEngine.setSamplePitch('1', 1.5, true);
+      expect(audioEngine.getSamplePitch('1')).toBe(1.5);
+
+      // リセット
+      audioEngine.resetSamplePitch('1');
+      expect(audioEngine.getSamplePitch('1')).toBe(1.0);
+    });
+
+    it('存在しないサンプルのピッチを操作するとエラーになる', () => {
+      expect(() => audioEngine.setSamplePitch('4', 1.5, true)).toThrow();
+      expect(() => audioEngine.getSamplePitch('4')).toThrow();
+      expect(() => audioEngine.resetSamplePitch('4')).toThrow();
     });
   });
 }); 
