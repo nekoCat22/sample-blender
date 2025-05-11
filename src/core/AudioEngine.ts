@@ -13,6 +13,7 @@
 
 import { EffectChain } from '@/effects/EffectChain'
 import { Filter } from '@/effects/Filter'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars    // BaseEffectはFilterが継承してるため、インポートが必須だが、ESLINTのエラーが出るため無視
 import { BaseEffect } from '@/effects/base/BaseEffect'
 
 export class AudioEngine {
