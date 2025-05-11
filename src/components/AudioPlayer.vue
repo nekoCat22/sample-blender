@@ -101,6 +101,16 @@
           @update:value="(value) => updateTiming(2, value)"
           @reset="resetTiming(2)"
         />
+        <Knob
+          label="Pitch"
+          :value="pitches[2]"
+          :min="-135"
+          :max="135"
+          :rotation-range="270"
+          :initial-rotation-offset="-135"
+          @update:value="(value) => updatePitch(2, value)"
+          @reset="resetPitch(2)"
+        />
       </div>
     </div>
 
@@ -149,6 +159,17 @@
           :is-disabled="!isSample3Enabled"
           @update:value="(value) => updateTiming(3, value)"
           @reset="resetTiming(3)"
+        />
+        <Knob
+          label="Pitch"
+          :value="pitches[3]"
+          :min="-135"
+          :max="135"
+          :rotation-range="270"
+          :initial-rotation-offset="-135"
+          :is-disabled="!isSample3Enabled"
+          @update:value="(value) => updatePitch(3, value)"
+          @reset="resetPitch(3)"
         />
       </div>
     </div>
