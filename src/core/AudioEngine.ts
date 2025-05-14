@@ -49,6 +49,9 @@ export class AudioEngine {
       this.masterGain = this.context.createGain();
       this.masterGain.connect(this.context.destination);
       this.isInitialized = true;
+      
+      // フィルターの初期化
+      this.initFilters();
     } catch (error: unknown) {
       throw new Error(`AudioEngineの初期化に失敗しました: ${(error as Error).message}`);
     }
@@ -570,5 +573,106 @@ export class AudioEngine {
       throw new Error('AudioEngineが初期化されていません');
     }
     this.filters.push(filter);
+  }
+
+  /**
+   * フィルターの初期化
+   * @throws {Error} 初期化されていない場合
+   */
+  private initFilters(): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+
+    try {
+      // サンプル1,2,3とマスター用のフィルターを作成
+      for (let i = 0; i < 4; i++) {
+        const filter = new Filter(this.context);
+        const effectChain = new EffectChain(this.context);
+        effectChain.addEffect(filter as unknown as BaseEffect);
+        this.filters.push(filter);
+        this.effectChains.push(effectChain);
+      }
+      
+      // マスターのEffectChainを出力に接続
+      this.effectChains[3].getOutput().connect(this.context.destination);
+      
+      // サンプル1の出力をEffectChainに接続
+      const sample1Gain = this.sampleGains.get('1');
+      if (sample1Gain) {
+        sample1Gain.disconnect();
+        sample1Gain.connect(this.effectChains[0].getInput());
+      }
+    } catch (error) {
+      throw new Error(`フィルターの初期化に失敗しました: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * フィルターの値を更新
+   * @param {number} index - フィルターのインデックス
+   * @param {number} angle - ノブの回転角度（-135度〜135度）
+   * @throws {Error} 初期化されていない場合、またはフィルターが存在しない場合
+   */
+  public setFilterValue(index: number, angle: number): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    if (!this.filters[index]) {
+      throw new Error(`フィルター ${index} が見つかりません`);
+    }
+
+    try {
+      this.filters[index].setKnobAngle(angle);
+    } catch (error) {
+      throw new Error(`フィルターの更新に失敗しました: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * フィルターをリセット
+   * @param {number} index - フィルターのインデックス
+   * @throws {Error} 初期化されていない場合、またはフィルターが存在しない場合
+   */
+  public resetFilter(index: number): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    if (!this.filters[index]) {
+      throw new Error(`フィルター ${index} が見つかりません`);
+    }
+
+    try {
+      this.filters[index].reset();
+    } catch (error) {
+      throw new Error(`フィルターのリセットに失敗しました: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * サンプルをエフェクトチェーンに接続
+   * @param {string} sampleId - サンプルID
+   * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
+   */
+  public connectSampleToEffectChain(sampleId: string): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+
+    try {
+      const sampleGain = this.sampleGains.get(sampleId);
+      if (!sampleGain) {
+        throw new Error(`サンプル ${sampleId} が見つかりません`);
+      }
+
+      // サンプルの出力を対応するEffectChainに接続
+      sampleGain.disconnect();
+      sampleGain.connect(this.effectChains[parseInt(sampleId) - 1].getInput());
+      
+      // EffectChainの出力をマスターのEffectChainに接続
+      this.effectChains[parseInt(sampleId) - 1].getOutput().connect(this.effectChains[3].getInput());
+    } catch (error) {
+      throw new Error(`サンプル ${sampleId} の接続に失敗しました: ${(error as Error).message}`);
+    }
   }
 } 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1746966052917" clover="3.2.0">
-  <project timestamp="1746966052917" name="All files">
-    <metrics statements="895" coveredstatements="542" conditionals="475" coveredconditionals="277" methods="185" coveredmethods="92" elements="1555" coveredelements="911" complexity="0" loc="895" ncloc="895" packages="6" files="12" classes="12"/>
+<coverage generated="1747185447407" clover="3.2.0">
+  <project timestamp="1747185447407" name="All files">
+    <metrics statements="895" coveredstatements="542" conditionals="475" coveredconditionals="277" methods="185" coveredmethods="92" elements="1555" coveredelements="911" complexity="0" loc="895" ncloc="895" packages="6" files="15" classes="15"/>
     <package name="src">
       <metrics statements="15" coveredstatements="0" conditionals="7" coveredconditionals="0" methods="2" coveredmethods="0"/>
       <file name="App.vue" path="C:\Users\9cats\handicraft\Cursor\sample_blender\sample-blender\src\App.vue">
@@ -947,7 +947,16 @@
     </package>
     <package name="src.types">
       <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
-      <file name="audio.ts" path="C:\Users\9cats\handicraft\Cursor\sample_blender\sample-blender\src\types\audio.ts">
+      <file name="common.ts" path="C:\Users\9cats\handicraft\Cursor\sample_blender\sample-blender\src\types\common.ts">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="index.ts" path="C:\Users\9cats\handicraft\Cursor\sample_blender\sample-blender\src\types\index.ts">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="player.ts" path="C:\Users\9cats\handicraft\Cursor\sample_blender\sample-blender\src\types\player.ts">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="wavesurfer.ts" path="C:\Users\9cats\handicraft\Cursor\sample_blender\sample-blender\src\types\wavesurfer.ts">
         <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
       </file>
     </package>

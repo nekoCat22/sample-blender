@@ -217,6 +217,8 @@ import VolumeMeter from './VolumeMeter.vue'
 import Knob from './Knob.vue'
 import { Filter } from '@/effects/Filter'
 import { EffectChain } from '@/effects/EffectChain'
+// BaseEffectはFilterが継承してるため、インポートが必須だが、ESLintのエラーが出るため無視する文
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { BaseEffect } from '@/effects/base/BaseEffect'
 
 export default defineComponent({
@@ -331,22 +333,6 @@ export default defineComponent({
       isPlaying.value = false
     }
 
-    // サンプルの接続を管理する関数
-    const connectSampleToEffectChain = (sampleNumber: number) => {
-      try {
-        const sampleGain = audioEngine.getSampleGain(sampleNumber.toString())
-        if (sampleGain) {
-          sampleGain.disconnect()
-          // サンプルの出力を対応するEffectChainに接続
-          sampleGain.connect(effectChains.value[sampleNumber - 1].getInput())
-          // EffectChainの出力をマスターのEffectChainに接続
-          effectChains.value[sampleNumber - 1].getOutput().connect(effectChains.value[3].getInput())
-        }
-      } catch (error) {
-        handleError(`サンプル${sampleNumber}の接続に失敗しました`, error as Error)
-      }
-    }
-
     const playFromStart = (): void => {
       try {
         resetPlayback()
@@ -372,7 +358,7 @@ export default defineComponent({
 
         // 各サンプルをEffectChainに接続
         sampleIds.forEach(sampleId => {
-          connectSampleToEffectChain(parseInt(sampleId))
+          audioEngine.connectSampleToEffectChain(sampleId)
         })
       } catch (error) {
         handleError('再生に失敗しました', error as Error)
@@ -490,53 +476,23 @@ export default defineComponent({
       }
     })
 
-    // フィルターの初期化
-    const initFilter = () => {
-      try {
-        // サンプル1,2,3とマスター用のフィルターを作成
-        for (let i = 0; i < 4; i++) {
-          const filter = new Filter(audioEngine.getContext())
-          const effectChain = new EffectChain(audioEngine.getContext())
-          effectChain.addEffect(filter as unknown as BaseEffect)
-          filters.value.push(filter)
-          effectChains.value.push(effectChain)
-        }
-        
-        // マスターのEffectChainを出力に接続
-        effectChains.value[3].getOutput().connect(audioEngine.getContext().destination)
-        
-        // サンプル1の出力をEffectChainに接続（既存の動作を維持）
-        const sample1Gain = audioEngine.getSampleGain('1')
-        if (sample1Gain) {
-          sample1Gain.disconnect()
-          sample1Gain.connect(effectChains.value[0].getInput())
-        }
-      } catch (error) {
-        handleError('フィルターの初期化に失敗しました', error as Error)
-      }
-    }
-
     // フィルターの更新
     const updateFilter = (index: number, angle: number) => {
       try {
-        if (filters.value[index]) {
-          filters.value[index].setKnobAngle(angle)
-          filterAngles.value[index] = angle
-        }
+        audioEngine.setFilterValue(index, angle);
+        filterAngles.value[index] = angle;
       } catch (error) {
-        handleError('フィルターの更新に失敗しました', error as Error)
+        handleError('フィルターの更新に失敗しました', error as Error);
       }
     }
 
     // フィルターのリセット
     const resetFilter = (index: number) => {
       try {
-        if (filters.value[index]) {
-          filters.value[index].reset()
-          filterAngles.value[index] = 0
-        }
+        audioEngine.resetFilter(index);
+        filterAngles.value[index] = 0;
       } catch (error) {
-        handleError('フィルターのリセットに失敗しました', error as Error)
+        handleError('フィルターのリセットに失敗しました', error as Error);
       }
     }
 
@@ -545,8 +501,6 @@ export default defineComponent({
       try {
         // 音声ファイルの読み込み
         await loadAudioFiles()
-        // フィルターの初期化
-        initFilter()
         // キーボードイベントのリスナーを追加
         window.addEventListener('keydown', handleKeyDown)
       } catch (error) {
@@ -574,10 +528,6 @@ export default defineComponent({
       errorMessage.value = null
       isLoading.value = false
       volumeLevel.value = -60
-      
-      // 参照のクリーンアップ
-      filters.value = []
-      effectChains.value = []
     })
 
     return {
