@@ -24,7 +24,7 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue'
 import WaveSurfer from 'wavesurfer.js'
-import type { WaveSurferInstance, WaveSurferOptions } from '../types/audio'
+import type { WaveSurferInstance, WaveSurferConfig } from '../types/wavesurfer'
 
 export default defineComponent({
   name: 'WaveformDisplay',
@@ -64,7 +64,7 @@ export default defineComponent({
         hideScrollbar: true,
         autoCenter: true,
         progressColor: 'transparent'
-      } as WaveSurferOptions) as WaveSurferInstance
+      } as WaveSurferConfig) as WaveSurferInstance
 
       // イベントリスナーの設定
       wavesurfer.value.on('error', (err?: Error) => {

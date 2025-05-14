@@ -1,6 +1,12 @@
 # sample-blender
 A web application for creating new audio samples by layering existing ones
 
+## 設計の特徴
+- モジュール性の高い設計
+- プラグイン形式でのエフェクト追加が可能
+- TypeScriptによる型安全な実装
+- テスト容易性を考慮した構造
+
 ## 要件定義
 ### 1. 基本機能  
     - プリセットサンプル（約500個）の管理と選択
@@ -27,7 +33,56 @@ A web application for creating new audio samples by layering existing ones
     - フロントエンドのみの構成（バックエンド不要）
     - ブラウザでの動作
     - TypeScriptによる型安全な実装
----
+
+## プロジェクト構造
+```
+プロジェクトルート/
+  ├── src/           # ソースコード
+  │   ├── components/     # Vueコンポーネント
+  │   ├── types/         # TypeScript型定義
+  │   ├── core/          # コアオーディオ処理
+  │   │   └── AudioEngine.ts      # メインのオーディオエンジン
+  │   │
+  │   ├── effects/       # オーディオエフェクト
+  │   │   ├── base/            # エフェクトの基底クラス
+  │   │   ├── EffectChain.ts   # エフェクトチェーン管理
+  │   │   ├── Filter.ts        # フィルターエフェクト
+  │   │   └── GainEffect.ts    # ゲインコントロール
+  │   │
+  │   ├── assets/        # 静的ファイル
+  │   ├── App.vue        # メインアプリケーションコンポーネント
+  │   ├── main.ts        # アプリケーションのエントリーポイント
+  │   └── shims-vue.d.ts # Vueの型定義
+  │
+  ├── tests/         # テストファイル
+  ├── public/        # 静的ファイル
+  ├── docs/          # ドキュメント
+  ├── package.json   # プロジェクト設定
+  └── README.md      # プロジェクト説明
+```
+
+## オーディオパスの流れ
+1. **入力処理**
+   - サンプルファイルの読み込み
+   - オーディオバッファへの変換
+   - メモリ管理
+
+2. **エフェクトチェーン**
+   - ゲインコントロール
+   - フィルター処理
+
+3. **出力処理**
+   - マスターボリューム
+   - 波形表示
+   - WAVファイル出力
+
+## 主要コンポーネントの役割
+- **AudioEngine**: 全体のオーディオ処理を管理
+- **AudioPlayer**: オーディオの再生、停止、波形表示などのUI制御
+- **BaseEffect**: エフェクトの基底クラス。共通のインターフェースを提供
+- **EffectChain**: エフェクトの接続と管理
+- **Knob**: パラメーター調整用のUIコンポーネント
+- **WaveformDisplay**: オーディオ波形の表示
 
 ## 開発ステップ
 ### Phase 1: 基礎的なオーディオ再生機能
@@ -90,14 +145,15 @@ A web application for creating new audio samples by layering existing ones
 2. サンプルアップロード機能
 3. 全体的な動作確認とバグ修正
 
----
+## わかってる問題
+- audioplayer.vueとfilter.ts両方回転角度幅の設定をしている
+- 音量メーターがゴミ
+　　原因はエフェクトチェーンの型らしい、要件等。AIからの提案↓
+　　// 間違っていた実装
+　　private effectChains: EffectChain[] = [];  // 配列として定義
 
-## 技術スタック
-- Vue 3
-- TypeScript
-- Web Audio API
-- WaveSurfer.js
-- ESLint + Prettier
+　　// 正しい実装
+　　private effectChains: Map<string, EffectChain> = new Map();  // Mapとして定義
 
 ## 開発環境のセットアップ
 
@@ -132,103 +188,5 @@ npm run type-check
 npm run test:unit
 ```
 
-## プロジェクト構造
-```
-src/
-  ├── components/     # Vueコンポーネント
-  ├── types/         # TypeScript型定義
-  ├── utils/         # ユーティリティ関数
-  └── assets/        # 静的ファイル
-```
-
-## オーディオパス設計
-### ディレクトリ構造
-```
-src/
-  ├── core/          # コアオーディオ処理
-  │   ├── AudioEngine.ts      # メインのオーディオエンジン
-  │   ├── AudioContext.ts     # Web Audio APIのコンテキスト管理
-  │   └── AudioNode.ts        # 基本的なオーディオノードのラッパー
-  │
-  ├── effects/       # オーディオエフェクト
-  │   ├── Filter.ts           # フィルターエフェクト
-  │   ├── Gain.ts            # ゲインコントロール
-  │   ├── ADSR.ts            # ADSRエンベロープ
-  │   └── Pitch.ts           # ピッチシフター
-  │
-  ├── types/         # 型定義
-  │   └── audio.d.ts         # オーディオ関連の型定義
-  │
-  └── components/    # UIコンポーネント
-      ├── Waveform.vue       # 波形表示コンポーネント
-      ├── SampleList.vue     # サンプルリスト
-      └── KnobControl.vue    # ノブコントロール
-```
-
-### オーディオパスの流れ
-1. **入力処理**
-   - サンプルファイルの読み込み
-   - オーディオバッファへの変換
-   - メモリ管理
-
-2. **エフェクトチェーン**
-   - ゲインコントロール
-   - フィルター処理
-   - ADSRエンベロープ
-   - ピッチシフト
-
-3. **出力処理**
-   - マスターボリューム
-   - 波形表示
-   - WAVファイル出力
-
-### 主要コンポーネントの役割
-- **AudioEngine**: 全体のオーディオ処理を管理
-- **AudioContext**: Web Audio APIのコンテキストを一元管理
-- **AudioNode**: 基本的なオーディオノードのラッパー
-- **エフェクト**: 各エフェクトを独立したクラスとして実装
-
-### 設計の特徴
-- モジュール性の高い設計
-- プラグイン形式でのエフェクト追加が可能
-- TypeScriptによる型安全な実装
-- テスト容易性を考慮した構造
-
-## わかってる問題
-```
-- audioplayer.vueとfilter.ts両方回転角度幅の設定をしている
-- 音量メーターがゴミ
-　　原因はエフェクトチェーンの型らしい、要件等。AIからの提案↓
-　　// 間違っていた実装
-　　private effectChains: EffectChain[] = [];  // 配列として定義
-
-　　// 正しい実装
-　　private effectChains: Map<string, EffectChain> = new Map();  // Mapとして定義
-
-
-
 ## カスタマイズ
 設定の詳細については [Configuration Reference](https://cli.vuejs.org/config/) を参照してください。
-```
-npm install
-```
-
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
-
-
