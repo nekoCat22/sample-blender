@@ -1,18 +1,18 @@
 /**
  * @file AudioPlayer.vue
- * @brief 音声ファイルの再生と波形表示を行うVueコンポーネント
+ * @brief 音声プレイヤーのUIと制御を行うVueコンポーネント
  * @details
- * - 3つの音声ファイルを同時に再生可能（サンプル3はEnable/Disable機能付き）
- * - 再生ボタン付き（全てのサンプルを同時に制御、常に最初から再生）
- * - エラー処理とエラーメッセージ表示機能
- * - ローディング状態の表示機能
- * - 各サンプルのノブによる音量調整機能（ダブルクリックで初期値にリセット）
- * - スペースキーでの再生制御機能
- * - マスターボリューム制御機能
- * - マスターボリュームの音量メーター表示機能（危険域の表示付き）
- * - サンプル2と3のタイミング調整機能（0秒から+0.5秒）
+ * - 3つの音声サンプルの波形表示とUI操作
+ * - サンプル3はEnable/Disable機能付き
+ * - 各サンプルの音量、フィルター、ピッチの調整UI
+ * - サンプル2と3のタイミング調整UI（0秒から+0.5秒）
+ * - マスターボリュームとマスターフィルターの調整UI
+ * - 音量メーター表示（危険域の表示付き）
+ * - スペースキーでの再生コントロール
+ * - エラー表示とローディング表示
  * @limitations
  * - ファイル名は固定（sample1.wav, sample2.wav, sample3.wav）
+ * - 実際の音声処理はAudioEngineクラスに委譲
  */
 
 <template>
@@ -215,11 +215,6 @@ import { AudioEngine } from '../core/AudioEngine'
 import WaveformDisplay from './WaveformDisplay.vue'
 import VolumeMeter from './VolumeMeter.vue'
 import Knob from './Knob.vue'
-import { Filter } from '@/effects/Filter'
-import { EffectChain } from '@/effects/EffectChain'
-// BaseEffectはFilterが継承してるため、インポートが必須だが、ESLintのエラーが出るため無視する文
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-import { BaseEffect } from '@/effects/base/BaseEffect'
 
 export default defineComponent({
   name: 'AudioPlayer',
@@ -259,24 +254,20 @@ export default defineComponent({
     })
     const volumeLevel = ref(-60)
     const meterInterval = ref<number | null>(null)
-    const filters = ref<Filter[]>([])
-    const effectChains = ref<EffectChain[]>([])
     const filterAngles = ref<number[]>([0, 0, 0, 0])  // サンプル1,2,3とマスター用
 
-    // フィルターのサブラベルを計算
+    // フィルターのサブラベルを計算（角度だけで判断）
     const filterSubLabel = computed(() => {
-      if (!filters.value[0]) return 'BYPASS'
-      const bypassRange = filters.value[0].getBypassAngleRange()
+      const bypassRange = 10  // バイパス範囲を固定値に
       if (Math.abs(filterAngles.value[0]) <= bypassRange) return 'BYPASS'
       if (filterAngles.value[0] > 0) return 'HP'
       return 'LP'
     })
 
-    // 各フィルターのサブラベルを計算
+    // 各フィルターのサブラベルを計算（角度だけで判断）
     const filterSubLabels = computed(() => {
-      return filterAngles.value.map((angle, index) => {
-        if (!filters.value[index]) return 'BYPASS'
-        const bypassRange = filters.value[index].getBypassAngleRange()
+      return filterAngles.value.map((angle) => {
+        const bypassRange = 10  // バイパス範囲を固定値に
         if (Math.abs(angle) <= bypassRange) return 'BYPASS'
         if (angle > 0) return 'HP'
         return 'LP'
