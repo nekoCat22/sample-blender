@@ -146,6 +146,9 @@ A web application for creating new audio samples by layering existing ones
 3. 全体的な動作確認とバグ修正
 
 ## わかってる問題
+- audioengineの責務が膨大
+- マスターボリュームどこでやってんの
+
 - audioplayer.vueとfilter.ts両方回転角度幅の設定をしている
 - 音量メーターがゴミ
 　　原因はエフェクトチェーンの型らしい、要件等。AIからの提案↓
