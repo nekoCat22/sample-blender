@@ -39,6 +39,11 @@ A web application for creating new audio samples by layering existing ones
 プロジェクトルート/
   ├── src/           # ソースコード
   │   ├── components/     # Vueコンポーネント
+  │   │   ├── AudioPlayer.vue     # メインの音声プレイヤーコンポーネント
+  │   │   ├── WaveformDisplay.vue # 波形表示コンポーネント
+  │   │   ├── Knob.vue            # パラメーター調整用ノブUI
+  │   │   └── VolumeMeter.vue     # 音量レベル表示メーター
+  │   │
   │   ├── types/         # TypeScript型定義
   │   ├── core/          # コアオーディオ処理
   │   │   └── AudioEngine.ts      # メインのオーディオエンジン
@@ -147,7 +152,7 @@ A web application for creating new audio samples by layering existing ones
 
 ## わかってる問題
 - audioengineの責務が膨大
-- マスターボリュームどこでやってんの
+- knob.vueから受け取るのを-1から1に正規化したいなり
 
 - audioplayer.vueとfilter.ts両方回転角度幅の設定をしている
 - 音量メーターがゴミ
