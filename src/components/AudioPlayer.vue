@@ -44,7 +44,7 @@
         />
         <Knob
           label="Filter"
-          :sub-label="filterSubLabel"
+          :sub-label="filterSubLabels[0]"
           :value="filterAngles[0]"
           :min="-135"
           :max="135"
@@ -252,17 +252,9 @@ export default defineComponent({
       2: null,
       3: null
     })
-    const volumeLevel = ref(-60)
-    const meterInterval = ref<number | null>(null)
+    const volumeLevel = ref(-60) // 音量レベルの初期値
+    const meterInterval = ref<number | null>(null) // 音量メーターの表示の設定
     const filterAngles = ref<number[]>([0, 0, 0, 0])  // サンプル1,2,3とマスター用
-
-    // フィルターのサブラベルを計算（角度だけで判断）
-    const filterSubLabel = computed(() => {
-      const bypassRange = 10  // バイパス範囲を固定値に
-      if (Math.abs(filterAngles.value[0]) <= bypassRange) return 'BYPASS'
-      if (filterAngles.value[0] > 0) return 'HP'
-      return 'LP'
-    })
 
     // 各フィルターのサブラベルを計算（角度だけで判断）
     const filterSubLabels = computed(() => {
@@ -546,7 +538,6 @@ export default defineComponent({
       updateMasterVolume,
       updatePitch,
       filterAngles,
-      filterSubLabel,
       filterSubLabels,
       updateFilter,
       resetFilter
