@@ -583,17 +583,37 @@ export class AudioEngine {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-
+  
     try {
-      // サンプル1,2,3とマスター用のフィルターを作成
-      for (let i = 0; i < 4; i++) {
-        const filter = new Filter(this.context);
-        const effectChain = new EffectChain(this.context);
-        effectChain.addEffect(filter as unknown as BaseEffect);
-        this.filters.push(filter);
-        this.effectChains.push(effectChain);
-      }
-      
+      // マスター用フィルター
+      const masterFilter = new Filter(this.context);
+      const masterEffectChain = new EffectChain(this.context);
+      masterEffectChain.addEffect(masterFilter as unknown as BaseEffect);
+      this.filters[0] = masterFilter; // インデックス 0 をマスターに
+      this.effectChains[0] = masterEffectChain;
+  
+      // サンプル1用フィルター
+      const sample1Filter = new Filter(this.context);
+      const sample1EffectChain = new EffectChain(this.context);
+      sample1EffectChain.addEffect(sample1Filter as unknown as BaseEffect);
+      this.filters[1] = sample1Filter; // インデックス 1 をサンプル1に
+      this.effectChains[1] = sample1EffectChain;
+  
+      // サンプル2用フィルター
+      const sample2Filter = new Filter(this.context);
+      const sample2EffectChain = new EffectChain(this.context);
+      sample2EffectChain.addEffect(sample2Filter as unknown as BaseEffect);
+      this.filters[2] = sample2Filter; // インデックス 2 をサンプル2に
+      this.effectChains[2] = sample2EffectChain;
+  
+      // サンプル3用フィルター
+      const sample3Filter = new Filter(this.context);
+      const sample3EffectChain = new EffectChain(this.context);
+      sample3EffectChain.addEffect(sample3Filter as unknown as BaseEffect);
+      this.filters[3] = sample3Filter; // インデックス 3 をサンプル3に
+      this.effectChains[3] = sample3EffectChain;
+
+       
       // マスターのEffectChainを出力に接続
       this.effectChains[3].getOutput().connect(this.context.destination);
       
@@ -610,20 +630,20 @@ export class AudioEngine {
 
   /**
    * フィルターの値を更新
-   * @param {number} index - フィルターのインデックス
+   * @param {number} keyNumber - フィルターのインデックス
    * @param {number} angle - ノブの回転角度（-135度〜135度）
    * @throws {Error} 初期化されていない場合、またはフィルターが存在しない場合
    */
-  public setFilterValue(index: number, angle: number): void {
+  public setFilterValue(keyNumber: number, angle: number): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    if (!this.filters[index]) {
-      throw new Error(`フィルター ${index} が見つかりません`);
+    if (!this.filters[keyNumber]) {
+      throw new Error(`フィルター ${keyNumber} が見つかりません`);
     }
 
     try {
-      this.filters[index].setKnobAngle(angle);
+      this.filters[keyNumber].setKnobAngle(angle);
     } catch (error) {
       throw new Error(`フィルターの更新に失敗しました: ${(error as Error).message}`);
     }
@@ -631,19 +651,19 @@ export class AudioEngine {
 
   /**
    * フィルターをリセット
-   * @param {number} index - フィルターのインデックス
+   * @param {number} keyNumber - フィルターのインデックス
    * @throws {Error} 初期化されていない場合、またはフィルターが存在しない場合
    */
-  public resetFilter(index: number): void {
+  public resetFilter(keyNumber: number): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    if (!this.filters[index]) {
-      throw new Error(`フィルター ${index} が見つかりません`);
+    if (!this.filters[keyNumber]) {
+      throw new Error(`フィルター ${keyNumber} が見つかりません`);
     }
 
     try {
-      this.filters[index].reset();
+      this.filters[keyNumber].reset();
     } catch (error) {
       throw new Error(`フィルターのリセットに失敗しました: ${(error as Error).message}`);
     }
@@ -658,19 +678,46 @@ export class AudioEngine {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-
+  
     try {
       const sampleGain = this.sampleGains.get(sampleId);
       if (!sampleGain) {
         throw new Error(`サンプル ${sampleId} が見つかりません`);
       }
-
+  
+      const sampleNumber = parseInt(sampleId, 10);
+      let effectChainIndex: number;
+  
+      if (sampleNumber === 1) {
+        effectChainIndex = 1; // サンプル1はインデックス 1
+      } else if (sampleNumber === 2) {
+        effectChainIndex = 2; // サンプル2はインデックス 2
+      } else if (sampleNumber === 3) {
+        effectChainIndex = 3; // サンプル3はインデックス 3
+      } else {
+        console.warn(`不明な sampleId: ${sampleId}`);
+        return;
+      }
+  
+      if (!this.effectChains[effectChainIndex]) {
+        throw new Error(`エフェクトチェーン ${effectChainIndex} が見つかりません`);
+      }
+      if (!this.effectChains[0]) {
+        throw new Error('マスターエフェクトチェーンが見つかりません');
+      }
+  
       // サンプルの出力を対応するEffectChainに接続
       sampleGain.disconnect();
-      sampleGain.connect(this.effectChains[parseInt(sampleId) - 1].getInput());
-      
+      sampleGain.connect(this.effectChains[effectChainIndex].getInput());
+  
       // EffectChainの出力をマスターのEffectChainに接続
-      this.effectChains[parseInt(sampleId) - 1].getOutput().connect(this.effectChains[3].getInput());
+      this.effectChains[effectChainIndex].getOutput().disconnect();
+      this.effectChains[effectChainIndex].getOutput().connect(this.effectChains[0].getInput());
+  
+      // マスターのEffectChainの出力を最終出力に接続 (一度切断してから接続)
+      this.effectChains[0].getOutput().disconnect();
+      this.effectChains[0].getOutput().connect(this.context.destination);
+  
     } catch (error) {
       throw new Error(`サンプル ${sampleId} の接続に失敗しました: ${(error as Error).message}`);
     }

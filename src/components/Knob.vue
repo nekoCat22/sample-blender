@@ -46,6 +46,7 @@ interface KnobProps {
   rotationRange: number;
   initialRotationOffset: number;
   isDisabled: boolean;
+  resetValue: number;
 }
 
 export default defineComponent({
@@ -86,6 +87,10 @@ export default defineComponent({
     isDisabled: {
       type: Boolean,
       default: false
+    },
+    resetValue: {
+      type: Number,
+      default: 0.5
     }
   },
   emits: ['update:value', 'reset'],

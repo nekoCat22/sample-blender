@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <h2>サンプル音声プレイヤー</h2>
+    <h2>サンプル声プレイヤー</h2>
     <div v-if="error" class="error-message">
       {{ error }}
     </div>
@@ -44,12 +44,12 @@
         />
         <Knob
           label="Filter"
-          :sub-label="filterSubLabels[0]"
-          :value="filterAngles[0]"
+          :sub-label="filterSubLabels[1]"
+          :value="filterAngles[1]"
           :min="-135"
           :max="135"
-          @update:value="(value) => updateFilter(0, value)"
-          @reset="resetFilter(0)"
+          @update:value="(value) => updateFilter(1, value)"
+          @reset="resetFilter(1)"
         />
         <Knob
           label="Pitch"
@@ -82,12 +82,12 @@
         />
         <Knob
           label="Filter"
-          :sub-label="filterSubLabels[1]"
-          :value="filterAngles[1]"
+          :sub-label="filterSubLabels[2]"
+          :value="filterAngles[2]"
           :min="-135"
           :max="135"
-          @update:value="(value) => updateFilter(1, value)"
-          @reset="resetFilter(1)"
+          @update:value="(value) => updateFilter(2, value)"
+          @reset="resetFilter(2)"
         />
         <Knob
           label="Timing"
@@ -136,13 +136,13 @@
         />
         <Knob
           label="Filter"
-          :sub-label="filterSubLabels[2]"
-          :value="filterAngles[2]"
+          :sub-label="filterSubLabels[3]"
+          :value="filterAngles[3]"
           :min="-135"
           :max="135"
           :is-disabled="!isSample3Enabled"
-          @update:value="(value) => updateFilter(2, value)"
-          @reset="resetFilter(2)"
+          @update:value="(value) => updateFilter(3, value)"
+          @reset="resetFilter(3)"
         />
         <Knob
           label="Timing"
@@ -184,12 +184,12 @@
         />
         <Knob
           label="Filter"
-          :sub-label="filterSubLabels[3]"
-          :value="filterAngles[3]"
+          :sub-label="filterSubLabels[0]"
+          :value="filterAngles[0]"
           :min="-135"
           :max="135"
-          @update:value="(value) => updateFilter(3, value)"
-          @reset="resetFilter(3)"
+          @update:value="(value) => updateFilter(0, value)"
+          @reset="resetFilter(0)"
         />
         <VolumeMeter 
           :level="volumeLevel"
@@ -243,18 +243,24 @@ export default defineComponent({
       2: null,
       3: null
     })
+    const filterAngles = ref<{ [key: number]: number }>({
+      0: 0, // マスター用
+      1: 0, // サンプル1
+      2: 0, // サンプル2
+      3: 0  // サンプル3
+    })
     const volumeLevel = ref(-60) // 音量レベルの初期値
     const meterInterval = ref<number | null>(null) // 音量メーターの表示の設定
-    const filterAngles = ref<number[]>([0, 0, 0, 0])  // サンプル1,2,3とマスター用
-
+    
     // 各フィルターのサブラベルを計算（角度だけで判断）
     const filterSubLabels = computed(() => {
-      return filterAngles.value.map((angle) => {
-        const bypassRange = 10  // バイパス範囲を固定値に
-        if (Math.abs(angle) <= bypassRange) return 'BYPASS'
-        if (angle > 0) return 'HP'
-        return 'LP'
-      })
+      return Object.keys(filterAngles.value).map((key) => {
+        const angle = filterAngles.value[parseInt(key)];
+        const bypassRange = 10;  // バイパス範囲を固定値に
+        if (Math.abs(angle) <= bypassRange) return 'BYPASS';
+        if (angle > 0) return 'HP';
+        return 'LP';
+      });
     })
 
     // メソッドの定義
@@ -451,20 +457,20 @@ export default defineComponent({
     })
 
     // フィルターの更新
-    const updateFilter = (index: number, angle: number) => {
+    const updateFilter = (sampleNumber: number, angle: number) => {
       try {
-        audioEngine.setFilterValue(index, angle);
-        filterAngles.value[index] = angle;
+        audioEngine.setFilterValue(sampleNumber, angle);
+        filterAngles.value[sampleNumber] = angle;
       } catch (error) {
         handleError('フィルターの更新に失敗しました', error as Error);
       }
     }
 
     // フィルターのリセット
-    const resetFilter = (index: number) => {
+    const resetFilter = (sampleNumber: number) => {
       try {
-        audioEngine.resetFilter(index);
-        filterAngles.value[index] = 0;
+        audioEngine.resetFilter(sampleNumber);
+        filterAngles.value[sampleNumber] = 0;
       } catch (error) {
         handleError('フィルターのリセットに失敗しました', error as Error);
       }
@@ -496,7 +502,7 @@ export default defineComponent({
       audioBlobs.value = { 1: null, 2: null, 3: null }
       volumes.value = { 1: 0.8, 2: 0.8, 3: 0.8 }
       timing.value = { 2: 0, 3: 0 }
-      filterAngles.value = [0, 0, 0, 0]
+      filterAngles.value = { 0: 0, 1: 0, 2: 0, 3: 0 }
       isSample3Enabled.value = false
       isPlaying.value = false
       errorMessage.value = null

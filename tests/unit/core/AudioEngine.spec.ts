@@ -26,10 +26,21 @@ const createBufferSourceNode = () => ({
   playbackRate: { value: 1.0 }
 });
 
+// BiquadFilterNodeのモックを作成
+const createBiquadFilterNode = () => ({
+  frequency: { value: 1000 },
+  Q: { value: 1 },
+  gain: { value: 0 },
+  type: 'lowpass',
+  connect: jest.fn(),
+  disconnect: jest.fn()
+});
+
 // AudioContextのモックを作成
 const mockAudioContext = {
   createBufferSource: jest.fn(() => createBufferSourceNode()),
   createGain: jest.fn(() => createGainNode()),
+  createBiquadFilter: jest.fn(() => createBiquadFilterNode()),
   decodeAudioData: jest.fn((arrayBuffer) => Promise.resolve({
     duration: 1,
     sampleRate: 44100,
