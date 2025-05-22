@@ -40,8 +40,6 @@ interface KnobProps {
   label: string;
   subLabel: string;
   value: number;
-  min: number;
-  max: number;
   step: number;
   rotationRange: number;
   initialRotationOffset: number;
@@ -63,14 +61,6 @@ export default defineComponent({
     value: {
       type: Number,
       required: true
-    },
-    min: {
-      type: Number,
-      default: 0
-    },
-    max: {
-      type: Number,
-      default: 1
     },
     step: {
       type: Number,
@@ -101,8 +91,7 @@ export default defineComponent({
     const startValue = ref(0);
 
     const rotation = computed(() => {
-      const normalizedValue = (props.value - props.min) / (props.max - props.min);
-      return normalizedValue * props.rotationRange + props.initialRotationOffset;
+      return props.value * props.rotationRange + props.initialRotationOffset;
     });
 
     const handleDoubleClick = () => {
@@ -130,10 +119,10 @@ export default defineComponent({
       const sensitivity = 0.005;
       
       let newValue = startValue.value;
-      newValue += deltaY * sensitivity * (props.max - props.min);
-      newValue += deltaX * sensitivity * (props.max - props.min);
+      newValue += deltaY * sensitivity;
+      newValue += deltaX * sensitivity;
       
-      newValue = Math.max(props.min, Math.min(props.max, newValue));
+      newValue = Math.max(0, Math.min(1, newValue));
       emit('update:value', parseFloat(newValue.toFixed(3)));
     };
 
@@ -160,11 +149,11 @@ export default defineComponent({
       if (props.isDisabled) return;
       event.preventDefault();
       
-      const wheelSensitivity = 0.0001
-      const delta = -event.deltaY * wheelSensitivity * (props.max - props.min);
+      const wheelSensitivity = 0.0001;
+      const delta = -event.deltaY * wheelSensitivity;
       let newValue = props.value + delta;
       
-      newValue = Math.max(props.min, Math.min(props.max, newValue));
+      newValue = Math.max(0, Math.min(1, newValue));
       emit('update:value', parseFloat(newValue.toFixed(3)));
     };
 
