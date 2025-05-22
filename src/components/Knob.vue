@@ -40,6 +40,8 @@ interface KnobProps {
   label: string;
   subLabel: string;
   value: number;
+  min: number;
+  max: number;
   step: number;
   rotationRange: number;
   initialRotationOffset: number;
@@ -61,6 +63,14 @@ export default defineComponent({
     value: {
       type: Number,
       required: true
+    },
+    min: {
+      type: Number,
+      default: 0
+    },
+    max: {
+      type: Number,
+      default: 1
     },
     step: {
       type: Number,
@@ -122,7 +132,7 @@ export default defineComponent({
       newValue += deltaY * sensitivity;
       newValue += deltaX * sensitivity;
       
-      newValue = Math.max(0, Math.min(1, newValue));
+      newValue = Math.max(props.min, Math.min(props.max, newValue));
       emit('update:value', parseFloat(newValue.toFixed(3)));
     };
 
@@ -153,7 +163,7 @@ export default defineComponent({
       const delta = -event.deltaY * wheelSensitivity;
       let newValue = props.value + delta;
       
-      newValue = Math.max(0, Math.min(1, newValue));
+      newValue = Math.max(props.min, Math.min(props.max, newValue));
       emit('update:value', parseFloat(newValue.toFixed(3)));
     };
 

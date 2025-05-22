@@ -44,7 +44,7 @@ describe('Filter', () => {
   let context: AudioContext;
 
   beforeEach(() => {
-    context = new AudioContext();
+    context = new MockAudioContext() as unknown as AudioContext;
     filter = new Filter(context);
   });
 

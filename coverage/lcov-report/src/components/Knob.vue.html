@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">82.47% </span>
+                <span class="strong">82.29% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>80/97</span>
+                <span class='fraction'>79/96</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">84.09% </span>
+                <span class="strong">83.9% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>74/88</span>
+                <span class='fraction'>73/87</span>
             </div>
         
             
@@ -310,8 +310,7 @@
 <a name='L245'></a><a href='#L245'>245</a>
 <a name='L246'></a><a href='#L246'>246</a>
 <a name='L247'></a><a href='#L247'>247</a>
-<a name='L248'></a><a href='#L248'>248</a>
-<a name='L249'></a><a href='#L249'>249</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L248'></a><a href='#L248'>248</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -369,7 +368,6 @@
 <span class="cline-any cline-yes">74x</span>
 <span class="cline-any cline-yes">74x</span>
 <span class="cline-any cline-yes">74x</span>
-<span class="cline-any cline-yes">75x</span>
 <span class="cline-any cline-yes">75x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">74x</span>
@@ -635,8 +633,8 @@ export default defineComponent({
     },
     step: {
       type: Number,
-      default: 0.01
-    },<span class="cstat-no" title="statement not covered" ><span class="missing-if-branch" title="if path not taken" >I</span></span>
+      <span class="missing-if-branch" title="if path not taken" >I</span>default: 0.01<span class="cstat-no" title="statement not covered" ></span>
+    },
     rotationRange: {
       type: Number,
       default: 270 // デフォルトの回転範囲
@@ -647,23 +645,22 @@ export default defineComponent({
     },
     isDisabled: {
       type: Boolean,
-      default: false
-    },<span class="missing-if-branch" title="else path not taken" >E</span>
+      <span class="missing-if-branch" title="else path not taken" >E</span>default: false
+    },
     resetValue: {
       type: Number,
       default: 0.5
     }
   },
-  emits: ['update:value', 'reset'],
-  setup(props: KnobPro<span class="fstat-no" title="function not covered" >ps</span>, { emit }) {
-    co<span class="cstat-no" title="statement not covered" >nst isDragging = ref(false);</span>
-    cons<span class="cstat-no" title="statement not covered" >t startY = ref(0);</span>
+  emits: ['update:valu<span class="fstat-no" title="function not covered" >e'</span>, 'reset'],
+  setu<span class="cstat-no" title="statement not covered" >p(props: KnobProps, { emit }) {</span>
+    cons<span class="cstat-no" title="statement not covered" >t isDragging = ref(</span>false);
+    const startY = ref(0);
     const startX = ref(0);
-    const startValue = ref(0);
-<span class="fstat-no" title="function not covered" ></span>
-    co<span class="cstat-no" title="statement not covered" >nst rotation</span> = computed(() =&gt; {
-      const normalizedValue = (props.value - props.min) / (props.max - props.min);
-      return normalize<span class="fstat-no" title="function not covered" >dV</span>alue * props.rotationRange + props.initialRotationOffset;
+    const startValue<span class="fstat-no" title="function not covered" > =</span> ref(0);
+<span class="cstat-no" title="statement not covered" ></span>
+    const rotation = computed(() =&gt; {
+      return props.val<span class="fstat-no" title="function not covered" >ue</span> * props.rotationRange + props.initialRotationOffset;
     })<span class="cstat-no" title="statement not covered" >;<span class="cstat-no" title="statement not covered" ></span></span>
 <span class="cstat-no" title="statement not covered" ></span>
     const handleDoubleClick =<span class="cstat-no" title="statement not covered" > () =&gt; </span>{
@@ -691,8 +688,8 @@ export default defineComponent({
       const sensitivity = 0.005;
       
       let newValue = startValue.value;
-      newValue += deltaY * sensitivity * (props.max - props.min);
-      newValue += deltaX * sensitivity * (props.max - props.min);
+      newValue += deltaY * sensitivity;
+      newValue += deltaX * sensitivity;
       
       newValue = Math.max(props.min, Math.min(props.max, newValue));
       emit('update:value', parseFloat(newValue.toFixed(3)));
@@ -721,8 +718,8 @@ export default defineComponent({
       if (props.isDisabled) return;
       event.preventDefault();
       
-      const wheelSensitivity = 0.0001
-      const delta = -event.deltaY * wheelSensitivity * (props.max - props.min);
+      const wheelSensitivity = 0.0001;
+      const delta = -event.deltaY * wheelSensitivity;
       let newValue = props.value + delta;
       
       newValue = Math.max(props.min, Math.min(props.max, newValue));
@@ -814,7 +811,7 @@ export default defineComponent({
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-18T06:40:28.053Z
+                at 2025-05-22T11:10:08.580Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

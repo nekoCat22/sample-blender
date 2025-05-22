@@ -179,44 +179,31 @@ describe('AudioEngine', () => {
     });
 
     it('ピッチを設定して取得できる', () => {
-      const testPitch = 1.5;
-      audioEngine.setSamplePitch('1', testPitch);
-      expect(audioEngine.getSamplePitch('1')).toBe(testPitch);
-    });
-
-    it('ノブの角度からピッチを設定できる', () => {
-      // 正の角度（1.0から2.0の範囲）
-      audioEngine.setSamplePitch('1', 135);
-      expect(audioEngine.getSamplePitch('1')).toBe(2.0);
-
-      // 負の角度（0.5から1.0の範囲）
-      audioEngine.setSamplePitch('1', -135);
-      expect(audioEngine.getSamplePitch('1')).toBe(0.5);
-
-      // 中間の角度
-      audioEngine.setSamplePitch('1', 0);
-      expect(audioEngine.getSamplePitch('1')).toBe(1.0);
+      const testPitch = 0.8;
+      audioEngine.saveSamplePitchRate('1', testPitch);
+      // 0.8の入力値は1.7のplaybackRateに変換される
+      expect(audioEngine.getSamplePitchRate('1')).toBeCloseTo(1.7, 5);
     });
 
     it('無効なピッチ値を設定するとエラーになる', () => {
-      expect(() => audioEngine.setSamplePitch('1', 0.4)).toThrow();
-      expect(() => audioEngine.setSamplePitch('1', 2.1)).toThrow();
+      expect(() => audioEngine.saveSamplePitchRate('1', -0.1)).toThrow();
+      expect(() => audioEngine.saveSamplePitchRate('1', 1.1)).toThrow();
     });
 
     it('ピッチをリセットできる', () => {
       // まずピッチを変更
-      audioEngine.setSamplePitch('1', 1.5);
-      expect(audioEngine.getSamplePitch('1')).toBe(1.5);
+      audioEngine.saveSamplePitchRate('1', 0.8);
+      expect(audioEngine.getSamplePitchRate('1')).toBeCloseTo(1.7, 5);
 
       // リセット
-      audioEngine.resetSamplePitch('1');
-      expect(audioEngine.getSamplePitch('1')).toBe(1.0);
+      audioEngine.resetSamplePitchRate('1');
+      expect(audioEngine.getSamplePitchRate('1')).toBe(1.0);
     });
 
     it('存在しないサンプルのピッチを操作するとエラーになる', () => {
-      expect(() => audioEngine.setSamplePitch('4', 1.5)).toThrow();
-      expect(() => audioEngine.getSamplePitch('4')).toThrow();
-      expect(() => audioEngine.resetSamplePitch('4')).toThrow();
+      expect(() => audioEngine.saveSamplePitchRate('4', 0.8)).toThrow();
+      expect(() => audioEngine.getSamplePitchRate('4')).toThrow();
+      expect(() => audioEngine.resetSamplePitchRate('4')).toThrow();
     });
   });
 }); 

@@ -35,9 +35,12 @@ export class AudioEngine {
   private effectChains: EffectChain[] = [];
   private filters: Filter[] = [];
   private samplePitches: Map<string, number> = new Map();
-  private static readonly MIN_PITCH = 0.5;
-  private static readonly MAX_PITCH = 2.0;
-  private static readonly DEFAULT_PITCH = 1.0;
+  private static readonly MIN_PITCH = 0.0;
+  private static readonly MAX_PITCH = 1.0;
+  private static readonly DEFAULT_PITCH = 0.5;
+  private static readonly MIN_PLAYBACK_RATE = 0.5;  // 最小再生速度（半速）
+  private static readonly MAX_PLAYBACK_RATE = 2.0;  // 最大再生速度（2倍速）
+  private static readonly DEFAULT_PLAYBACK_RATE = 1.0;  // デフォルト再生速度（通常速度）
 
   /**
    * AudioEngineのコンストラクタ
@@ -276,76 +279,57 @@ export class AudioEngine {
   }
 
   /**
-   * サンプルのピッチを設定
+   * サンプルのピッチレートを保存
    * @param {string} sampleId - サンプルID
-   * @param {number} value - 0.0から1.0の範囲の値（内部で0.5から2.0に変換）
+   * @param {number} value - ピッチ値（0.0から1.0の範囲）
    * @throws {Error} 初期化されていない場合、または無効なピッチ値の場合
    */
-  public setSamplePitch(sampleId: string, value: number): void {
+  public saveSamplePitchRate(sampleId: string, value: number): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-
-    // サンプルの存在チェックを追加
     if (!this.sampleBuffers.has(sampleId)) {
       throw new Error(`サンプル ${sampleId} が見つかりません`);
     }
-
-    if (value < 0 || value > 1) {
-      throw new Error('ピッチ値は0.0から1.0の範囲で指定してください');
+    if (value < AudioEngine.MIN_PITCH || value > AudioEngine.MAX_PITCH) {
+      throw new Error(`ピッチ値は${AudioEngine.MIN_PITCH}から${AudioEngine.MAX_PITCH}の範囲で指定してください`);
     }
 
-    let pitch: number;
-    if (value <= 0.5) {
-      // 0.0-0.5の範囲を0.5-1.0に変換
-      pitch = 0.5 + (value * 1.0); // 0.5から1.0までの範囲
-    } else {
-      // 0.5-1.0の範囲を1.0-2.0に変換
-      pitch = 1.0 + ((value - 0.5) * 2.0); // 1.0から2.0までの範囲
-    }
-
-    // 現在再生中のソースのピッチを更新
-    const source = this.sampleSources.get(sampleId);
-    if (source) {
-      source.playbackRate.value = pitch;
-    }
-
-    // ピッチ値を保存
-    this.samplePitches.set(sampleId, pitch);
+    // 0-1の値を0.5-2.0の範囲に変換
+    const playbackRate = AudioEngine.MIN_PLAYBACK_RATE + 
+      (value * (AudioEngine.MAX_PLAYBACK_RATE - AudioEngine.MIN_PLAYBACK_RATE));
+    this.samplePitches.set(sampleId, playbackRate);
   }
 
   /**
-   * サンプルのピッチを取得
+   * サンプルのピッチレートを取得
    * @param {string} sampleId - サンプルID
-   * @returns {number} 現在のピッチ値
+   * @returns {number} 現在のピッチレート（0.5から2.0の範囲）
    * @throws {Error} 初期化されていない場合
    */
-  public getSamplePitch(sampleId: string): number {
+  public getSamplePitchRate(sampleId: string): number {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    // サンプルの存在チェックを追加
     if (!this.sampleBuffers.has(sampleId)) {
       throw new Error(`サンプル ${sampleId} が見つかりません`);
     }
-    return this.samplePitches.get(sampleId) || AudioEngine.DEFAULT_PITCH;
+    return this.samplePitches.get(sampleId) ?? AudioEngine.DEFAULT_PLAYBACK_RATE;
   }
 
   /**
-   * サンプルのピッチをリセット
+   * サンプルのピッチレートをリセット
    * @param {string} sampleId - サンプルID
    * @throws {Error} 初期化されていない場合
    */
-  public resetSamplePitch(sampleId: string): void {
+  public resetSamplePitchRate(sampleId: string): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    // サンプルの存在チェックを追加
     if (!this.sampleBuffers.has(sampleId)) {
       throw new Error(`サンプル ${sampleId} が見つかりません`);
     }
-    // 直接ピッチ値を1.0に設定
-    this.setSamplePitch(sampleId, 1.0);
+    this.samplePitches.set(sampleId, AudioEngine.DEFAULT_PLAYBACK_RATE);
   }
 
   /**
@@ -372,7 +356,7 @@ export class AudioEngine {
     // 新しいソースを作成
     const source = this.context.createBufferSource();
     source.buffer = buffer;
-    source.playbackRate.value = this.getSamplePitch(sampleId);
+    source.playbackRate.value = this.getSamplePitchRate(sampleId);
 
     // ゲインノードを取得または作成
     let gain = this.sampleGains.get(sampleId);
@@ -493,7 +477,7 @@ export class AudioEngine {
       // 新しいソースを作成
       const source = this.context.createBufferSource();
       source.buffer = buffer;
-      source.playbackRate.value = this.getSamplePitch(sampleId);
+      source.playbackRate.value = this.getSamplePitchRate(sampleId);
 
       // ゲインノードを取得または作成
       let gain = this.sampleGains.get(sampleId);

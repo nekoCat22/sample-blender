@@ -240,7 +240,7 @@ export default defineComponent({
     const filterSubLabels = computed(() => {
       return Object.keys(filterAngles.value).map((key) => {
         const value = filterAngles.value[parseInt(key)];
-        const bypassRange = 0.03;  // バイパス範囲を0.03に設定（0.497から0.503の範囲）
+        const bypassRange = 0.05;  // バイパス範囲を0.05に設定（0.45から0.55の範囲）
         if (Math.abs(value - 0.5) <= bypassRange) return 'BYPASS';
         if (value > 0.5) return 'HP';
         return 'LP';
@@ -392,7 +392,7 @@ export default defineComponent({
     // ピッチ制御
     const updatePitch = (sampleNumber: number, value: number): void => {
       try {
-        audioEngine.setSamplePitch(sampleNumber.toString(), value)
+        audioEngine.saveSamplePitchRate(sampleNumber.toString(), value)
         pitches.value[sampleNumber] = value
       } catch (error) {
         handleError('ピッチの更新に失敗しました', error as Error)
@@ -402,7 +402,7 @@ export default defineComponent({
     const resetPitch = (sampleNumber: number): void => {
       try {
         pitches.value[sampleNumber] = 0.5
-        audioEngine.setSamplePitch(sampleNumber.toString(), 0.5)
+        audioEngine.saveSamplePitchRate(sampleNumber.toString(), 0.5)
       } catch (error) {
         handleError('ピッチのリセットに失敗しました', error as Error)
       }
