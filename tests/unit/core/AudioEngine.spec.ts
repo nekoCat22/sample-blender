@@ -158,25 +158,17 @@ describe('AudioEngine', () => {
 
     it('複数のサンプルを同時に再生できる', () => {
       const sampleIds = ['1', '2'];
-      const timings = { '2': 0.1 };
-      
-      expect(() => audioEngine.playSamples(sampleIds, timings)).not.toThrow();
+      expect(() => audioEngine.playSamples(sampleIds)).not.toThrow();
     });
 
     it('存在しないサンプルを再生しようとするとエラーになる', () => {
       const sampleIds = ['1', '4'];
-      
       expect(() => audioEngine.playSamples(sampleIds)).toThrow('サンプル 4 が見つかりません');
     });
 
     it('タイミングを指定して再生できる', () => {
       const sampleIds = ['1', '2', '3'];
-      const timings = {
-        '2': 0.1,
-        '3': 0.2
-      };
-      
-      expect(() => audioEngine.playSamples(sampleIds, timings)).not.toThrow();
+      expect(() => audioEngine.playSamples(sampleIds)).not.toThrow();
     });
   });
 

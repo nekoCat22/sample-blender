@@ -308,17 +308,8 @@ export default defineComponent({
           sampleIds.push('3')
         }
 
-        // タイミング情報を作成
-        const timings: { [key: string]: number } = {}
-        if (timing.value[2] !== 0) {
-          timings['2'] = timing.value[2]
-        }
-        if (timing.value[3] !== 0) {
-          timings['3'] = timing.value[3]
-        }
-
         // AudioEngineを使って再生
-        audioEngine.playSamples(sampleIds, timings)
+        audioEngine.playSamples(sampleIds)
 
         // 各サンプルをEffectChainに接続
         sampleIds.forEach(sampleId => {

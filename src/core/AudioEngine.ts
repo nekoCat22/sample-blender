@@ -470,10 +470,9 @@ export class AudioEngine {
   /**
    * 複数のサンプルを同時に再生
    * @param {string[]} sampleIds - 再生するサンプルIDの配列
-   * @param {{ [sampleId: string]: number }} timings - 各サンプルのタイミング調整値（秒）
    * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
    */
-  public playSamples(sampleIds: string[], timings: { [sampleId: string]: number } = {}): void {
+  public playSamples(sampleIds: string[]): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
