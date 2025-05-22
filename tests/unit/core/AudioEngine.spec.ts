@@ -5,6 +5,7 @@
  * - 初期化のテスト
  * - マスターボリュームの制御テスト
  * - エラー処理のテスト
+ * - 音声ノードの接続テスト
  */
 
 import { AudioEngine } from '@/core/AudioEngine';
@@ -62,7 +63,8 @@ const mockAudioContext = {
   close: jest.fn(() => {
     mockAudioContext.state = 'closed';
     return Promise.resolve();
-  })
+  }),
+  destination: {} // 出力先のモック
 };
 
 // AudioContextのグローバルモックを設定
@@ -91,6 +93,10 @@ describe('AudioEngine', () => {
       const context = audioEngine.getContext();
       expect(context).toBeDefined();
       expect(context.state).toBe('running');
+    });
+
+    it('マスターゲインが正しく初期化される', () => {
+      expect(mockAudioContext.createGain).toHaveBeenCalled();
     });
   });
 
@@ -154,6 +160,25 @@ describe('AudioEngine', () => {
       await audioEngine.loadSample('1', new ArrayBuffer(0));
       await audioEngine.loadSample('2', new ArrayBuffer(0));
       await audioEngine.loadSample('3', new ArrayBuffer(0));
+    });
+
+    it('サンプルの読み込み時にGainNodeが作成される', async () => {
+      await audioEngine.loadSample('test', new ArrayBuffer(0));
+      expect(mockAudioContext.createGain).toHaveBeenCalled();
+    });
+
+    it('サンプル再生時にAudioBufferSourceNodeがGainNodeに接続される', () => {
+      // playSample内で生成されるsourceをキャプチャするための変数
+      let createdSource: any = null;
+      mockAudioContext.createBufferSource.mockImplementation(() => {
+        createdSource = createBufferSourceNode();
+        return createdSource;
+      });
+
+      audioEngine.playSample('1');
+
+      // playSampleで生成されたsourceのconnectが呼ばれているかを確認
+      expect(createdSource.connect).toHaveBeenCalled();
     });
 
     it('複数のサンプルを同時に再生できる', () => {

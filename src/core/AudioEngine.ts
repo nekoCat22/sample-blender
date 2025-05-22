@@ -20,7 +20,7 @@ import { BaseEffect } from '@/effects/base/BaseEffect'
 
 export class AudioEngine {
   private context: AudioContext;
-  private masterGain: GainNode;
+  private masterGain!: GainNode;  // 初期化はinitMasterGainで行うので、!を使用
   private isInitialized = false;
   private sampleTimings: Map<string, number> = new Map();
   private static readonly MAX_TIMING = 0.5;
@@ -49,14 +49,43 @@ export class AudioEngine {
   constructor() {
     try {
       this.context = new AudioContext();
-      this.masterGain = this.context.createGain();
-      this.masterGain.connect(this.context.destination);
-      this.isInitialized = true;
+      this.isInitialized = true;  // 初期化フラグを先に設定
+      this.initMasterGain();
       
       // フィルターの初期化
       this.initFilters();
     } catch (error: unknown) {
       throw new Error(`AudioEngineの初期化に失敗しました: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * マスターゲインの初期化と接続
+   * @throws {Error} 初期化に失敗した場合
+   */
+  private initMasterGain(): void {
+    try {
+      this.masterGain = this.context.createGain();
+      // マスターゲインを出力に接続
+      this.connectMasterGainToOutput();
+    } catch (error) {
+      throw new Error(`マスターゲインの初期化に失敗しました: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * マスターゲインを出力に接続
+   * @throws {Error} 初期化されていない場合
+   */
+  private connectMasterGainToOutput(): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    try {
+      this.masterGain.disconnect();
+      this.masterGain.connect(this.context.destination);
+    } catch (error) {
+      throw new Error(`マスターゲインの接続に失敗しました: ${(error as Error).message}`);
     }
   }
 
@@ -358,16 +387,17 @@ export class AudioEngine {
     source.buffer = buffer;
     source.playbackRate.value = this.getSamplePitchRate(sampleId);
 
-    // ゲインノードを取得または作成
-    let gain = this.sampleGains.get(sampleId);
+    // ゲインノードを取得
+    const gain = this.sampleGains.get(sampleId);
     if (!gain) {
-      gain = this.context.createGain();
-      this.sampleGains.set(sampleId, gain);
+      throw new Error(`サンプル ${sampleId} のゲインノードが見つかりません`);
     }
 
-    // ノードを接続
+    // 既存の接続を切断してから新しい接続を作成
+    gain.disconnect();
     source.connect(gain);
-    gain.connect(this.masterGain);
+    // サンプルをエフェクトチェーンに再接続
+    this.connectSampleToEffectChain(sampleId);
 
     // 再生開始
     const timing = this.sampleTimings.get(sampleId) || 0;
@@ -408,6 +438,13 @@ export class AudioEngine {
     try {
       const buffer = await this.context.decodeAudioData(audioData);
       this.sampleBuffers.set(sampleId, buffer);
+
+      // ゲインノードを作成
+      const gain = this.context.createGain();
+      this.sampleGains.set(sampleId, gain);
+
+      // サンプルをエフェクトチェーンに接続
+      this.connectSampleToEffectChain(sampleId);
     } catch (error) {
       throw new Error(`サンプル ${sampleId} の読み込みに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -479,16 +516,17 @@ export class AudioEngine {
       source.buffer = buffer;
       source.playbackRate.value = this.getSamplePitchRate(sampleId);
 
-      // ゲインノードを取得または作成
-      let gain = this.sampleGains.get(sampleId);
+      // ゲインノードを取得
+      const gain = this.sampleGains.get(sampleId);
       if (!gain) {
-        gain = this.context.createGain();
-        this.sampleGains.set(sampleId, gain);
+        throw new Error(`サンプル ${sampleId} のゲインノードが見つかりません`);
       }
 
-      // ノードを接続
+      // 既存の接続を切断してから新しい接続を作成
+      gain.disconnect();
       source.connect(gain);
-      gain.connect(this.masterGain);
+      // サンプルをエフェクトチェーンに再接続
+      this.connectSampleToEffectChain(sampleId);
 
       // タイミングを設定（既に0-0.5の範囲に変換済みの値を使用）
       const timing = this.sampleTimings.get(sampleId) || 0;
@@ -587,16 +625,8 @@ export class AudioEngine {
       this.filters[3] = sample3Filter; // インデックス 3 をサンプル3に
       this.effectChains[3] = sample3EffectChain;
 
-       
-      // マスターのEffectChainを出力に接続
-      this.effectChains[3].getOutput().connect(this.context.destination);
-      
-      // サンプル1の出力をEffectChainに接続
-      const sample1Gain = this.sampleGains.get('1');
-      if (sample1Gain) {
-        sample1Gain.disconnect();
-        sample1Gain.connect(this.effectChains[0].getInput());
-      }
+      // マスターのEffectChainの出力をマスターゲインに接続
+      this.effectChains[0].getOutput().connect(this.masterGain);
     } catch (error) {
       throw new Error(`フィルターの初期化に失敗しました: ${(error as Error).message}`);
     }
@@ -690,10 +720,6 @@ export class AudioEngine {
       // EffectChainの出力をマスターのEffectChainに接続
       this.effectChains[effectChainIndex].getOutput().disconnect();
       this.effectChains[effectChainIndex].getOutput().connect(this.effectChains[0].getInput());
-  
-      // マスターのEffectChainの出力を最終出力に接続 (一度切断してから接続)
-      this.effectChains[0].getOutput().disconnect();
-      this.effectChains[0].getOutput().connect(this.context.destination);
   
     } catch (error) {
       throw new Error(`サンプル ${sampleId} の接続に失敗しました: ${(error as Error).message}`);

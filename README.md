@@ -66,14 +66,18 @@ A web application for creating new audio samples by layering existing ones
   └── README.md      # プロジェクト説明
 ```
 
-## オーディオパスの流れ
+## 音声信号経路
+[サンプル1 (AudioBufferSourceNode)] --(出力)--> [GainNode1 (音量)] --(出力)--> [エフェクトチェーン1 (フィルター)] --(出力)-->
+[サンプル2 (AudioBufferSourceNode)] --(出力)--> [GainNode2 (音量)] --(出力)--> [エフェクトチェーン2 (フィルター)] --(出力)--> [マスターエフェクトチェーン (フィルター)] --(出力)--> [マスターゲインノード] --(出力)--> [ステレオ出力]
+[サンプル3 (AudioBufferSourceNode)] --(出力)--> [GainNode3 (音量)] --(出力)--> [エフェクトチェーン3 (フィルター)] --(出力)-->
+
 1. **入力処理**
    - サンプルファイルの読み込み
    - オーディオバッファへの変換
    - メモリ管理
 
 2. **エフェクトチェーン**
-   - ゲインコントロール
+   - ゲインコントロール（GainNode）
    - フィルター処理
 
 3. **出力処理**
@@ -152,9 +156,7 @@ A web application for creating new audio samples by layering existing ones
 
 ## わかってる問題
 - audioengineの責務が膨大
-- knob.vueから受け取るのを-1から1に正規化したいなり
 
-- audioplayer.vueとfilter.ts両方回転角度幅の設定をしている
 - 音量メーターがゴミ
 　　原因はエフェクトチェーンの型らしい、要件等。AIからの提案↓
 　　// 間違っていた実装
