@@ -409,7 +409,7 @@ export default defineComponent({
     const resetPitch = (sampleNumber: number): void => {
       try {
         pitches.value[sampleNumber] = 0.5
-        audioEngine.setSamplePitch(sampleNumber.toString(), 0.5, true)
+        audioEngine.setSamplePitch(sampleNumber.toString(), 0.5)
       } catch (error) {
         handleError('ピッチのリセットに失敗しました', error as Error)
       }

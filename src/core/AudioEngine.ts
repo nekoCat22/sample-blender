@@ -278,11 +278,10 @@ export class AudioEngine {
   /**
    * サンプルのピッチを設定
    * @param {string} sampleId - サンプルID
-   * @param {number} value - ノブの角度（-135から135）または直接のピッチ値（0.5から2.0）
-   * @param {boolean} isDirectPitch - valueが直接のピッチ値かどうか
+   * @param {number} value - 0.0から1.0の範囲の値（内部で0.5から2.0に変換）
    * @throws {Error} 初期化されていない場合、または無効なピッチ値の場合
    */
-  public setSamplePitch(sampleId: string, value: number, isDirectPitch = false): void {
+  public setSamplePitch(sampleId: string, value: number): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
@@ -292,29 +291,17 @@ export class AudioEngine {
       throw new Error(`サンプル ${sampleId} が見つかりません`);
     }
 
-    let pitch: number;
-    if (isDirectPitch) {
-      // 直接のピッチ値の場合
-      if (value < AudioEngine.MIN_PITCH || value > AudioEngine.MAX_PITCH) {
-        throw new Error(`ピッチは${AudioEngine.MIN_PITCH}から${AudioEngine.MAX_PITCH}の範囲で指定してください`);
-      }
-      pitch = value;
-    } else {
-      // ノブの角度の場合
-      const knobAngle = value;
-      pitch = 1.0; // 基準値
+    if (value < 0 || value > 1) {
+      throw new Error('ピッチ値は0.0から1.0の範囲で指定してください');
+    }
 
-      if (knobAngle > 0) {
-        // 正の角度の場合：1.0から2.0までの範囲
-        const positiveRange = 1.0; // 2.0 - 1.0
-        const positiveStep = positiveRange / 135; // 1度あたりの変化量
-        pitch = 1.0 + (knobAngle * positiveStep);
-      } else if (knobAngle < 0) {
-        // 負の角度の場合：0.5から1.0までの範囲
-        const negativeRange = 0.5; // 1.0 - 0.5
-        const negativeStep = negativeRange / 135; // 1度あたりの変化量
-        pitch = 1.0 + (knobAngle * negativeStep);
-      }
+    let pitch: number;
+    if (value <= 0.5) {
+      // 0.0-0.5の範囲を0.5-1.0に変換
+      pitch = 0.5 + (value * 1.0); // 0.5から1.0までの範囲
+    } else {
+      // 0.5-1.0の範囲を1.0-2.0に変換
+      pitch = 1.0 + ((value - 0.5) * 2.0); // 1.0から2.0までの範囲
     }
 
     // 現在再生中のソースのピッチを更新
@@ -358,7 +345,7 @@ export class AudioEngine {
       throw new Error(`サンプル ${sampleId} が見つかりません`);
     }
     // 直接ピッチ値を1.0に設定
-    this.setSamplePitch(sampleId, 1.0, true);
+    this.setSamplePitch(sampleId, 1.0);
   }
 
   /**

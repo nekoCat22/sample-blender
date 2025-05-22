@@ -188,7 +188,7 @@ describe('AudioEngine', () => {
 
     it('ピッチを設定して取得できる', () => {
       const testPitch = 1.5;
-      audioEngine.setSamplePitch('1', testPitch, true);
+      audioEngine.setSamplePitch('1', testPitch);
       expect(audioEngine.getSamplePitch('1')).toBe(testPitch);
     });
 
@@ -207,13 +207,13 @@ describe('AudioEngine', () => {
     });
 
     it('無効なピッチ値を設定するとエラーになる', () => {
-      expect(() => audioEngine.setSamplePitch('1', 0.4, true)).toThrow();
-      expect(() => audioEngine.setSamplePitch('1', 2.1, true)).toThrow();
+      expect(() => audioEngine.setSamplePitch('1', 0.4)).toThrow();
+      expect(() => audioEngine.setSamplePitch('1', 2.1)).toThrow();
     });
 
     it('ピッチをリセットできる', () => {
       // まずピッチを変更
-      audioEngine.setSamplePitch('1', 1.5, true);
+      audioEngine.setSamplePitch('1', 1.5);
       expect(audioEngine.getSamplePitch('1')).toBe(1.5);
 
       // リセット
@@ -222,7 +222,7 @@ describe('AudioEngine', () => {
     });
 
     it('存在しないサンプルのピッチを操作するとエラーになる', () => {
-      expect(() => audioEngine.setSamplePitch('4', 1.5, true)).toThrow();
+      expect(() => audioEngine.setSamplePitch('4', 1.5)).toThrow();
       expect(() => audioEngine.getSamplePitch('4')).toThrow();
       expect(() => audioEngine.resetSamplePitch('4')).toThrow();
     });
