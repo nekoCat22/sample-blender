@@ -172,30 +172,34 @@ export class AudioEngine {
   /**
    * サンプルの再生タイミングを設定
    * @param {string} sampleId - サンプルID
-   * @param {number} timing - 0.0から0.5秒の範囲のタイミング値
+   * @param {number} timing - 0.0から1.0の範囲のタイミング値（内部で0.0から0.5秒に変換）
    * @throws {Error} 初期化されていない場合、または無効なタイミング値の場合
    */
   public setTiming(sampleId: string, timing: number): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    if (timing < 0 || timing > AudioEngine.MAX_TIMING) {
-      throw new Error(`タイミングは0から${AudioEngine.MAX_TIMING}秒の間で指定してください`);
+    if (timing < 0 || timing > 1) {
+      throw new Error('タイミングは0から1の範囲で指定してください');
     }
-    this.sampleTimings.set(sampleId, timing);
+    // 0-1の値を0-0.5の範囲に変換
+    const convertedTiming = timing * AudioEngine.MAX_TIMING;
+    this.sampleTimings.set(sampleId, convertedTiming);
   }
 
   /**
    * サンプルの再生タイミングを取得
    * @param {string} sampleId - サンプルID
-   * @returns {number} 現在のタイミング値
+   * @returns {number} 現在のタイミング値（0.0から1.0の範囲）
    * @throws {Error} 初期化されていない場合
    */
   public getTiming(sampleId: string): number {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    return this.sampleTimings.get(sampleId) || 0;
+    // 0-0.5の値を0-1の範囲に変換して返す
+    const timing = this.sampleTimings.get(sampleId) || 0;
+    return timing / AudioEngine.MAX_TIMING;
   }
 
   /**
@@ -516,8 +520,8 @@ export class AudioEngine {
       source.connect(gain);
       gain.connect(this.masterGain);
 
-      // タイミングを設定
-      const timing = timings[sampleId] || 0;
+      // タイミングを設定（既に0-0.5の範囲に変換済みの値を使用）
+      const timing = this.sampleTimings.get(sampleId) || 0;
       const startTime = this.context.currentTime + timing;
 
       // 再生終了時のイベントを設定
