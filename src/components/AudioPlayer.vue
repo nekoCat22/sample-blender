@@ -46,16 +46,12 @@
           label="Filter"
           :sub-label="filterSubLabels[1]"
           :value="filterAngles[1]"
-          :min="-135"
-          :max="135"
           @update:value="(value) => updateFilter(1, value)"
           @reset="resetFilter(1)"
         />
         <Knob
           label="Pitch"
           :value="pitches[1]"
-          :min="-135"
-          :max="135"
           :initial-rotation-offset="-135"
           @update:value="(value) => updatePitch(1, value)"
           @reset="resetPitch(1)"
@@ -84,24 +80,18 @@
           label="Filter"
           :sub-label="filterSubLabels[2]"
           :value="filterAngles[2]"
-          :min="-135"
-          :max="135"
           @update:value="(value) => updateFilter(2, value)"
           @reset="resetFilter(2)"
         />
         <Knob
           label="Timing"
           :value="timing[2]"
-          :min="0"
-          :max="0.5"
           @update:value="(value) => updateTiming(2, value)"
           @reset="resetTiming(2)"
         />
         <Knob
           label="Pitch"
           :value="pitches[2]"
-          :min="-135"
-          :max="135"
           :initial-rotation-offset="-135"
           @update:value="(value) => updatePitch(2, value)"
           @reset="resetPitch(2)"
@@ -138,8 +128,6 @@
           label="Filter"
           :sub-label="filterSubLabels[3]"
           :value="filterAngles[3]"
-          :min="-135"
-          :max="135"
           :is-disabled="!isSample3Enabled"
           @update:value="(value) => updateFilter(3, value)"
           @reset="resetFilter(3)"
@@ -147,8 +135,6 @@
         <Knob
           label="Timing"
           :value="timing[3]"
-          :min="0"
-          :max="0.5"
           :is-disabled="!isSample3Enabled"
           @update:value="(value) => updateTiming(3, value)"
           @reset="resetTiming(3)"
@@ -156,8 +142,6 @@
         <Knob
           label="Pitch"
           :value="pitches[3]"
-          :min="-135"
-          :max="135"
           :initial-rotation-offset="-135"
           :is-disabled="!isSample3Enabled"
           @update:value="(value) => updatePitch(3, value)"
@@ -186,8 +170,6 @@
           label="Filter"
           :sub-label="filterSubLabels[0]"
           :value="filterAngles[0]"
-          :min="-135"
-          :max="135"
           @update:value="(value) => updateFilter(0, value)"
           @reset="resetFilter(0)"
         />
@@ -233,9 +215,9 @@ export default defineComponent({
       3: 0
     })
     const pitches = ref<{ [key: number]: number }>({
-      1: 1.0,
-      2: 1.0,
-      3: 1.0
+      1: 0.5,
+      2: 0.5,
+      3: 0.5
     })
     const isSample3Enabled = ref(false)
     const audioBlobs = ref<{ [key: number]: Blob | null }>({
@@ -244,21 +226,21 @@ export default defineComponent({
       3: null
     })
     const filterAngles = ref<{ [key: number]: number }>({
-      0: 0, // マスター用
-      1: 0, // サンプル1
-      2: 0, // サンプル2
-      3: 0  // サンプル3
+      0: 0.5, // マスター用
+      1: 0.5, // サンプル1
+      2: 0.5, // サンプル2
+      3: 0.5  // サンプル3
     })
     const volumeLevel = ref(-60) // 音量レベルの初期値
     const meterInterval = ref<number | null>(null) // 音量メーターの表示の設定
     
-    // 各フィルターのサブラベルを計算（角度だけで判断）
+    // 各フィルターのサブラベルを計算（0から1の正規化値で判断）
     const filterSubLabels = computed(() => {
       return Object.keys(filterAngles.value).map((key) => {
-        const angle = filterAngles.value[parseInt(key)];
-        const bypassRange = 10;  // バイパス範囲を固定値に
-        if (Math.abs(angle) <= bypassRange) return 'BYPASS';
-        if (angle > 0) return 'HP';
+        const value = filterAngles.value[parseInt(key)];
+        const bypassRange = 0.03;  // バイパス範囲を0.03に設定（0.497から0.503の範囲）
+        if (Math.abs(value - 0.5) <= bypassRange) return 'BYPASS';
+        if (value > 0.5) return 'HP';
         return 'LP';
       });
     })
@@ -426,8 +408,8 @@ export default defineComponent({
 
     const resetPitch = (sampleNumber: number): void => {
       try {
-        pitches.value[sampleNumber] = 1.0
-        audioEngine.setSamplePitch(sampleNumber.toString(), 1.0, true)
+        pitches.value[sampleNumber] = 0.5
+        audioEngine.setSamplePitch(sampleNumber.toString(), 0.5, true)
       } catch (error) {
         handleError('ピッチのリセットに失敗しました', error as Error)
       }
@@ -446,7 +428,7 @@ export default defineComponent({
     const resetFilter = (sampleNumber: number) => {
       try {
         audioEngine.resetFilter(sampleNumber);
-        filterAngles.value[sampleNumber] = 0;
+        filterAngles.value[sampleNumber] = 0.5;
       } catch (error) {
         handleError('フィルターのリセットに失敗しました', error as Error);
       }
@@ -507,7 +489,8 @@ export default defineComponent({
       audioBlobs.value = { 1: null, 2: null, 3: null }
       volumes.value = { 1: 0.8, 2: 0.8, 3: 0.8 }
       timing.value = { 2: 0, 3: 0 }
-      filterAngles.value = { 0: 0, 1: 0, 2: 0, 3: 0 }
+      filterAngles.value = { 0: 0.5, 1: 0.5, 2: 0.5, 3: 0.5 }
+      pitches.value = { 1: 0.5, 2: 0.5, 3: 0.5 }
       isSample3Enabled.value = false
       isPlaying.value = false
       errorMessage.value = null
