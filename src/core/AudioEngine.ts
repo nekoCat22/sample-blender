@@ -621,19 +621,22 @@ export class AudioEngine {
   /**
    * フィルターの値を更新
    * @param {number} keyNumber - フィルターのインデックス
-   * @param {number} angle - ノブの回転角度（-135度〜135度）
+   * @param {number} value - 0.0から1.0の範囲の値
    * @throws {Error} 初期化されていない場合、またはフィルターが存在しない場合
    */
-  public setFilterValue(keyNumber: number, angle: number): void {
+  public setFilterValue(keyNumber: number, value: number): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
     if (!this.filters[keyNumber]) {
       throw new Error(`フィルター ${keyNumber} が見つかりません`);
     }
+    if (value < 0 || value > 1) {
+      throw new Error('フィルター値は0.0から1.0の範囲で指定してください');
+    }
 
     try {
-      this.filters[keyNumber].setKnobAngle(angle);
+      this.filters[keyNumber].updateFilter(value);
     } catch (error) {
       throw new Error(`フィルターの更新に失敗しました: ${(error as Error).message}`);
     }

@@ -40,16 +40,15 @@ class MockAudioContext {
 }
 
 describe('Filter', () => {
-  let context: AudioContext;
   let filter: Filter;
+  let context: AudioContext;
 
   beforeEach(() => {
-    context = new MockAudioContext() as unknown as AudioContext;
+    context = new AudioContext();
     filter = new Filter(context);
   });
 
   afterEach(() => {
-    filter.dispose();
     context.close();
   });
 
@@ -57,68 +56,45 @@ describe('Filter', () => {
     it('フィルターが正しく初期化されること', () => {
       expect(filter).toBeDefined();
       expect(filter.isEffectEnabled()).toBe(false);
-      expect(filter.getState().knobAngle).toBe(0);
+      expect(filter.getState().filterValue).toBe(0.5);
       expect(filter.getState().frequency).toBe(1000);
       expect(filter.getState().type).toBe('lowpass');
     });
   });
 
-  describe('有効/無効', () => {
-    it('フィルターを有効にできること', () => {
+  describe('フィルター値', () => {
+    it('有効な値を設定できること', () => {
+      filter.updateFilter(0.8);
+      expect(filter.getState().filterValue).toBe(0.8);
+    });
+
+    it('無効な値を設定するとエラーになること', () => {
+      expect(() => filter.updateFilter(1.5)).toThrow();
+      expect(() => filter.updateFilter(-0.5)).toThrow();
+    });
+
+    it('バイパス範囲内ではフィルターが無効になること', () => {
       filter.enable();
-      expect(filter.isEffectEnabled()).toBe(true);
-    });
-
-    it('フィルターを無効にできること', () => {
-      filter.enable();
-      filter.disable();
-      expect(filter.isEffectEnabled()).toBe(false);
-    });
-  });
-
-  describe('ノブの回転角度', () => {
-    it('有効な角度を設定できること', () => {
-      filter.setKnobAngle(45);
-      expect(filter.getState().knobAngle).toBe(45);
-    });
-
-    it('無効な角度を設定するとエラーになること', () => {
-      expect(() => filter.setKnobAngle(200)).toThrow();
-      expect(() => filter.setKnobAngle(-200)).toThrow();
-    });
-
-    it('0度の時はフィルターが無効になること', () => {
-      filter.enable();
-      filter.setKnobAngle(0);
+      filter.updateFilter(0.5);
       expect(filter.isEffectEnabled()).toBe(false);
     });
 
-    it('負の角度でローパスフィルターになること', () => {
-      filter.setKnobAngle(-45);
+    it('0-0.45の範囲でローパスフィルターになること', () => {
+      filter.updateFilter(0.3);
       expect(filter.getState().type).toBe('lowpass');
     });
 
-    it('正の角度でハイパスフィルターになること', () => {
-      filter.setKnobAngle(45);
+    it('0.55-1.0の範囲でハイパスフィルターになること', () => {
+      filter.updateFilter(0.8);
       expect(filter.getState().type).toBe('highpass');
     });
   });
 
-  describe('カットオフ周波数', () => {
-    it('有効な周波数を設定できること', () => {
-      filter.setCutoffFrequency(1000);
-      expect(filter.getState().frequency).toBe(1000);
-    });
-
-    it('無効な周波数を設定するとエラーになること', () => {
-      expect(() => filter.setCutoffFrequency(10)).toThrow();
-      expect(() => filter.setCutoffFrequency(30000)).toThrow();
-    });
-
-    it('角度に応じて周波数が変化すること', () => {
-      filter.setKnobAngle(45);
+  describe('周波数', () => {
+    it('値に応じて周波数が変化すること', () => {
+      filter.updateFilter(0.6);
       const frequency1 = filter.getState().frequency;
-      filter.setKnobAngle(90);
+      filter.updateFilter(0.8);
       const frequency2 = filter.getState().frequency;
       expect(frequency2).toBeGreaterThan(frequency1);
     });
@@ -126,10 +102,10 @@ describe('Filter', () => {
 
   describe('リセット', () => {
     it('フィルターをリセットできること', () => {
-      filter.setKnobAngle(45);
+      filter.updateFilter(0.8);
       filter.setCutoffFrequency(2000);
       filter.reset();
-      expect(filter.getState().knobAngle).toBe(0);
+      expect(filter.getState().filterValue).toBe(0.5);
       expect(filter.getState().frequency).toBe(1000);
       expect(filter.getState().type).toBe('lowpass');
       expect(filter.isEffectEnabled()).toBe(false);

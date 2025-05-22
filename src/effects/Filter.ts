@@ -3,9 +3,9 @@
  * @brief オーディオフィルターの実装
  * @details
  * - ローパスフィルターとハイパスフィルターの実装
- * - ノブの回転角度に応じてフィルターの種類とカットオフ周波数を制御
- * - -5度から5度の範囲ではフィルターをバイパス
- * - 負の角度でローパス、正の角度でハイパスとして動作
+ * - 0-1の値に応じてフィルターの種類とカットオフ周波数を制御
+ * - 0.45-0.55の範囲ではフィルターをバイパス
+ * - 0-0.45でローパス、0.55-1.0でハイパスとして動作
  * - 周波数の変化は対数カーブを使用
  * @limitations
  * - カットオフ周波数は20Hz〜20000Hzの範囲に制限
@@ -17,21 +17,20 @@ export class Filter extends BaseEffect {
   private filter: BiquadFilterNode;
   private filterGain: GainNode;  // フィルターパス用のゲイン
   private bypassGain: GainNode;  // バイパスパス用のゲイン
-  private knobAngle: number;  // ノブの回転角度（-135度〜135度）
+  private filterValue: number;  // フィルター値（0-1）
 
   // 定数
   private readonly MIN_FREQUENCY = 20;    // 最低周波数（Hz）
   private readonly MAX_FREQUENCY = 20000; // 最高周波数（Hz）
-  private readonly MIN_ANGLE = -135;      // 最小角度（度）
-  private readonly MAX_ANGLE = 135;       // 最大角度（度）
-  private readonly BYPASS_ANGLE_RANGE = 5; // バイパス範囲（度）
+  private readonly BYPASS_MIN = 0.45;     // バイパス範囲の最小値
+  private readonly BYPASS_MAX = 0.55;     // バイパス範囲の最大値
 
   /**
    * @brief バイパス範囲を取得
-   * @returns バイパス範囲（度）
+   * @returns バイパス範囲
    */
-  public getBypassAngleRange(): number {
-    return this.BYPASS_ANGLE_RANGE;
+  public getBypassRange(): { min: number; max: number } {
+    return { min: this.BYPASS_MIN, max: this.BYPASS_MAX };
   }
 
   /**
@@ -43,7 +42,7 @@ export class Filter extends BaseEffect {
     this.filter = this.context.createBiquadFilter();
     this.filterGain = this.context.createGain();
     this.bypassGain = this.context.createGain();
-    this.knobAngle = 0;  // 初期値は0度（フィルターOFF）
+    this.filterValue = 0.5;  // 初期値は0.5（フィルターOFF）
 
     // フィルターの初期設定
     this.filter.type = 'lowpass';
@@ -135,15 +134,43 @@ export class Filter extends BaseEffect {
   }
 
   /**
-   * @brief ノブの回転角度を設定
-   * @param angle - ノブの回転角度（-135度〜135度）
+   * @brief フィルターの設定を更新
+   * @param value - フィルター値（0-1）
    */
-  setKnobAngle(angle: number): void {
-    if (angle < this.MIN_ANGLE || angle > this.MAX_ANGLE) {
-      throw new Error(`ノブの回転角度は${this.MIN_ANGLE}度から${this.MAX_ANGLE}度の範囲で指定してください`);
+  public updateFilter(value: number): void {
+    if (value < 0 || value > 1) {
+      throw new Error('フィルター値は0から1の範囲で指定してください');
     }
-    this.knobAngle = angle;
-    this.updateFilter();
+    this.filterValue = value;
+
+    if (this.filterValue >= this.BYPASS_MIN && this.filterValue <= this.BYPASS_MAX) {
+      // バイパス範囲内ではフィルターをバイパス
+      this.setEnabled(false);
+      return;
+    }
+
+    // フィルターを有効にする
+    this.setEnabled(true);
+
+    if (this.filterValue < this.BYPASS_MIN) {
+      // 0-0.45の範囲：ローパスフィルター
+      this.setFilterType('lowpass');
+      // 0-0.45の範囲を0-1に正規化
+      const normalizedValue = this.filterValue / this.BYPASS_MIN;
+      // 対数カーブを適用して周波数を計算
+      const logValue = Math.pow(10, normalizedValue * 3);
+      const frequency = this.MIN_FREQUENCY + (this.MAX_FREQUENCY - this.MIN_FREQUENCY) * (logValue - 1) / 999;
+      this.setCutoffFrequency(frequency);
+    } else {
+      // 0.55-1.0の範囲：ハイパスフィルター
+      this.setFilterType('highpass');
+      // 0.55-1.0の範囲を0-1に正規化
+      const normalizedValue = (this.filterValue - this.BYPASS_MAX) / (1 - this.BYPASS_MAX);
+      // 対数カーブを適用して周波数を計算
+      const logValue = Math.pow(10, normalizedValue * 3);
+      const frequency = this.MIN_FREQUENCY + (this.MAX_FREQUENCY - this.MIN_FREQUENCY) * (logValue - 1) / 999;
+      this.setCutoffFrequency(frequency);
+    }
   }
 
   /**
@@ -169,9 +196,9 @@ export class Filter extends BaseEffect {
    * @brief フィルターの状態を取得
    * @returns フィルターの状態
    */
-  getState(): { knobAngle: number; frequency: number; type: BiquadFilterType } {
+  getState(): { filterValue: number; frequency: number; type: BiquadFilterType } {
     return {
-      knobAngle: this.knobAngle,
+      filterValue: this.filterValue,
       frequency: this.getParameter('frequency'),
       type: this.filter.type
     };
@@ -181,46 +208,11 @@ export class Filter extends BaseEffect {
    * @brief フィルターの設定をリセット
    */
   reset(): void {
-    this.knobAngle = 0;
+    this.filterValue = 0.5;
     this.filter.type = 'lowpass';
     this.setParameter('frequency', 1000);
     this.setParameter('Q', 1);
     this.setEnabled(false);  // リセット時にフィルターを無効にする
-  }
-
-  /**
-   * @brief フィルターの設定を更新
-   */
-  private updateFilter(): void {
-    if (Math.abs(this.knobAngle) <= this.BYPASS_ANGLE_RANGE) {
-      // バイパス範囲内ではフィルターをバイパス
-      this.setEnabled(false);
-      return;
-    }
-
-    // フィルターを有効にする
-    this.setEnabled(true);
-
-    // 角度に応じてフィルターの種類を設定
-    if (this.knobAngle < 0) {
-      // 負の角度でローパス
-      this.setFilterType('lowpass');
-      // ローパスの場合、-135度で最低周波数、-5度で最高周波数になるように
-      const normalizedAngle = (this.knobAngle - this.MIN_ANGLE) / (-this.BYPASS_ANGLE_RANGE - this.MIN_ANGLE);
-      // 対数カーブを適用
-      const logValue = Math.pow(10, normalizedAngle * 3); // 3は対数カーブの強さを調整
-      const frequency = this.MIN_FREQUENCY + (this.MAX_FREQUENCY - this.MIN_FREQUENCY) * (logValue - 1) / 999;
-      this.setCutoffFrequency(frequency);
-    } else {
-      // 正の角度でハイパス
-      this.setFilterType('highpass');
-      // ハイパスの場合、5度で最低周波数、135度で最高周波数になるように
-      const normalizedAngle = (this.knobAngle - this.BYPASS_ANGLE_RANGE) / (this.MAX_ANGLE - this.BYPASS_ANGLE_RANGE);
-      // 対数カーブを適用
-      const logValue = Math.pow(10, normalizedAngle * 3); // 3は対数カーブの強さを調整
-      const frequency = this.MIN_FREQUENCY + (this.MAX_FREQUENCY - this.MIN_FREQUENCY) * (logValue - 1) / 999;
-      this.setCutoffFrequency(frequency);
-    }
   }
 
   /**

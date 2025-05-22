@@ -170,6 +170,8 @@
           label="Filter"
           :sub-label="filterSubLabels[0]"
           :value="filterAngles[0]"
+          :min="0"
+          :max="1"
           @update:value="(value) => updateFilter(0, value)"
           @reset="resetFilter(0)"
         />
