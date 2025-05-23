@@ -176,9 +176,6 @@ export class AudioEngine {
       return;
     }
 
-    // EffectsManagerの破棄
-    this.effectsManager.dispose();
-
     // エフェクトチェーンを破棄
     this.effectChains.forEach(chain => {
       if (chain && typeof chain.dispose === 'function') {
@@ -186,6 +183,9 @@ export class AudioEngine {
       }
     });
     this.effectChains = [];
+
+    // EffectsManagerの破棄
+    this.effectsManager.dispose();
 
     // 音声コンテキストを破棄する前に、すべての接続を切断
     this.masterGain.disconnect();

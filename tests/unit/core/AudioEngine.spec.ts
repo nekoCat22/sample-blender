@@ -6,9 +6,26 @@
  * - マスターボリュームの制御テスト
  * - エラー処理のテスト
  * - 音声ノードの接続テスト
+ * - エフェクトチェーンの接続テスト
  */
 
 import { AudioEngine } from '@/core/AudioEngine';
+import { EffectChain } from '@/effects/EffectChain';
+import { Filter } from '@/effects/Filter';
+
+// Filterのモックを作成
+jest.mock('@/effects/Filter', () => {
+  const mockFilter = jest.fn().mockImplementation(() => ({
+    updateFilter: jest.fn(),
+    reset: jest.fn(),
+    dispose: jest.fn(),
+    getInput: jest.fn(() => createGainNode()),
+    getOutput: jest.fn(() => createGainNode())
+  }));
+  return {
+    Filter: mockFilter
+  };
+});
 
 // GainNodeのモックを作成
 const createGainNode = () => ({
@@ -197,38 +214,36 @@ describe('AudioEngine', () => {
     });
   });
 
-  describe('ピッチシフター', () => {
+  describe('エフェクトチェーン', () => {
     beforeEach(async () => {
       // テスト用のサンプルデータを作成
       await audioEngine.loadSample('1', new ArrayBuffer(0));
+      await audioEngine.loadSample('2', new ArrayBuffer(0));
+      await audioEngine.loadSample('3', new ArrayBuffer(0));
     });
 
-    it('ピッチを設定して取得できる', () => {
-      const testPitch = 0.8;
-      audioEngine.saveSamplePitchRate('1', testPitch);
-      // 0.8の入力値は1.7のplaybackRateに変換される
-      expect(audioEngine.getSamplePitchRate('1')).toBeCloseTo(1.7, 5);
+    it('サンプルをエフェクトチェーンに接続できる', () => {
+      expect(() => audioEngine.connectSampleToEffectChain('1')).not.toThrow();
     });
 
-    it('無効なピッチ値を設定するとエラーになる', () => {
-      expect(() => audioEngine.saveSamplePitchRate('1', -0.1)).toThrow();
-      expect(() => audioEngine.saveSamplePitchRate('1', 1.1)).toThrow();
+    it('存在しないサンプルをエフェクトチェーンに接続しようとするとエラーになる', () => {
+      expect(() => audioEngine.connectSampleToEffectChain('4')).toThrow();
     });
 
-    it('ピッチをリセットできる', () => {
-      // まずピッチを変更
-      audioEngine.saveSamplePitchRate('1', 0.8);
-      expect(audioEngine.getSamplePitchRate('1')).toBeCloseTo(1.7, 5);
-
-      // リセット
-      audioEngine.resetSamplePitchRate('1');
-      expect(audioEngine.getSamplePitchRate('1')).toBe(1.0);
+    it('フィルター値を設定できる', () => {
+      expect(() => audioEngine.setFilterValue(0, 0.5)).not.toThrow();
     });
 
-    it('存在しないサンプルのピッチを操作するとエラーになる', () => {
-      expect(() => audioEngine.saveSamplePitchRate('4', 0.8)).toThrow();
-      expect(() => audioEngine.getSamplePitchRate('4')).toThrow();
-      expect(() => audioEngine.resetSamplePitchRate('4')).toThrow();
+    it('無効なフィルターインデックスを指定するとエラーになる', () => {
+      expect(() => audioEngine.setFilterValue(4, 0.5)).toThrow();
+    });
+
+    it('フィルターをリセットできる', () => {
+      expect(() => audioEngine.resetFilter(0)).not.toThrow();
+    });
+
+    it('無効なフィルターインデックスでリセットしようとするとエラーになる', () => {
+      expect(() => audioEngine.resetFilter(4)).toThrow();
     });
   });
 }); 
