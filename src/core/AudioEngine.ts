@@ -8,12 +8,13 @@
  * - エラー処理の統一
  * - サンプルの再生タイミング制御
  * - 再生終了イベントの通知
- * - エフェクトチェーンとフィルターの管理
+ * - エフェクトチェーン
  * - サンプルのピッチ制御
+ * - エフェクトの種類と値をEffectsManagerに渡す 
  */
 
 import { EffectChain } from '@/effects/EffectChain'
-import { Filter } from '@/effects/Filter'
+import { EffectsManager, ChannelType } from './EffectsManager'
 // BaseEffectはFilterが継承してるため、インポートが必須だが、ESLintのエラーが出るため無視する文
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { BaseEffect } from '@/effects/base/BaseEffect'
@@ -33,7 +34,7 @@ export class AudioEngine {
   private onPlaybackEndCallback: (() => void) | null = null;
   private activeSampleCount = 0;
   private effectChains: EffectChain[] = [];
-  private filters: Filter[] = [];
+  private effectsManager: EffectsManager;
   private samplePitches: Map<string, number> = new Map();
   private static readonly MIN_PITCH = 0.0;
   private static readonly MAX_PITCH = 1.0;
@@ -52,8 +53,11 @@ export class AudioEngine {
       this.isInitialized = true;  // 初期化フラグを先に設定
       this.initMasterGain();
       
-      // フィルターの初期化
-      this.initFilters();
+      // EffectsManagerの初期化
+      this.effectsManager = new EffectsManager(this.context);
+      
+      // エフェクトチェーンの初期化
+      this.initEffectChains();
     } catch (error: unknown) {
       throw new Error(`AudioEngineの初期化に失敗しました: ${(error as Error).message}`);
     }
@@ -172,6 +176,9 @@ export class AudioEngine {
       return;
     }
 
+    // EffectsManagerの破棄
+    this.effectsManager.dispose();
+
     // エフェクトチェーンを破棄
     this.effectChains.forEach(chain => {
       if (chain && typeof chain.dispose === 'function') {
@@ -179,14 +186,6 @@ export class AudioEngine {
       }
     });
     this.effectChains = [];
-
-    // フィルターを破棄
-    this.filters.forEach(filter => {
-      if (filter && typeof filter.dispose === 'function') {
-        filter.dispose();
-      }
-    });
-    this.filters = [];
 
     // 音声コンテキストを破棄する前に、すべての接続を切断
     this.masterGain.disconnect();
@@ -564,115 +563,39 @@ export class AudioEngine {
   }
 
   /**
-   * エフェクトチェーンを追加
-   * @param {EffectChain} effectChain - 追加するエフェクトチェーン
-   * @throws {Error} 初期化されていない場合
+   * エフェクトチェーンの初期化
+   * @throws {Error} 初期化に失敗した場合
    */
-  public addEffectChain(effectChain: EffectChain): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    this.effectChains.push(effectChain);
-  }
-
-  /**
-   * フィルターを追加
-   * @param {Filter} filter - 追加するフィルター
-   * @throws {Error} 初期化されていない場合
-   */
-  public addFilter(filter: Filter): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    this.filters.push(filter);
-  }
-
-  /**
-   * フィルターの初期化
-   * @throws {Error} 初期化されていない場合
-   */
-  private initFilters(): void {
+  private initEffectChains(): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
   
     try {
-      // マスター用フィルター
-      const masterFilter = new Filter(this.context);
+      // マスター用エフェクトチェーン
       const masterEffectChain = new EffectChain(this.context);
-      masterEffectChain.addEffect(masterFilter as unknown as BaseEffect);
-      this.filters[0] = masterFilter; // インデックス 0 をマスターに
+      masterEffectChain.addEffect(this.effectsManager.getEffect('master') as unknown as BaseEffect);
       this.effectChains[0] = masterEffectChain;
   
-      // サンプル1用フィルター
-      const sample1Filter = new Filter(this.context);
-      const sample1EffectChain = new EffectChain(this.context);
-      sample1EffectChain.addEffect(sample1Filter as unknown as BaseEffect);
-      this.filters[1] = sample1Filter; // インデックス 1 をサンプル1に
-      this.effectChains[1] = sample1EffectChain;
+      // チャンネル1用エフェクトチェーン
+      const channel1EffectChain = new EffectChain(this.context);
+      channel1EffectChain.addEffect(this.effectsManager.getEffect('channel1') as unknown as BaseEffect);
+      this.effectChains[1] = channel1EffectChain;
   
-      // サンプル2用フィルター
-      const sample2Filter = new Filter(this.context);
-      const sample2EffectChain = new EffectChain(this.context);
-      sample2EffectChain.addEffect(sample2Filter as unknown as BaseEffect);
-      this.filters[2] = sample2Filter; // インデックス 2 をサンプル2に
-      this.effectChains[2] = sample2EffectChain;
+      // チャンネル2用エフェクトチェーン
+      const channel2EffectChain = new EffectChain(this.context);
+      channel2EffectChain.addEffect(this.effectsManager.getEffect('channel2') as unknown as BaseEffect);
+      this.effectChains[2] = channel2EffectChain;
   
-      // サンプル3用フィルター
-      const sample3Filter = new Filter(this.context);
-      const sample3EffectChain = new EffectChain(this.context);
-      sample3EffectChain.addEffect(sample3Filter as unknown as BaseEffect);
-      this.filters[3] = sample3Filter; // インデックス 3 をサンプル3に
-      this.effectChains[3] = sample3EffectChain;
+      // チャンネル3用エフェクトチェーン
+      const channel3EffectChain = new EffectChain(this.context);
+      channel3EffectChain.addEffect(this.effectsManager.getEffect('channel3') as unknown as BaseEffect);
+      this.effectChains[3] = channel3EffectChain;
 
       // マスターのEffectChainの出力をマスターゲインに接続
       this.effectChains[0].getOutput().connect(this.masterGain);
     } catch (error) {
-      throw new Error(`フィルターの初期化に失敗しました: ${(error as Error).message}`);
-    }
-  }
-
-  /**
-   * フィルターの値を更新
-   * @param {number} keyNumber - フィルターのインデックス
-   * @param {number} value - 0.0から1.0の範囲の値
-   * @throws {Error} 初期化されていない場合、またはフィルターが存在しない場合
-   */
-  public setFilterValue(keyNumber: number, value: number): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    if (!this.filters[keyNumber]) {
-      throw new Error(`フィルター ${keyNumber} が見つかりません`);
-    }
-    if (value < 0 || value > 1) {
-      throw new Error('フィルター値は0.0から1.0の範囲で指定してください');
-    }
-
-    try {
-      this.filters[keyNumber].updateFilter(value);
-    } catch (error) {
-      throw new Error(`フィルターの更新に失敗しました: ${(error as Error).message}`);
-    }
-  }
-
-  /**
-   * フィルターをリセット
-   * @param {number} keyNumber - フィルターのインデックス
-   * @throws {Error} 初期化されていない場合、またはフィルターが存在しない場合
-   */
-  public resetFilter(keyNumber: number): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    if (!this.filters[keyNumber]) {
-      throw new Error(`フィルター ${keyNumber} が見つかりません`);
-    }
-
-    try {
-      this.filters[keyNumber].reset();
-    } catch (error) {
-      throw new Error(`フィルターのリセットに失敗しました: ${(error as Error).message}`);
+      throw new Error(`エフェクトチェーンの初期化に失敗しました: ${(error as Error).message}`);
     }
   }
 
@@ -723,6 +646,77 @@ export class AudioEngine {
   
     } catch (error) {
       throw new Error(`サンプル ${sampleId} の接続に失敗しました: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * フィルターの値を更新
+   * @param {number} keyNumber - フィルターのインデックス
+   * @param {number} value - 0.0から1.0の範囲の値
+   * @throws {Error} 初期化されていない場合、またはフィルターが存在しない場合
+   */
+  public setFilterValue(keyNumber: number, value: number): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+
+    let channelType: ChannelType;
+    switch (keyNumber) {
+      case 0:
+        channelType = 'master';
+        break;
+      case 1:
+        channelType = 'channel1';
+        break;
+      case 2:
+        channelType = 'channel2';
+        break;
+      case 3:
+        channelType = 'channel3';
+        break;
+      default:
+        throw new Error(`無効なフィルターインデックスです: ${keyNumber}`);
+    }
+
+    try {
+      this.effectsManager.setEffectValue(channelType, value);
+    } catch (error) {
+      throw new Error(`フィルターの更新に失敗しました: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * フィルターをリセット
+   * @param {number} keyNumber - フィルターのインデックス
+   * @throws {Error} 初期化されていない場合、またはフィルターが存在しない場合
+   */
+  public resetFilter(keyNumber: number): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+
+    let channelType: ChannelType;
+    switch (keyNumber) {
+      case 0:
+        channelType = 'master';
+        break;
+      case 1:
+        channelType = 'channel1';
+        break;
+      case 2:
+        channelType = 'channel2';
+        break;
+      case 3:
+        channelType = 'channel3';
+        break;
+      default:
+        throw new Error(`無効なフィルターインデックスです: ${keyNumber}`);
+    }
+
+    try {
+      this.effectsManager.resetEffect(channelType);
+    } catch (error) {
+      throw new Error(`フィルターのリセットに失敗しました: ${(error as Error).message}`);
     }
   }
 } 
