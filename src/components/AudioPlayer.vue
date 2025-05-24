@@ -291,7 +291,7 @@ export default defineComponent({
           
           // 初期タイミングを設定（サンプル2と3のみ）
           if (sampleNumber === 2 || sampleNumber === 3) {
-            audioEngine.setTiming(sampleNumber.toString(), timing.value[sampleNumber])
+            audioEngine.saveTiming(sampleNumber.toString(), timing.value[sampleNumber])
           }
           
           // 初期フィルターを設定
@@ -394,7 +394,7 @@ export default defineComponent({
     // タイミング制御
     const updateTiming = (sampleNumber: number, value: number): void => {
       try {
-        audioEngine.setTiming(sampleNumber.toString(), value)
+        audioEngine.saveTiming(sampleNumber.toString(), value)
         timing.value[sampleNumber] = value
       } catch (error) {
         handleError('タイミングの調整に失敗しました', error as Error)
@@ -405,7 +405,7 @@ export default defineComponent({
       try {
         const initialTiming = 0
         timing.value[sampleNumber] = initialTiming
-        audioEngine.setTiming(sampleNumber.toString(), initialTiming)
+        audioEngine.saveTiming(sampleNumber.toString(), initialTiming)
       } catch (error) {
         handleError('タイミングのリセットに失敗しました', error as Error)
       }

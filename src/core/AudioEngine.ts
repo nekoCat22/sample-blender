@@ -124,18 +124,6 @@ export class AudioEngine {
   }
 
   /**
-   * マスターボリュームを取得
-   * @returns {number} 現在のマスターボリューム値
-   * @throws {Error} 初期化されていない場合
-   */
-  public getMasterVolume(): number {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    return this.masterGain.gain.value;
-  }
-
-  /**
    * 音声ノードをマスターボリュームに接続
    * @param {AudioNode} node - 接続する音声ノード
    * @throws {Error} 初期化されていない場合
@@ -303,12 +291,12 @@ export class AudioEngine {
   // ===== タイミング制御 =====
 
   /**
-   * サンプルの再生タイミングを設定
+   * サンプルの再生タイミングを保存
    * @param {string} sampleId - サンプルID
    * @param {number} timing - 0.0から1.0の範囲のタイミング値（内部で0.0から0.5秒に変換）
    * @throws {Error} 初期化されていない場合、または無効なタイミング値の場合
    */
-  public setTiming(sampleId: string, timing: number): void {
+  public saveTiming(sampleId: string, timing: number): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
@@ -323,16 +311,14 @@ export class AudioEngine {
   /**
    * サンプルの再生タイミングを取得
    * @param {string} sampleId - サンプルID
-   * @returns {number} 現在のタイミング値（0.0から1.0の範囲）
+   * @returns {number} 現在のタイミング値（0.0から0.5秒の範囲）
    * @throws {Error} 初期化されていない場合
    */
   public getTiming(sampleId: string): number {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    // 0-0.5の値を0-1の範囲に変換して返す
-    const timing = this.sampleTimings.get(sampleId) || 0;
-    return timing / AudioEngine.MAX_TIMING;
+    return this.sampleTimings.get(sampleId) || 0;
   }
 
   // ===== ピッチ制御 =====
@@ -373,7 +359,7 @@ export class AudioEngine {
    * サンプルのピッチレートを取得
    * @param {string} sampleId - サンプルID
    * @returns {number} 現在のピッチレート（0.5から2.0の範囲）
-   * @throws {Error} 初期化されていない場合
+   * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
    */
   public getSamplePitchRate(sampleId: string): number {
     if (!this.isInitialized) {
@@ -421,6 +407,94 @@ export class AudioEngine {
     } catch (error) {
       throw new Error(`フィルターの更新に失敗しました: ${(error as Error).message}`);
     }
+  }
+
+  // ===== UIの表示・メーター更新用メソッド =====
+
+  /**
+   * マスターボリュームを取得
+   * @returns {number} 現在のマスターボリューム値（0.0から1.0の範囲）
+   * @throws {Error} 初期化されていない場合
+   */
+  public getMasterVolume(): number {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    return this.masterGain.gain.value;
+  }
+
+  /**
+   * サンプルの音量を取得
+   * @param {string} sampleId - サンプルID
+   * @returns {number} 現在の音量値（0.0から1.0の範囲）
+   * @throws {Error} 初期化されていない場合
+   */
+  public getSampleVolume(sampleId: string): number {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    const gain = this.sampleGains.get(sampleId);
+    return gain ? gain.gain.value : 0;
+  }
+
+  /**
+   * 現在の再生時間を取得
+   * @returns {number} 現在の再生時間（秒）
+   * @throws {Error} 初期化されていない場合
+   */
+  public getCurrentTime(): number {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    if (!this.isPlaying) {
+      return 0;
+    }
+
+    // 各サンプルの再生開始時間を考慮して、最も進んでいる時間を返す
+    const currentTime = this.context.currentTime;
+    let maxProgress = 0;
+
+    this.sampleStartTimes.forEach((startTime, sampleId) => {
+      const timing = this.sampleTimings.get(sampleId) || 0;
+      const progress = currentTime - startTime - timing;
+      if (progress > maxProgress) {
+        maxProgress = progress;
+      }
+    });
+
+    return Math.max(0, maxProgress);
+  }
+
+  /**
+   * サンプルの長さを取得
+   * @param {string} sampleId - サンプルID
+   * @returns {number} サンプルの長さ（秒）
+   * @throws {Error} 初期化されていない場合
+   */
+  public getSampleDuration(sampleId: string): number {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    const buffer = this.sampleBuffers.get(sampleId);
+    return buffer ? buffer.duration : 0;
+  }
+
+  /**
+   * 最長のサンプルの長さを取得
+   * @returns {number} 最長のサンプルの長さ（秒）
+   * @throws {Error} 初期化されていない場合
+   */
+  public getMaxDuration(): number {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    let maxDuration = 0;
+    this.sampleBuffers.forEach(buffer => {
+      if (buffer.duration > maxDuration) {
+        maxDuration = buffer.duration;
+      }
+    });
+    return maxDuration;
   }
 
   // ===== ユーティリティ関数 =====
@@ -476,78 +550,6 @@ export class AudioEngine {
     if (gain) {
       gain.gain.value = volume;
     }
-  }
-
-  /**
-   * サンプルの音量を取得
-   * @param {string} sampleId - サンプルID
-   * @returns {number} 現在の音量値
-   * @throws {Error} 初期化されていない場合
-   */
-  public getSampleVolume(sampleId: string): number {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    const gain = this.sampleGains.get(sampleId);
-    return gain ? gain.gain.value : 0;
-  }
-
-  /**
-   * 現在の再生時間を取得
-   * @returns {number} 現在の再生時間（秒）
-   * @throws {Error} 初期化されていない場合
-   */
-  public getCurrentTime(): number {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    if (!this.isPlaying) {
-      return 0;
-    }
-
-    // 各サンプルの再生開始時間を考慮して、最も進んでいる時間を返す
-    const currentTime = this.context.currentTime;
-    let maxProgress = 0;
-
-    this.sampleStartTimes.forEach((startTime, sampleId) => {
-      const timing = this.sampleTimings.get(sampleId) || 0;
-      const progress = currentTime - startTime - timing;
-      if (progress > maxProgress) {
-        maxProgress = progress;
-      }
-    });
-
-    return Math.max(0, maxProgress);
-  }
-
-  /**
-   * サンプルの長さを取得
-   * @param {string} sampleId - サンプルID
-   * @returns {number} サンプルの長さ（秒）
-   */
-  public getSampleDuration(sampleId: string): number {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    const buffer = this.sampleBuffers.get(sampleId);
-    return buffer ? buffer.duration : 0;
-  }
-
-  /**
-   * 最長のサンプルの長さを取得
-   * @returns {number} 最長のサンプルの長さ（秒）
-   */
-  public getMaxDuration(): number {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    let maxDuration = 0;
-    this.sampleBuffers.forEach(buffer => {
-      if (buffer.duration > maxDuration) {
-        maxDuration = buffer.duration;
-      }
-    });
-    return maxDuration;
   }
 
   /**

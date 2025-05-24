@@ -293,4 +293,45 @@ describe('AudioEngine', () => {
       expect(audioEngine.getSamplePitchRate('1')).toBe(1.5);
     });
   });
+
+  describe('タイミング制御', () => {
+    beforeEach(async () => {
+      // テスト用のサンプルデータを作成
+      await audioEngine.loadSample('1', new ArrayBuffer(0));
+    });
+
+    it('有効なタイミング値を保存できること', () => {
+      expect(() => audioEngine.saveTiming('1', 0.5)).not.toThrow();
+    });
+
+    it('無効なタイミング値を保存するとエラーになること', () => {
+      expect(() => audioEngine.saveTiming('1', 1.5)).toThrow();
+      expect(() => audioEngine.saveTiming('1', -0.5)).toThrow();
+    });
+
+    it('存在しないサンプルのタイミング値を保存するとエラーになること', () => {
+      expect(() => audioEngine.saveTiming('4', 0.5)).toThrow();
+    });
+  });
+
+  describe('タイミング値の変換', () => {
+    beforeEach(async () => {
+      await audioEngine.loadSample('1', new ArrayBuffer(0));
+    });
+
+    it('0.0のタイミング値が0.0秒に変換されること', () => {
+      audioEngine.saveTiming('1', 0.0);
+      expect(audioEngine.getTiming('1')).toBe(0.0);
+    });
+
+    it('0.5のタイミング値が0.25秒に変換されること', () => {
+      audioEngine.saveTiming('1', 0.5);
+      expect(audioEngine.getTiming('1')).toBe(0.5);
+    });
+
+    it('1.0のタイミング値が0.5秒に変換されること', () => {
+      audioEngine.saveTiming('1', 1.0);
+      expect(audioEngine.getTiming('1')).toBe(1.0);
+    });
+  });
 }); 
