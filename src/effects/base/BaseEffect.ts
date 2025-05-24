@@ -52,6 +52,7 @@ export abstract class BaseEffect {
   public abstract disable(): void;
   public abstract setParameter(param: string, value: number): void;
   public abstract getParameter(param: string): number;
+  public abstract updateEffect(value: number): void;
 
   /**
    * エフェクトの有効状態を取得

@@ -79,14 +79,20 @@ export class Filter extends BaseEffect {
    * @brief フィルターを有効にする
    */
   public enable(): void {
-    this.setEnabled(true);
+    this.checkState();
+    this.isEnabled = true;
+    this.filterGain.gain.setTargetAtTime(1, this.context.currentTime, 0.01);
+    this.bypassGain.gain.setTargetAtTime(0, this.context.currentTime, 0.01);
   }
 
   /**
    * @brief フィルターを無効にする
    */
   public disable(): void {
-    this.setEnabled(false);
+    this.checkState();
+    this.isEnabled = false;
+    this.filterGain.gain.setTargetAtTime(0, this.context.currentTime, 0.01);
+    this.bypassGain.gain.setTargetAtTime(1, this.context.currentTime, 0.01);
   }
 
   /**
@@ -95,6 +101,7 @@ export class Filter extends BaseEffect {
    * @param value - パラメータ値
    */
   public setParameter(param: string, value: number): void {
+    this.checkState();
     const audioParam = this.parameters.get(param);
     if (!audioParam) {
       throw new Error(`無効なパラメータ名です: ${param}`);
@@ -108,6 +115,7 @@ export class Filter extends BaseEffect {
    * @returns パラメータ値
    */
   public getParameter(param: string): number {
+    this.checkState();
     const audioParam = this.parameters.get(param);
     if (!audioParam) {
       throw new Error(`無効なパラメータ名です: ${param}`);
@@ -223,5 +231,10 @@ export class Filter extends BaseEffect {
     this.filterGain.disconnect();
     this.bypassGain.disconnect();
     super.dispose();
+  }
+
+  public updateEffect(value: number): void {
+    this.checkState();
+    this.updateFilter(value);
   }
 } 

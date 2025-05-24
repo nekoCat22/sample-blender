@@ -73,6 +73,151 @@ export class AudioEngine {
   }
 
   /**
+   * 音声コンテキストを取得
+   * @returns {AudioContext} 音声コンテキスト
+   * @throws {Error} 初期化されていない場合
+   */
+  public getContext(): AudioContext {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    return this.context;
+  }
+
+  // ===== 音声経路初期化と接続 =====
+
+  /**
+   * 音声ノードをマスターボリュームに接続
+   * @param {AudioNode} node - 接続する音声ノード
+   * @throws {Error} 初期化されていない場合
+   */
+  public connectToMaster(node: AudioNode): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    node.connect(this.masterGain);
+  }
+
+  /**
+   * サンプルをエフェクトチェーンに接続
+   * @param {string} sampleId - サンプルID
+   * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
+   */
+  public connectSampleToEffectChain(sampleId: string): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+  
+    try {
+      const sampleGain = this.sampleGains.get(sampleId);
+      if (!sampleGain) {
+        throw new Error(`サンプル ${sampleId} が見つかりません`);
+      }
+  
+      const sampleNumber = parseInt(sampleId, 10);
+      let effectChainIndex: number;
+  
+      if (sampleNumber === 1) {
+        effectChainIndex = 1; // サンプル1はインデックス 1
+      } else if (sampleNumber === 2) {
+        effectChainIndex = 2; // サンプル2はインデックス 2
+      } else if (sampleNumber === 3) {
+        effectChainIndex = 3; // サンプル3はインデックス 3
+      } else {
+        console.warn(`不明な sampleId: ${sampleId}`);
+        return;
+      }
+  
+      if (!this.effectChains[effectChainIndex]) {
+        throw new Error(`エフェクトチェーン ${effectChainIndex} が見つかりません`);
+      }
+      if (!this.effectChains[0]) {
+        throw new Error('マスターエフェクトチェーンが見つかりません');
+      }
+  
+      // サンプルの出力を対応するEffectChainに接続
+      sampleGain.disconnect();
+      sampleGain.connect(this.effectChains[effectChainIndex].getInput());
+  
+      // EffectChainの出力をマスターのEffectChainに接続
+      this.effectChains[effectChainIndex].getOutput().disconnect();
+      this.effectChains[effectChainIndex].getOutput().connect(this.effectChains[0].getInput());
+  
+    } catch (error) {
+      throw new Error(`サンプル ${sampleId} の接続に失敗しました: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * マスターゲインの初期化と接続
+   * @throws {Error} 初期化に失敗した場合
+   */
+  private initMasterGain(): void {
+    try {
+      this.masterGain = this.context.createGain();
+      // マスターゲインを出力に接続
+      this.connectMasterGainToOutput();
+    } catch (error) {
+      throw new Error(`マスターゲインの初期化に失敗しました: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * マスターゲインを出力に接続
+   * @throws {Error} 初期化されていない場合
+   */
+  private connectMasterGainToOutput(): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    try {
+      this.masterGain.disconnect();
+      this.masterGain.connect(this.context.destination);
+    } catch (error) {
+      throw new Error(`マスターゲインの接続に失敗しました: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * エフェクトチェーンの初期化
+   * @throws {Error} 初期化に失敗した場合
+   */
+  private initEffectChains(): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+  
+    try {
+      // マスター用エフェクトチェーン
+      const masterEffectChain = new EffectChain(this.context);
+      masterEffectChain.addEffect(this.effectsManager.getEffect('master', 'filter'));
+      this.effectChains[0] = masterEffectChain;
+  
+      // チャンネル1用エフェクトチェーン
+      const channel1EffectChain = new EffectChain(this.context);
+      channel1EffectChain.addEffect(this.effectsManager.getEffect('channel1', 'filter'));
+      this.effectChains[1] = channel1EffectChain;
+  
+      // チャンネル2用エフェクトチェーン
+      const channel2EffectChain = new EffectChain(this.context);
+      channel2EffectChain.addEffect(this.effectsManager.getEffect('channel2', 'filter'));
+      this.effectChains[2] = channel2EffectChain;
+  
+      // チャンネル3用エフェクトチェーン
+      const channel3EffectChain = new EffectChain(this.context);
+      channel3EffectChain.addEffect(this.effectsManager.getEffect('channel3', 'filter'));
+      this.effectChains[3] = channel3EffectChain;
+
+      // マスターのEffectChainの出力をマスターゲインに接続
+      this.effectChains[0].getOutput().connect(this.masterGain);
+    } catch (error) {
+      throw new Error(`エフェクトチェーンの初期化に失敗しました: ${(error as Error).message}`);
+    }
+  }
+
+  // ===== 破棄関連 =====
+
+  /**
    * 音声コンテキストを破棄
    * @throws {Error} 初期化されていない場合
    */
@@ -121,18 +266,6 @@ export class AudioEngine {
       throw new Error('マスターボリュームは0.0から1.0の範囲で指定してください');
     }
     this.masterGain.gain.value = value;
-  }
-
-  /**
-   * 音声ノードをマスターボリュームに接続
-   * @param {AudioNode} node - 接続する音声ノード
-   * @throws {Error} 初期化されていない場合
-   */
-  public connectToMaster(node: AudioNode): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    node.connect(this.masterGain);
   }
 
   // ===== サンプル管理 =====
@@ -371,7 +504,7 @@ export class AudioEngine {
     return this.samplePitches.get(sampleId) ?? AudioEngine.DEFAULT_PLAYBACK_RATE;
   }
 
-  // ===== エフェクトチェーン管理 =====
+  // ===== エフェクト管理 =====
 
   /**
    * フィルターの値を更新
@@ -403,7 +536,7 @@ export class AudioEngine {
     }
 
     try {
-      this.effectsManager.setEffectValue(channelType, value);
+      this.effectsManager.setEffectValue(channelType, 'filter', value);
     } catch (error) {
       throw new Error(`フィルターの更新に失敗しました: ${(error as Error).message}`);
     }
@@ -497,19 +630,7 @@ export class AudioEngine {
     return maxDuration;
   }
 
-  // ===== ユーティリティ関数 =====
-
-  /**
-   * 音声コンテキストを取得
-   * @returns {AudioContext} 音声コンテキスト
-   * @throws {Error} 初期化されていない場合
-   */
-  public getContext(): AudioContext {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    return this.context;
-  }
+  // ===== 音声コンテキストの制御 =====
 
   /**
    * 音声コンテキストを一時停止
@@ -558,137 +679,5 @@ export class AudioEngine {
    */
   public setOnPlaybackEnd(callback: () => void): void {
     this.onPlaybackEndCallback = callback;
-  }
-
-  /**
-   * サンプルのゲインノードを取得
-   * @param {string} sampleId - サンプルID
-   * @returns {GainNode | undefined} ゲインノード
-   * @throws {Error} 初期化されていない場合
-   */
-  public getSampleGain(sampleId: string): GainNode | undefined {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    return this.sampleGains.get(sampleId);
-  }
-
-  // ===== プライベートメソッド =====
-
-  /**
-   * マスターゲインの初期化と接続
-   * @throws {Error} 初期化に失敗した場合
-   */
-  private initMasterGain(): void {
-    try {
-      this.masterGain = this.context.createGain();
-      // マスターゲインを出力に接続
-      this.connectMasterGainToOutput();
-    } catch (error) {
-      throw new Error(`マスターゲインの初期化に失敗しました: ${(error as Error).message}`);
-    }
-  }
-
-  /**
-   * マスターゲインを出力に接続
-   * @throws {Error} 初期化されていない場合
-   */
-  private connectMasterGainToOutput(): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    try {
-      this.masterGain.disconnect();
-      this.masterGain.connect(this.context.destination);
-    } catch (error) {
-      throw new Error(`マスターゲインの接続に失敗しました: ${(error as Error).message}`);
-    }
-  }
-
-  /**
-   * エフェクトチェーンの初期化
-   * @throws {Error} 初期化に失敗した場合
-   */
-  private initEffectChains(): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-  
-    try {
-      // マスター用エフェクトチェーン
-      const masterEffectChain = new EffectChain(this.context);
-      masterEffectChain.addEffect(this.effectsManager.getEffect('master') as unknown as BaseEffect);
-      this.effectChains[0] = masterEffectChain;
-  
-      // チャンネル1用エフェクトチェーン
-      const channel1EffectChain = new EffectChain(this.context);
-      channel1EffectChain.addEffect(this.effectsManager.getEffect('channel1') as unknown as BaseEffect);
-      this.effectChains[1] = channel1EffectChain;
-  
-      // チャンネル2用エフェクトチェーン
-      const channel2EffectChain = new EffectChain(this.context);
-      channel2EffectChain.addEffect(this.effectsManager.getEffect('channel2') as unknown as BaseEffect);
-      this.effectChains[2] = channel2EffectChain;
-  
-      // チャンネル3用エフェクトチェーン
-      const channel3EffectChain = new EffectChain(this.context);
-      channel3EffectChain.addEffect(this.effectsManager.getEffect('channel3') as unknown as BaseEffect);
-      this.effectChains[3] = channel3EffectChain;
-
-      // マスターのEffectChainの出力をマスターゲインに接続
-      this.effectChains[0].getOutput().connect(this.masterGain);
-    } catch (error) {
-      throw new Error(`エフェクトチェーンの初期化に失敗しました: ${(error as Error).message}`);
-    }
-  }
-
-  /**
-   * サンプルをエフェクトチェーンに接続
-   * @param {string} sampleId - サンプルID
-   * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
-   */
-  public connectSampleToEffectChain(sampleId: string): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-  
-    try {
-      const sampleGain = this.sampleGains.get(sampleId);
-      if (!sampleGain) {
-        throw new Error(`サンプル ${sampleId} が見つかりません`);
-      }
-  
-      const sampleNumber = parseInt(sampleId, 10);
-      let effectChainIndex: number;
-  
-      if (sampleNumber === 1) {
-        effectChainIndex = 1; // サンプル1はインデックス 1
-      } else if (sampleNumber === 2) {
-        effectChainIndex = 2; // サンプル2はインデックス 2
-      } else if (sampleNumber === 3) {
-        effectChainIndex = 3; // サンプル3はインデックス 3
-      } else {
-        console.warn(`不明な sampleId: ${sampleId}`);
-        return;
-      }
-  
-      if (!this.effectChains[effectChainIndex]) {
-        throw new Error(`エフェクトチェーン ${effectChainIndex} が見つかりません`);
-      }
-      if (!this.effectChains[0]) {
-        throw new Error('マスターエフェクトチェーンが見つかりません');
-      }
-  
-      // サンプルの出力を対応するEffectChainに接続
-      sampleGain.disconnect();
-      sampleGain.connect(this.effectChains[effectChainIndex].getInput());
-  
-      // EffectChainの出力をマスターのEffectChainに接続
-      this.effectChains[effectChainIndex].getOutput().disconnect();
-      this.effectChains[effectChainIndex].getOutput().connect(this.effectChains[0].getInput());
-  
-    } catch (error) {
-      throw new Error(`サンプル ${sampleId} の接続に失敗しました: ${(error as Error).message}`);
-    }
   }
 } 

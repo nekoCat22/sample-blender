@@ -21,6 +21,11 @@ import { BaseEffect } from '@/effects/base/BaseEffect';
 export type ChannelType = 'master' | 'channel1' | 'channel2' | 'channel3';
 
 /**
+ * エフェクトの種類を定義
+ */
+export type EffectType = 'filter' | 'reverb' | 'delay' | 'distortion';
+
+/**
  * エフェクトの管理クラス
  */
 export class EffectsManager {
@@ -31,8 +36,8 @@ export class EffectsManager {
     CHANNEL3: 'channel3'
   } as const;
 
-  private effects: Map<ChannelType, Filter>;
-  private effectValues: Map<ChannelType, number>;
+  private effects: Map<ChannelType, Map<EffectType, BaseEffect>>;
+  private effectValues: Map<ChannelType, Map<EffectType, number>>;
 
   /**
    * EffectsManagerのコンストラクタ
@@ -51,25 +56,22 @@ export class EffectsManager {
    */
   private initializeEffects(): void {
     try {
-      // マスターエフェクトの初期化
-      const masterFilter = new Filter(this.audioContext);
-      this.effects.set(this.effectTypes.MASTER, masterFilter);
-      this.effectValues.set(this.effectTypes.MASTER, 0.5);
+      // 各チャンネルのエフェクトを初期化
+      Object.values(this.effectTypes).forEach(channelType => {
+        const channelEffects = new Map<EffectType, BaseEffect>();
+        const channelValues = new Map<EffectType, number>();
 
-      // チャンネル1のエフェクトの初期化
-      const channel1Filter = new Filter(this.audioContext);
-      this.effects.set(this.effectTypes.CHANNEL1, channel1Filter);
-      this.effectValues.set(this.effectTypes.CHANNEL1, 0.5);
+        // 各エフェクトタイプの初期化
+        ['filter', 'reverb', 'delay', 'distortion'].forEach(effectType => {
+          // 現在はFilterのみ実装されているため、すべてFilterで初期化
+          const effect = new Filter(this.audioContext);
+          channelEffects.set(effectType as EffectType, effect);
+          channelValues.set(effectType as EffectType, 0.5);
+        });
 
-      // チャンネル2のエフェクトの初期化
-      const channel2Filter = new Filter(this.audioContext);
-      this.effects.set(this.effectTypes.CHANNEL2, channel2Filter);
-      this.effectValues.set(this.effectTypes.CHANNEL2, 0.5);
-
-      // チャンネル3のエフェクトの初期化
-      const channel3Filter = new Filter(this.audioContext);
-      this.effects.set(this.effectTypes.CHANNEL3, channel3Filter);
-      this.effectValues.set(this.effectTypes.CHANNEL3, 0.5);
+        this.effects.set(channelType, channelEffects);
+        this.effectValues.set(channelType, channelValues);
+      });
     } catch (error) {
       throw new Error(`エフェクトの初期化に失敗しました: ${(error as Error).message}`);
     }
@@ -78,22 +80,31 @@ export class EffectsManager {
   /**
    * エフェクトの値の設定
    * @param {ChannelType} channelType - チャンネルタイプ
+   * @param {EffectType} effectType - エフェクトタイプ
    * @param {number} value - 設定する値（0.0から1.0の範囲）
-   * @throws {Error} 無効なチャンネルタイプの場合
+   * @throws {Error} 無効なチャンネルタイプまたはエフェクトタイプの場合
    */
-  public setEffectValue(channelType: ChannelType, value: number): void {
+  public setEffectValue(channelType: ChannelType, effectType: EffectType, value: number): void {
     if (!this.isValidChannelType(channelType)) {
       throw new Error(`無効なチャンネルタイプです: ${channelType}`);
     }
 
-    const effect = this.effects.get(channelType);
+    const channelEffects = this.effects.get(channelType);
+    if (!channelEffects) {
+      throw new Error(`チャンネルのエフェクトが見つかりません: ${channelType}`);
+    }
+
+    const effect = channelEffects.get(effectType);
     if (!effect) {
-      throw new Error(`エフェクトが見つかりません: ${channelType}`);
+      throw new Error(`エフェクトが見つかりません: ${effectType}`);
     }
 
     try {
-      effect.updateFilter(value);
-      this.effectValues.set(channelType, value);
+      effect.updateEffect(value);
+      const channelValues = this.effectValues.get(channelType);
+      if (channelValues) {
+        channelValues.set(effectType, value);
+      }
     } catch (error) {
       throw new Error(`エフェクトの値の設定に失敗しました: ${(error as Error).message}`);
     }
@@ -102,17 +113,23 @@ export class EffectsManager {
   /**
    * エフェクトの取得
    * @param {ChannelType} channelType - チャンネルタイプ
-   * @returns {Filter} エフェクト
-   * @throws {Error} 無効なチャンネルタイプの場合
+   * @param {EffectType} effectType - エフェクトタイプ
+   * @returns {BaseEffect} エフェクト
+   * @throws {Error} 無効なチャンネルタイプまたはエフェクトタイプの場合
    */
-  public getEffect(channelType: ChannelType): Filter {
+  public getEffect(channelType: ChannelType, effectType: EffectType): BaseEffect {
     if (!this.isValidChannelType(channelType)) {
       throw new Error(`無効なチャンネルタイプです: ${channelType}`);
     }
 
-    const effect = this.effects.get(channelType);
+    const channelEffects = this.effects.get(channelType);
+    if (!channelEffects) {
+      throw new Error(`チャンネルのエフェクトが見つかりません: ${channelType}`);
+    }
+
+    const effect = channelEffects.get(effectType);
     if (!effect) {
-      throw new Error(`エフェクトが見つかりません: ${channelType}`);
+      throw new Error(`エフェクトが見つかりません: ${effectType}`);
     }
 
     return effect;
@@ -131,10 +148,12 @@ export class EffectsManager {
    * リソースの解放
    */
   public dispose(): void {
-    this.effects.forEach(effect => {
-      if (effect && typeof effect.dispose === 'function') {
-        effect.dispose();
-      }
+    this.effects.forEach(channelEffects => {
+      channelEffects.forEach(effect => {
+        if (effect && typeof effect.dispose === 'function') {
+          effect.dispose();
+        }
+      });
     });
     this.effects.clear();
     this.effectValues.clear();

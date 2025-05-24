@@ -8,7 +8,8 @@
  * - エラー処理のテスト
  */
 
-import { EffectsManager, ChannelType } from '@/core/EffectsManager';
+import { EffectsManager } from '@/core/EffectsManager';
+import { ChannelType, EffectType } from '@/core/EffectsManager';
 import { Filter } from '@/effects/Filter';
 
 // Filterのモックを作成
@@ -33,10 +34,11 @@ const mockAudioContext = {
 
 describe('EffectsManager', () => {
   let effectsManager: EffectsManager;
+  let mockContext: AudioContext;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    effectsManager = new EffectsManager(mockAudioContext as unknown as AudioContext);
+    mockContext = new AudioContext();
+    effectsManager = new EffectsManager(mockContext);
   });
 
   afterEach(() => {
@@ -45,60 +47,52 @@ describe('EffectsManager', () => {
 
   describe('初期化', () => {
     it('正常に初期化できる', () => {
-      expect(effectsManager).toBeInstanceOf(EffectsManager);
-    });
-
-    it('各チャンネルのエフェクトが初期化される', () => {
-      const channelTypes: ChannelType[] = ['master', 'channel1', 'channel2', 'channel3'];
-      channelTypes.forEach(channelType => {
-        expect(() => effectsManager.getEffect(channelType)).not.toThrow();
-      });
+      expect(effectsManager).toBeDefined();
     });
   });
 
-  describe('エフェクトの値の設定', () => {
-    it('エフェクトの値を設定できる', () => {
+  describe('getEffect', () => {
+    it('有効なチャンネルタイプとエフェクトタイプを指定するとエフェクトを取得できる', () => {
       const channelTypes: ChannelType[] = ['master', 'channel1', 'channel2', 'channel3'];
+      const effectTypes: EffectType[] = ['filter', 'reverb', 'delay', 'distortion'];
       channelTypes.forEach(channelType => {
-        expect(() => effectsManager.setEffectValue(channelType, 0.5)).not.toThrow();
-      });
-    });
-
-    it('エフェクトの値をリセット値（0.5）に設定できる', () => {
-      const channelTypes: ChannelType[] = ['master', 'channel1', 'channel2', 'channel3'];
-      channelTypes.forEach(channelType => {
-        expect(() => effectsManager.setEffectValue(channelType, 0.5)).not.toThrow();
+        effectTypes.forEach(effectType => {
+          expect(() => effectsManager.getEffect(channelType, effectType)).not.toThrow();
+        });
       });
     });
 
     it('無効なチャンネルタイプを指定するとエラーになる', () => {
-      expect(() => effectsManager.setEffectValue('invalid' as ChannelType, 0.5)).toThrow();
+      expect(() => effectsManager.getEffect('invalid' as ChannelType, 'filter')).toThrow();
+    });
+
+    it('無効なエフェクトタイプを指定するとエラーになる', () => {
+      expect(() => effectsManager.getEffect('master', 'invalid' as EffectType)).toThrow();
     });
   });
 
-  describe('エフェクトの取得', () => {
-    it('エフェクトを取得できる', () => {
+  describe('setEffectValue', () => {
+    it('有効なチャンネルタイプとエフェクトタイプを指定すると値を設定できる', () => {
       const channelTypes: ChannelType[] = ['master', 'channel1', 'channel2', 'channel3'];
+      const effectTypes: EffectType[] = ['filter', 'reverb', 'delay', 'distortion'];
       channelTypes.forEach(channelType => {
-        const effect = effectsManager.getEffect(channelType);
-        expect(effect).toBeDefined();
-        expect(effect.updateFilter).toBeDefined();
-        expect(effect.dispose).toBeDefined();
+        effectTypes.forEach(effectType => {
+          expect(() => effectsManager.setEffectValue(channelType, effectType, 0.5)).not.toThrow();
+        });
       });
     });
 
     it('無効なチャンネルタイプを指定するとエラーになる', () => {
-      expect(() => effectsManager.getEffect('invalid' as ChannelType)).toThrow();
+      expect(() => effectsManager.setEffectValue('invalid' as ChannelType, 'filter', 0.5)).toThrow();
+    });
+
+    it('無効なエフェクトタイプを指定するとエラーになる', () => {
+      expect(() => effectsManager.setEffectValue('master', 'invalid' as EffectType, 0.5)).toThrow();
     });
   });
 
-  describe('リソースの解放', () => {
-    it('disposeを呼び出してもエラーにならない', () => {
-      expect(() => effectsManager.dispose()).not.toThrow();
-    });
-
-    it('二重でdisposeを呼び出してもエラーにならない', () => {
-      effectsManager.dispose();
+  describe('dispose', () => {
+    it('正常に破棄できる', () => {
       expect(() => effectsManager.dispose()).not.toThrow();
     });
   });

@@ -25,19 +25,37 @@ class TestEffect extends BaseEffect {
   }
 
   public enable(): void {
+    this.checkState();
     this.isEnabled = true;
   }
 
   public disable(): void {
+    this.checkState();
     this.isEnabled = false;
   }
 
   public setParameter(param: string, value: number): void {
-    // テスト用の実装
+    this.checkState();
+    const audioParam = this.parameters.get(param);
+    if (!audioParam) {
+      throw new Error(`無効なパラメータです: ${param}`);
+    }
+    audioParam.value = value;
   }
 
   public getParameter(param: string): number {
-    return 0; // テスト用の実装
+    this.checkState();
+    const audioParam = this.parameters.get(param);
+    if (!audioParam) {
+      throw new Error(`無効なパラメータです: ${param}`);
+    }
+    return audioParam.value;
+  }
+
+  public updateEffect(value: number): void {
+    this.checkState();
+    // テスト用の実装
+    this.setParameter('test', value);
   }
 }
 
