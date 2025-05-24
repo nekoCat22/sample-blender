@@ -294,52 +294,15 @@ export class AudioEngine {
     }
   }
 
+  // ===== 再生の制御 =====
+
   /**
    * サンプルを再生
    * @param {string} sampleId - サンプルID
    * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
    */
   public playSample(sampleId: string): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    const buffer = this.sampleBuffers.get(sampleId);
-    if (!buffer) {
-      throw new Error(`サンプル ${sampleId} が見つかりません`);
-    }
-
-    // 既存のソースを停止
-    const existingSource = this.sampleSources.get(sampleId);
-    if (existingSource) {
-      existingSource.stop();
-      existingSource.disconnect();
-    }
-
-    // 新しいソースを作成
-    const source = this.context.createBufferSource();
-    source.buffer = buffer;
-    source.playbackRate.value = this.getSamplePitchRate(sampleId);
-
-    // ゲインノードを取得
-    const gain = this.sampleGains.get(sampleId);
-    if (!gain) {
-      throw new Error(`サンプル ${sampleId} のゲインノードが見つかりません`);
-    }
-
-    // 既存の接続を切断してから新しい接続を作成
-    gain.disconnect();
-    source.connect(gain);
-    // サンプルをエフェクトチェーンに再接続
-    this.connectSampleToEffectChain(sampleId);
-
-    // 再生開始
-    const timing = this.sampleTimings.get(sampleId) || 0;
-    source.start(this.context.currentTime + timing);
-    this.sampleSources.set(sampleId, source);
-    this.sampleStartTimes.set(sampleId, this.context.currentTime);
-
-    // 再生状態を更新
-    this.isPlaying = true;
+    this.playSamples([sampleId]);
   }
 
   /**
@@ -405,6 +368,28 @@ export class AudioEngine {
   }
 
   /**
+   * 音声コンテキストを一時停止
+   * @throws {Error} 初期化されていない場合
+   */
+  public async suspend(): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    await this.context.suspend();
+  }
+
+  /**
+   * 音声コンテキストを再開
+   * @throws {Error} 初期化されていない場合
+   */
+  public async resume(): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    await this.context.resume();
+  }
+
+  /**
    * すべてのサンプルを停止
    */
   public stopAll(): void {
@@ -420,6 +405,14 @@ export class AudioEngine {
     this.sampleStartTimes.clear();
     this.isPlaying = false;
   }
+
+  /**
+   * 再生終了時のコールバックを設定
+   * @param {() => void} callback - 再生終了時に呼び出されるコールバック関数
+   */
+  public setOnPlaybackEnd(callback: () => void): void {
+    this.onPlaybackEndCallback = callback;
+  }  
 
   // ===== タイミング制御 =====
 
@@ -630,29 +623,7 @@ export class AudioEngine {
     return maxDuration;
   }
 
-  // ===== 音声コンテキストの制御 =====
-
-  /**
-   * 音声コンテキストを一時停止
-   * @throws {Error} 初期化されていない場合
-   */
-  public async suspend(): Promise<void> {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    await this.context.suspend();
-  }
-
-  /**
-   * 音声コンテキストを再開
-   * @throws {Error} 初期化されていない場合
-   */
-  public async resume(): Promise<void> {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    await this.context.resume();
-  }
+  // ===== サンプルの音量の制御 =====
 
   /**
    * サンプルの音量を設定
@@ -673,11 +644,4 @@ export class AudioEngine {
     }
   }
 
-  /**
-   * 再生終了時のコールバックを設定
-   * @param {() => void} callback - 再生終了時に呼び出されるコールバック関数
-   */
-  public setOnPlaybackEnd(callback: () => void): void {
-    this.onPlaybackEndCallback = callback;
-  }
 } 
