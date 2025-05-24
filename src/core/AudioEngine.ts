@@ -414,6 +414,27 @@ export class AudioEngine {
     this.onPlaybackEndCallback = callback;
   }  
 
+  // ===== サンプルの音量の制御 =====
+
+  /**
+   * サンプルの音量を設定
+   * @param {string} sampleId - サンプルID
+   * @param {number} volume - 0.0から1.0の範囲の音量値
+   * @throws {Error} 初期化されていない場合、または無効な音量値の場合
+   */
+  public setSampleVolume(sampleId: string, volume: number): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    if (volume < 0 || volume > 1) {
+      throw new Error('音量は0.0から1.0の範囲で指定してください');
+    }
+    const gain = this.sampleGains.get(sampleId);
+    if (gain) {
+      gain.gain.value = volume;
+    }
+  }
+  
   // ===== タイミング制御 =====
 
   /**
@@ -622,26 +643,4 @@ export class AudioEngine {
     });
     return maxDuration;
   }
-
-  // ===== サンプルの音量の制御 =====
-
-  /**
-   * サンプルの音量を設定
-   * @param {string} sampleId - サンプルID
-   * @param {number} volume - 0.0から1.0の範囲の音量値
-   * @throws {Error} 初期化されていない場合、または無効な音量値の場合
-   */
-  public setSampleVolume(sampleId: string, volume: number): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    if (volume < 0 || volume > 1) {
-      throw new Error('音量は0.0から1.0の範囲で指定してください');
-    }
-    const gain = this.sampleGains.get(sampleId);
-    if (gain) {
-      gain.gain.value = volume;
-    }
-  }
-
 } 
