@@ -282,7 +282,27 @@ export default defineComponent({
           // AudioEngineで音声データを読み込み
           const arrayBuffer = await blob.arrayBuffer()
           await audioEngine.loadSample(sampleNumber.toString(), arrayBuffer)
+          
+          // 初期音量を設定
+          audioEngine.setSampleVolume(sampleNumber.toString(), volumes.value[sampleNumber])
+          
+          // 初期ピッチを設定
+          audioEngine.saveSamplePitchRate(sampleNumber.toString(), pitches.value[sampleNumber])
+          
+          // 初期タイミングを設定（サンプル2と3のみ）
+          if (sampleNumber === 2 || sampleNumber === 3) {
+            audioEngine.setTiming(sampleNumber.toString(), timing.value[sampleNumber])
+          }
+          
+          // 初期フィルターを設定
+          audioEngine.setFilterValue(sampleNumber, filterAngles.value[sampleNumber])
         }
+
+        // マスターボリュームを設定
+        audioEngine.setMasterVolume(masterVolume.value)
+        
+        // マスターフィルターを設定
+        audioEngine.setFilterValue(0, filterAngles.value[0])
 
         // 再生終了時のコールバックを設定
         audioEngine.setOnPlaybackEnd(() => {
@@ -365,7 +385,7 @@ export default defineComponent({
       try {
         const initialVolume = 0.8
         volumes.value[sampleNumber] = initialVolume
-        updateVolume(sampleNumber, initialVolume)
+        audioEngine.setSampleVolume(sampleNumber.toString(), initialVolume)
       } catch (error) {
         handleError('音量のリセットに失敗しました', error as Error)
       }
@@ -385,7 +405,7 @@ export default defineComponent({
       try {
         const initialTiming = 0
         timing.value[sampleNumber] = initialTiming
-        updateTiming(sampleNumber, initialTiming)
+        audioEngine.setTiming(sampleNumber.toString(), initialTiming)
       } catch (error) {
         handleError('タイミングのリセットに失敗しました', error as Error)
       }
@@ -405,7 +425,7 @@ export default defineComponent({
       try {
         const initialPitch = 0.5
         pitches.value[sampleNumber] = initialPitch
-        updatePitch(sampleNumber, initialPitch)
+        audioEngine.saveSamplePitchRate(sampleNumber.toString(), initialPitch)
       } catch (error) {
         handleError('ピッチのリセットに失敗しました', error as Error)
       }
@@ -425,7 +445,7 @@ export default defineComponent({
       try {
         const initialFilter = 0.5
         filterAngles.value[sampleNumber] = initialFilter
-        updateFilter(sampleNumber, initialFilter)
+        audioEngine.setFilterValue(sampleNumber, initialFilter)
       } catch (error) {
         handleError('フィルターのリセットに失敗しました', error as Error);
       }

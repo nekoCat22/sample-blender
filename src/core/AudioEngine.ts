@@ -335,18 +335,6 @@ export class AudioEngine {
     return timing / AudioEngine.MAX_TIMING;
   }
 
-  /**
-   * サンプルの再生タイミングをリセット
-   * @param {string} sampleId - サンプルID
-   * @throws {Error} 初期化されていない場合
-   */
-  public resetTiming(sampleId: string): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    this.sampleTimings.set(sampleId, 0);
-  }
-
   // ===== ピッチ制御 =====
 
   /**
@@ -366,9 +354,18 @@ export class AudioEngine {
       throw new Error(`ピッチ値は${AudioEngine.MIN_PITCH}から${AudioEngine.MAX_PITCH}の範囲で指定してください`);
     }
 
-    // 0-1の値を0.5-2.0の範囲に変換
-    const playbackRate = AudioEngine.MIN_PLAYBACK_RATE + 
-      (value * (AudioEngine.MAX_PLAYBACK_RATE - AudioEngine.MIN_PLAYBACK_RATE));
+    let playbackRate: number;
+    if (value < 0.5) {
+      // 0.0-0.5の範囲を0.5-1.0の範囲に変換
+      playbackRate = AudioEngine.MIN_PLAYBACK_RATE + (value * 2 * (AudioEngine.DEFAULT_PLAYBACK_RATE - AudioEngine.MIN_PLAYBACK_RATE));
+    } else if (value > 0.5) {
+      // 0.5-1.0の範囲を1.0-2.0の範囲に変換
+      playbackRate = AudioEngine.DEFAULT_PLAYBACK_RATE + ((value - 0.5) * 2 * (AudioEngine.MAX_PLAYBACK_RATE - AudioEngine.DEFAULT_PLAYBACK_RATE));
+    } else {
+      // 0.5の場合はデフォルト値
+      playbackRate = AudioEngine.DEFAULT_PLAYBACK_RATE;
+    }
+
     this.samplePitches.set(sampleId, playbackRate);
   }
 
@@ -386,21 +383,6 @@ export class AudioEngine {
       throw new Error(`サンプル ${sampleId} が見つかりません`);
     }
     return this.samplePitches.get(sampleId) ?? AudioEngine.DEFAULT_PLAYBACK_RATE;
-  }
-
-  /**
-   * サンプルのピッチレートをリセット
-   * @param {string} sampleId - サンプルID
-   * @throws {Error} 初期化されていない場合
-   */
-  public resetSamplePitchRate(sampleId: string): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    if (!this.sampleBuffers.has(sampleId)) {
-      throw new Error(`サンプル ${sampleId} が見つかりません`);
-    }
-    this.saveSamplePitchRate(sampleId, AudioEngine.DEFAULT_PITCH);
   }
 
   // ===== エフェクトチェーン管理 =====
