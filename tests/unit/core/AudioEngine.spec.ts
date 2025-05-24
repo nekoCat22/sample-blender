@@ -242,4 +242,55 @@ describe('AudioEngine', () => {
       expect(() => audioEngine.setFilterValue(0, 0.5)).not.toThrow();
     });
   });
+
+  describe('ピッチ制御', () => {
+    beforeEach(async () => {
+      // テスト用のサンプルデータを作成
+      await audioEngine.loadSample('1', new ArrayBuffer(0));
+    });
+
+    it('有効なピッチ値を設定できること', () => {
+      expect(() => audioEngine.saveSamplePitchRate('1', 0.5)).not.toThrow();
+    });
+
+    it('無効なピッチ値を設定するとエラーになること', () => {
+      expect(() => audioEngine.saveSamplePitchRate('1', 1.5)).toThrow();
+      expect(() => audioEngine.saveSamplePitchRate('1', -0.5)).toThrow();
+    });
+
+    it('存在しないサンプルのピッチ値を設定するとエラーになること', () => {
+      expect(() => audioEngine.saveSamplePitchRate('4', 0.5)).toThrow();
+    });
+  });
+
+  describe('ピッチ値の変換', () => {
+    beforeEach(async () => {
+      await audioEngine.loadSample('1', new ArrayBuffer(0));
+    });
+
+    it('0.0のピッチ値が0.5の再生速度に変換されること', () => {
+      audioEngine.saveSamplePitchRate('1', 0.0);
+      expect(audioEngine.getSamplePitchRate('1')).toBe(0.5);
+    });
+
+    it('0.5のピッチ値が1.0の再生速度に変換されること', () => {
+      audioEngine.saveSamplePitchRate('1', 0.5);
+      expect(audioEngine.getSamplePitchRate('1')).toBe(1.0);
+    });
+
+    it('1.0のピッチ値が2.0の再生速度に変換されること', () => {
+      audioEngine.saveSamplePitchRate('1', 1.0);
+      expect(audioEngine.getSamplePitchRate('1')).toBe(2.0);
+    });
+
+    it('0.25のピッチ値が0.75の再生速度に変換されること', () => {
+      audioEngine.saveSamplePitchRate('1', 0.25);
+      expect(audioEngine.getSamplePitchRate('1')).toBe(0.75);
+    });
+
+    it('0.75のピッチ値が1.5の再生速度に変換されること', () => {
+      audioEngine.saveSamplePitchRate('1', 0.75);
+      expect(audioEngine.getSamplePitchRate('1')).toBe(1.5);
+    });
+  });
 }); 
