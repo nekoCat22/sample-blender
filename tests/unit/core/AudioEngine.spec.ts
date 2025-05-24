@@ -238,12 +238,8 @@ describe('AudioEngine', () => {
       expect(() => audioEngine.setFilterValue(4, 0.5)).toThrow();
     });
 
-    it('フィルターをリセットできる', () => {
-      expect(() => audioEngine.resetFilter(0)).not.toThrow();
-    });
-
-    it('無効なフィルターインデックスでリセットしようとするとエラーになる', () => {
-      expect(() => audioEngine.resetFilter(4)).toThrow();
+    it('フィルター値をリセット値（0.5）に設定できる', () => {
+      expect(() => audioEngine.setFilterValue(0, 0.5)).not.toThrow();
     });
   });
 }); 

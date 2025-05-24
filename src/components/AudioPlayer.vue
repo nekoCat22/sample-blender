@@ -363,8 +363,9 @@ export default defineComponent({
 
     const resetVolume = (sampleNumber: number): void => {
       try {
-        volumes.value[sampleNumber] = 0.8
-        updateVolume(sampleNumber, 0.8)
+        const initialVolume = 0.8
+        volumes.value[sampleNumber] = initialVolume
+        updateVolume(sampleNumber, initialVolume)
       } catch (error) {
         handleError('音量のリセットに失敗しました', error as Error)
       }
@@ -382,8 +383,9 @@ export default defineComponent({
 
     const resetTiming = (sampleNumber: number): void => {
       try {
-        timing.value[sampleNumber] = 0
-        audioEngine.resetTiming(sampleNumber.toString())
+        const initialTiming = 0
+        timing.value[sampleNumber] = initialTiming
+        updateTiming(sampleNumber, initialTiming)
       } catch (error) {
         handleError('タイミングのリセットに失敗しました', error as Error)
       }
@@ -401,8 +403,9 @@ export default defineComponent({
 
     const resetPitch = (sampleNumber: number): void => {
       try {
-        pitches.value[sampleNumber] = 0.5
-        audioEngine.saveSamplePitchRate(sampleNumber.toString(), 0.5)
+        const initialPitch = 0.5
+        pitches.value[sampleNumber] = initialPitch
+        updatePitch(sampleNumber, initialPitch)
       } catch (error) {
         handleError('ピッチのリセットに失敗しました', error as Error)
       }
@@ -420,8 +423,9 @@ export default defineComponent({
 
     const resetFilter = (sampleNumber: number) => {
       try {
-        audioEngine.resetFilter(sampleNumber);
-        filterAngles.value[sampleNumber] = 0.5;
+        const initialFilter = 0.5
+        filterAngles.value[sampleNumber] = initialFilter
+        updateFilter(sampleNumber, initialFilter)
       } catch (error) {
         handleError('フィルターのリセットに失敗しました', error as Error);
       }

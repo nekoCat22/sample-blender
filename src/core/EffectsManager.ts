@@ -100,29 +100,6 @@ export class EffectsManager {
   }
 
   /**
-   * エフェクトのリセット
-   * @param {ChannelType} channelType - チャンネルタイプ
-   * @throws {Error} 無効なチャンネルタイプの場合
-   */
-  public resetEffect(channelType: ChannelType): void {
-    if (!this.isValidChannelType(channelType)) {
-      throw new Error(`無効なチャンネルタイプです: ${channelType}`);
-    }
-
-    const effect = this.effects.get(channelType);
-    if (!effect) {
-      throw new Error(`エフェクトが見つかりません: ${channelType}`);
-    }
-
-    try {
-      effect.reset();
-      this.effectValues.set(channelType, 0.5);
-    } catch (error) {
-      throw new Error(`エフェクトのリセットに失敗しました: ${(error as Error).message}`);
-    }
-  }
-
-  /**
    * エフェクトの取得
    * @param {ChannelType} channelType - チャンネルタイプ
    * @returns {Filter} エフェクト

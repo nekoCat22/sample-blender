@@ -4,7 +4,6 @@
  * @details
  * - エフェクトの初期化テスト
  * - エフェクトの値の設定テスト
- * - エフェクトのリセットテスト
  * - エフェクトの取得テスト
  * - エラー処理のテスト
  */
@@ -16,7 +15,6 @@ import { Filter } from '@/effects/Filter';
 jest.mock('@/effects/Filter', () => {
   const mockFilter = jest.fn().mockImplementation(() => ({
     updateFilter: jest.fn(),
-    reset: jest.fn(),
     dispose: jest.fn()
   }));
   return {
@@ -66,21 +64,15 @@ describe('EffectsManager', () => {
       });
     });
 
-    it('無効なチャンネルタイプを指定するとエラーになる', () => {
-      expect(() => effectsManager.setEffectValue('invalid' as ChannelType, 0.5)).toThrow();
-    });
-  });
-
-  describe('エフェクトのリセット', () => {
-    it('エフェクトをリセットできる', () => {
+    it('エフェクトの値をリセット値（0.5）に設定できる', () => {
       const channelTypes: ChannelType[] = ['master', 'channel1', 'channel2', 'channel3'];
       channelTypes.forEach(channelType => {
-        expect(() => effectsManager.resetEffect(channelType)).not.toThrow();
+        expect(() => effectsManager.setEffectValue(channelType, 0.5)).not.toThrow();
       });
     });
 
     it('無効なチャンネルタイプを指定するとエラーになる', () => {
-      expect(() => effectsManager.resetEffect('invalid' as ChannelType)).toThrow();
+      expect(() => effectsManager.setEffectValue('invalid' as ChannelType, 0.5)).toThrow();
     });
   });
 
@@ -91,7 +83,6 @@ describe('EffectsManager', () => {
         const effect = effectsManager.getEffect(channelType);
         expect(effect).toBeDefined();
         expect(effect.updateFilter).toBeDefined();
-        expect(effect.reset).toBeDefined();
         expect(effect.dispose).toBeDefined();
       });
     });

@@ -400,7 +400,7 @@ export class AudioEngine {
     if (!this.sampleBuffers.has(sampleId)) {
       throw new Error(`サンプル ${sampleId} が見つかりません`);
     }
-    this.samplePitches.set(sampleId, AudioEngine.DEFAULT_PLAYBACK_RATE);
+    this.saveSamplePitchRate(sampleId, AudioEngine.DEFAULT_PITCH);
   }
 
   // ===== エフェクトチェーン管理 =====
@@ -438,41 +438,6 @@ export class AudioEngine {
       this.effectsManager.setEffectValue(channelType, value);
     } catch (error) {
       throw new Error(`フィルターの更新に失敗しました: ${(error as Error).message}`);
-    }
-  }
-
-  /**
-   * フィルターをリセット
-   * @param {number} keyNumber - フィルターのインデックス
-   * @throws {Error} 初期化されていない場合、またはフィルターが存在しない場合
-   */
-  public resetFilter(keyNumber: number): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-
-    let channelType: ChannelType;
-    switch (keyNumber) {
-      case 0:
-        channelType = 'master';
-        break;
-      case 1:
-        channelType = 'channel1';
-        break;
-      case 2:
-        channelType = 'channel2';
-        break;
-      case 3:
-        channelType = 'channel3';
-        break;
-      default:
-        throw new Error(`無効なフィルターインデックスです: ${keyNumber}`);
-    }
-
-    try {
-      this.effectsManager.resetEffect(channelType);
-    } catch (error) {
-      throw new Error(`フィルターのリセットに失敗しました: ${(error as Error).message}`);
     }
   }
 
