@@ -199,18 +199,18 @@ describe('AudioEngine', () => {
     });
 
     it('複数のサンプルを同時に再生できる', () => {
-      const sampleIds = ['1', '2'];
-      expect(() => audioEngine.playSamples(sampleIds)).not.toThrow();
+      const channelIds = ['1', '2'];
+      expect(() => audioEngine.playSamples(channelIds)).not.toThrow();
     });
 
     it('存在しないサンプルを再生しようとするとエラーになる', () => {
-      const sampleIds = ['1', '4'];
-      expect(() => audioEngine.playSamples(sampleIds)).toThrow('サンプル 4 が見つかりません');
+      const channelIds = ['1', '4'];
+      expect(() => audioEngine.playSamples(channelIds)).toThrow('チャンネル 4 が見つかりません');
     });
 
     it('タイミングを指定して再生できる', () => {
-      const sampleIds = ['1', '2', '3'];
-      expect(() => audioEngine.playSamples(sampleIds)).not.toThrow();
+      const channelIds = ['1', '2', '3'];
+      expect(() => audioEngine.playSamples(channelIds)).not.toThrow();
     });
   });
 

@@ -100,31 +100,31 @@ export class AudioEngine {
 
   /**
    * サンプルをエフェクトチェーンに接続
-   * @param {string} sampleId - サンプルID
+   * @param {string} channelId - チャンネルID
    * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
    */
-  public connectSampleToEffectChain(sampleId: string): void {
+  public connectSampleToEffectChain(channelId: string): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
   
     try {
-      const sampleGain = this.sampleGains.get(sampleId);
+      const sampleGain = this.sampleGains.get(channelId);
       if (!sampleGain) {
-        throw new Error(`サンプル ${sampleId} が見つかりません`);
+        throw new Error(`チャンネル ${channelId} が見つかりません`);
       }
   
-      const sampleNumber = parseInt(sampleId, 10);
+      const channelNumber = parseInt(channelId, 10);
       let effectChainIndex: number;
   
-      if (sampleNumber === 1) {
-        effectChainIndex = 1; // サンプル1はインデックス 1
-      } else if (sampleNumber === 2) {
-        effectChainIndex = 2; // サンプル2はインデックス 2
-      } else if (sampleNumber === 3) {
-        effectChainIndex = 3; // サンプル3はインデックス 3
+      if (channelNumber === 1) {
+        effectChainIndex = 1; // チャンネル1はインデックス 1
+      } else if (channelNumber === 2) {
+        effectChainIndex = 2; // チャンネル2はインデックス 2
+      } else if (channelNumber === 3) {
+        effectChainIndex = 3; // チャンネル3はインデックス 3
       } else {
-        console.warn(`不明な sampleId: ${sampleId}`);
+        console.warn(`不明な channelId: ${channelId}`);
         return;
       }
   
@@ -144,7 +144,7 @@ export class AudioEngine {
       this.effectChains[effectChainIndex].getOutput().connect(this.effectChains[0].getInput());
   
     } catch (error) {
-      throw new Error(`サンプル ${sampleId} の接続に失敗しました: ${(error as Error).message}`);
+      throw new Error(`チャンネル ${channelId} の接続に失敗しました: ${(error as Error).message}`);
     }
   }
 
@@ -251,46 +251,29 @@ export class AudioEngine {
     this.isInitialized = false;
   }
 
-  // ===== マスターボリューム制御 =====
-
-  /**
-   * マスターボリュームを設定
-   * @param {number} value - マスターボリューム値（0.0 から 1.0）
-   * @throws {Error} 初期化されていない場合、または値が範囲外の場合
-   */
-  public setMasterVolume(value: number): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    if (value < 0 || value > 1) {
-      throw new Error('マスターボリュームは0.0から1.0の範囲で指定してください');
-    }
-    this.masterGain.gain.value = value;
-  }
-
   // ===== サンプル管理 =====
 
   /**
    * サンプルを読み込み
-   * @param {string} sampleId - サンプルID
+   * @param {string} channelId - チャンネルID
    * @param {ArrayBuffer} audioData - 音声データ
    */
-  public async loadSample(sampleId: string, audioData: ArrayBuffer): Promise<void> {
+  public async loadSample(channelId: string, audioData: ArrayBuffer): Promise<void> {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
     try {
       const buffer = await this.context.decodeAudioData(audioData);
-      this.sampleBuffers.set(sampleId, buffer);
+      this.sampleBuffers.set(channelId, buffer);
 
       // ゲインノードを作成
       const gain = this.context.createGain();
-      this.sampleGains.set(sampleId, gain);
+      this.sampleGains.set(channelId, gain);
 
       // サンプルをエフェクトチェーンに接続
-      this.connectSampleToEffectChain(sampleId);
+      this.connectSampleToEffectChain(channelId);
     } catch (error) {
-      throw new Error(`サンプル ${sampleId} の読み込みに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`チャンネル ${channelId} の読み込みに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -298,19 +281,19 @@ export class AudioEngine {
 
   /**
    * サンプルを再生
-   * @param {string} sampleId - サンプルID
+   * @param {string} channelId - チャンネルID
    * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
    */
-  public playSample(sampleId: string): void {
-    this.playSamples([sampleId]);
+  public playSample(channelId: string): void {
+    this.playSamples([channelId]);
   }
 
   /**
    * 複数のサンプルを同時に再生
-   * @param {string[]} sampleIds - 再生するサンプルIDの配列
+   * @param {string[]} channelIds - 再生するチャンネルIDの配列
    * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
    */
-  public playSamples(sampleIds: string[]): void {
+  public playSamples(channelIds: string[]): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
@@ -319,34 +302,34 @@ export class AudioEngine {
     this.stopAll();
 
     // アクティブなサンプル数をリセット
-    this.activeSampleCount = sampleIds.length;
+    this.activeSampleCount = channelIds.length;
 
     // 各サンプルを再生
-    sampleIds.forEach(sampleId => {
-      const buffer = this.sampleBuffers.get(sampleId);
+    channelIds.forEach(channelId => {
+      const buffer = this.sampleBuffers.get(channelId);
       if (!buffer) {
-        throw new Error(`サンプル ${sampleId} が見つかりません`);
+        throw new Error(`チャンネル ${channelId} が見つかりません`);
       }
 
       // 新しいソースを作成
       const source = this.context.createBufferSource();
       source.buffer = buffer;
-      source.playbackRate.value = this.getSamplePitchRate(sampleId);
+      source.playbackRate.value = this.getSamplePitchRate(channelId);
 
       // ゲインノードを取得
-      const gain = this.sampleGains.get(sampleId);
+      const gain = this.sampleGains.get(channelId);
       if (!gain) {
-        throw new Error(`サンプル ${sampleId} のゲインノードが見つかりません`);
+        throw new Error(`チャンネル ${channelId} のゲインノードが見つかりません`);
       }
 
       // 既存の接続を切断してから新しい接続を作成
       gain.disconnect();
       source.connect(gain);
       // サンプルをエフェクトチェーンに再接続
-      this.connectSampleToEffectChain(sampleId);
+      this.connectSampleToEffectChain(channelId);
 
       // タイミングを設定（既に0-0.5の範囲に変換済みの値を使用）
-      const timing = this.sampleTimings.get(sampleId) || 0;
+      const timing = this.sampleTimings.get(channelId) || 0;
       const startTime = this.context.currentTime + timing;
 
       // 再生終了時のイベントを設定
@@ -359,8 +342,8 @@ export class AudioEngine {
 
       // 再生開始
       source.start(startTime);
-      this.sampleSources.set(sampleId, source);
-      this.sampleStartTimes.set(sampleId, startTime);
+      this.sampleSources.set(channelId, source);
+      this.sampleStartTimes.set(channelId, startTime);
     });
 
     // 再生状態を更新
@@ -414,22 +397,41 @@ export class AudioEngine {
     this.onPlaybackEndCallback = callback;
   }  
 
+  // ===== 各パラメータ制御 =====
+
+  // ===== マスターボリューム制御 =====
+
+  /**
+   * マスターボリュームを設定
+   * @param {number} value - マスターボリューム値（0.0 から 1.0）
+   * @throws {Error} 初期化されていない場合、または値が範囲外の場合
+   */
+  public setMasterVolume(value: number): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    if (value < 0 || value > 1) {
+      throw new Error('マスターボリュームは0.0から1.0の範囲で指定してください');
+    }
+    this.masterGain.gain.value = value;
+  }
+
   // ===== サンプルの音量の制御 =====
 
   /**
    * サンプルの音量を設定
-   * @param {string} sampleId - サンプルID
+   * @param {string} channelId - チャンネルID
    * @param {number} volume - 0.0から1.0の範囲の音量値
    * @throws {Error} 初期化されていない場合、または無効な音量値の場合
    */
-  public setSampleVolume(sampleId: string, volume: number): void {
+  public setSampleVolume(channelId: string, volume: number): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
     if (volume < 0 || volume > 1) {
       throw new Error('音量は0.0から1.0の範囲で指定してください');
     }
-    const gain = this.sampleGains.get(sampleId);
+    const gain = this.sampleGains.get(channelId);
     if (gain) {
       gain.gain.value = volume;
     }
@@ -439,11 +441,11 @@ export class AudioEngine {
 
   /**
    * サンプルの再生タイミングを保存
-   * @param {string} sampleId - サンプルID
+   * @param {string} channelId - チャンネルID
    * @param {number} timing - 0.0から1.0の範囲のタイミング値（内部で0.0から0.5秒に変換）
    * @throws {Error} 初期化されていない場合、または無効なタイミング値の場合
    */
-  public saveTiming(sampleId: string, timing: number): void {
+  public saveTiming(channelId: string, timing: number): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
@@ -452,36 +454,36 @@ export class AudioEngine {
     }
     // 0-1の値を0-0.5の範囲に変換
     const convertedTiming = timing * AudioEngine.MAX_TIMING;
-    this.sampleTimings.set(sampleId, convertedTiming);
+    this.sampleTimings.set(channelId, convertedTiming);
   }
 
   /**
    * サンプルの再生タイミングを取得
-   * @param {string} sampleId - サンプルID
+   * @param {string} channelId - チャンネルID
    * @returns {number} 現在のタイミング値（0.0から0.5秒の範囲）
    * @throws {Error} 初期化されていない場合
    */
-  public getTiming(sampleId: string): number {
+  public getTiming(channelId: string): number {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    return this.sampleTimings.get(sampleId) || 0;
+    return this.sampleTimings.get(channelId) || 0;
   }
 
   // ===== ピッチ制御 =====
 
   /**
    * サンプルのピッチレートを保存
-   * @param {string} sampleId - サンプルID
+   * @param {string} channelId - チャンネルID
    * @param {number} value - ピッチ値（0.0から1.0の範囲）
    * @throws {Error} 初期化されていない場合、または無効なピッチ値の場合
    */
-  public saveSamplePitchRate(sampleId: string, value: number): void {
+  public saveSamplePitchRate(channelId: string, value: number): void {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    if (!this.sampleBuffers.has(sampleId)) {
-      throw new Error(`サンプル ${sampleId} が見つかりません`);
+    if (!this.sampleBuffers.has(channelId)) {
+      throw new Error(`チャンネル ${channelId} が見つかりません`);
     }
     if (value < AudioEngine.MIN_PITCH || value > AudioEngine.MAX_PITCH) {
       throw new Error(`ピッチ値は${AudioEngine.MIN_PITCH}から${AudioEngine.MAX_PITCH}の範囲で指定してください`);
@@ -499,23 +501,23 @@ export class AudioEngine {
       playbackRate = AudioEngine.DEFAULT_PLAYBACK_RATE;
     }
 
-    this.samplePitches.set(sampleId, playbackRate);
+    this.samplePitches.set(channelId, playbackRate);
   }
 
   /**
    * サンプルのピッチレートを取得
-   * @param {string} sampleId - サンプルID
+   * @param {string} channelId - チャンネルID
    * @returns {number} 現在のピッチレート（0.5から2.0の範囲）
    * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
    */
-  public getSamplePitchRate(sampleId: string): number {
+  public getSamplePitchRate(channelId: string): number {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    if (!this.sampleBuffers.has(sampleId)) {
-      throw new Error(`サンプル ${sampleId} が見つかりません`);
+    if (!this.sampleBuffers.has(channelId)) {
+      throw new Error(`チャンネル ${channelId} が見つかりません`);
     }
-    return this.samplePitches.get(sampleId) ?? AudioEngine.DEFAULT_PLAYBACK_RATE;
+    return this.samplePitches.get(channelId) ?? AudioEngine.DEFAULT_PLAYBACK_RATE;
   }
 
   // ===== エフェクト管理 =====
@@ -572,15 +574,15 @@ export class AudioEngine {
 
   /**
    * サンプルの音量を取得
-   * @param {string} sampleId - サンプルID
+   * @param {string} channelId - チャンネルID
    * @returns {number} 現在の音量値（0.0から1.0の範囲）
    * @throws {Error} 初期化されていない場合
    */
-  public getSampleVolume(sampleId: string): number {
+  public getSampleVolume(channelId: string): number {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    const gain = this.sampleGains.get(sampleId);
+    const gain = this.sampleGains.get(channelId);
     return gain ? gain.gain.value : 0;
   }
 
@@ -601,8 +603,8 @@ export class AudioEngine {
     const currentTime = this.context.currentTime;
     let maxProgress = 0;
 
-    this.sampleStartTimes.forEach((startTime, sampleId) => {
-      const timing = this.sampleTimings.get(sampleId) || 0;
+    this.sampleStartTimes.forEach((startTime, channelId) => {
+      const timing = this.sampleTimings.get(channelId) || 0;
       const progress = currentTime - startTime - timing;
       if (progress > maxProgress) {
         maxProgress = progress;
@@ -614,15 +616,15 @@ export class AudioEngine {
 
   /**
    * サンプルの長さを取得
-   * @param {string} sampleId - サンプルID
+   * @param {string} channelId - チャンネルID
    * @returns {number} サンプルの長さ（秒）
    * @throws {Error} 初期化されていない場合
    */
-  public getSampleDuration(sampleId: string): number {
+  public getSampleDuration(channelId: string): number {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    const buffer = this.sampleBuffers.get(sampleId);
+    const buffer = this.sampleBuffers.get(channelId);
     return buffer ? buffer.duration : 0;
   }
 

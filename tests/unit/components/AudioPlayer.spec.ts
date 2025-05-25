@@ -122,6 +122,23 @@ describe('AudioPlayer.vue', () => {
     })
   })
 
+  // チャンネル3の有効/無効のテストを追加
+  it('チャンネル3のトグルスイッチで有効/無効を切り替えられる', async () => {
+    const toggleSwitch = wrapper.find('.toggle-switch input[type="checkbox"]')
+    expect(toggleSwitch.exists()).toBe(true)
+
+    // 初期状態は無効
+    expect(wrapper.vm.isChannel3Enabled).toBe(false)
+
+    // トグルスイッチをクリックして有効化
+    await toggleSwitch.trigger('click')
+    expect(wrapper.vm.isChannel3Enabled).toBe(true)
+
+    // 再度クリックして無効化
+    await toggleSwitch.trigger('click')
+    expect(wrapper.vm.isChannel3Enabled).toBe(false)
+  })
+
   // オーディオ関連のテストはスキップ
   it.skip('オーディオファイルを読み込める', () => {
     // テストをスキップ

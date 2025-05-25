@@ -112,7 +112,7 @@
       <div class="knob-row">
         <div class="toggle-container">
           <label class="toggle-switch">
-            <input type="checkbox" v-model="isSample3Enabled">
+            <input type="checkbox" v-model="isChannel3Enabled">
             <span class="toggle-slider"></span>
           </label>
           <div class="toggle-label">Enable</div>
@@ -120,7 +120,7 @@
         <Knob
           label="Gain"
           :value="volumes[3]"
-          :is-disabled="!isSample3Enabled"
+          :is-disabled="!isChannel3Enabled"
           @update:value="(value) => updateVolume(3, value)"
           @reset="resetVolume(3)"
         />
@@ -128,14 +128,14 @@
           label="Filter"
           :sub-label="filterSubLabels[3]"
           :value="filterAngles[3]"
-          :is-disabled="!isSample3Enabled"
+          :is-disabled="!isChannel3Enabled"
           @update:value="(value) => updateFilter(3, value)"
           @reset="resetFilter(3)"
         />
         <Knob
           label="Timing"
           :value="timing[3]"
-          :is-disabled="!isSample3Enabled"
+          :is-disabled="!isChannel3Enabled"
           @update:value="(value) => updateTiming(3, value)"
           @reset="resetTiming(3)"
         />
@@ -143,7 +143,7 @@
           label="Pitch"
           :value="pitches[3]"
           :initial-rotation-offset="-135"
-          :is-disabled="!isSample3Enabled"
+          :is-disabled="!isChannel3Enabled"
           @update:value="(value) => updatePitch(3, value)"
           @reset="resetPitch(3)"
         />
@@ -221,7 +221,7 @@ export default defineComponent({
       2: 0.5,
       3: 0.5
     })
-    const isSample3Enabled = ref(false)
+    const isChannel3Enabled = ref(false)
     const audioBlobs = ref<{ [key: number]: Blob | null }>({
       1: null,
       2: null,
@@ -271,31 +271,31 @@ export default defineComponent({
       try {
         isLoading.value = true
 
-        for (let sampleNumber of [1, 2, 3]) {
-          const response = await fetch(`/sample${sampleNumber}.wav`)
+        for (let channelNumber of [1, 2, 3]) {
+          const response = await fetch(`/sample${channelNumber}.wav`)
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`)
           }
           const blob = await response.blob()
-          audioBlobs.value[sampleNumber] = blob
+          audioBlobs.value[channelNumber] = blob
           
           // AudioEngineで音声データを読み込み
           const arrayBuffer = await blob.arrayBuffer()
-          await audioEngine.loadSample(sampleNumber.toString(), arrayBuffer)
+          await audioEngine.loadSample(channelNumber.toString(), arrayBuffer)
           
           // 初期音量を設定
-          audioEngine.setSampleVolume(sampleNumber.toString(), volumeAngles.value[sampleNumber])
+          audioEngine.setSampleVolume(channelNumber.toString(), volumeAngles.value[channelNumber])
           
           // 初期ピッチを設定
-          audioEngine.saveSamplePitchRate(sampleNumber.toString(), pitchAngles.value[sampleNumber])
+          audioEngine.saveSamplePitchRate(channelNumber.toString(), pitchAngles.value[channelNumber])
           
           // 初期タイミングを設定（サンプル2と3のみ）
-          if (sampleNumber === 2 || sampleNumber === 3) {
-            audioEngine.saveTiming(sampleNumber.toString(), timingAngles.value[sampleNumber])
+          if (channelNumber === 2 || channelNumber === 3) {
+            audioEngine.saveTiming(channelNumber.toString(), timingAngles.value[channelNumber])
           }
           
           // 初期フィルターを設定
-          audioEngine.setFilterValue(sampleNumber, filterAngles.value[sampleNumber])
+          audioEngine.setFilterValue(channelNumber, filterAngles.value[channelNumber])
         }
 
         // マスターボリュームを設定
@@ -325,17 +325,17 @@ export default defineComponent({
         isPlaying.value = true
         
         // 再生するサンプルIDの配列を作成
-        const sampleIds = ['1', '2']
-        if (isSample3Enabled.value) {
-          sampleIds.push('3')
+        const channelIds = ['1', '2']
+        if (isChannel3Enabled.value) {
+          channelIds.push('3')
         }
 
         // AudioEngineを使って再生
-        audioEngine.playSamples(sampleIds)
+        audioEngine.playSamples(channelIds)
 
         // 各サンプルをEffectChainに接続
-        sampleIds.forEach(sampleId => {
-          audioEngine.connectSampleToEffectChain(sampleId)
+        channelIds.forEach(channelId => {
+          audioEngine.connectSampleToEffectChain(channelId)
         })
       } catch (error) {
         handleError('再生に失敗しました', error as Error)
@@ -371,81 +371,81 @@ export default defineComponent({
     }
 
     // サンプル音量制御
-    const updateVolume = (sampleNumber: number, value: number): void => {
+    const updateVolume = (channelNumber: number, value: number): void => {
       try {
         const volume = value * masterVolume.value
-        audioEngine.setSampleVolume(sampleNumber.toString(), volume)
-        volumeAngles.value[sampleNumber] = value
+        audioEngine.setSampleVolume(channelNumber.toString(), volume)
+        volumeAngles.value[channelNumber] = value
       } catch (error) {
         handleError('音量の更新に失敗しました', error as Error)
       }
     }
 
-    const resetVolume = (sampleNumber: number): void => {
+    const resetVolume = (channelNumber: number): void => {
       try {
         const initialVolume = 0.8
-        volumeAngles.value[sampleNumber] = initialVolume
-        audioEngine.setSampleVolume(sampleNumber.toString(), initialVolume)
+        volumeAngles.value[channelNumber] = initialVolume
+        audioEngine.setSampleVolume(channelNumber.toString(), initialVolume)
       } catch (error) {
         handleError('音量のリセットに失敗しました', error as Error)
       }
     }
 
     // タイミング制御
-    const updateTiming = (sampleNumber: number, value: number): void => {
+    const updateTiming = (channelNumber: number, value: number): void => {
       try {
-        audioEngine.saveTiming(sampleNumber.toString(), value)
-        timingAngles.value[sampleNumber] = value
+        audioEngine.saveTiming(channelNumber.toString(), value)
+        timingAngles.value[channelNumber] = value
       } catch (error) {
         handleError('タイミングの調整に失敗しました', error as Error)
       }
     }
 
-    const resetTiming = (sampleNumber: number): void => {
+    const resetTiming = (channelNumber: number): void => {
       try {
         const initialTiming = 0
-        timingAngles.value[sampleNumber] = initialTiming
-        audioEngine.saveTiming(sampleNumber.toString(), initialTiming)
+        timingAngles.value[channelNumber] = initialTiming
+        audioEngine.saveTiming(channelNumber.toString(), initialTiming)
       } catch (error) {
         handleError('タイミングのリセットに失敗しました', error as Error)
       }
     }
 
     // ピッチ制御
-    const updatePitch = (sampleNumber: number, value: number): void => {
+    const updatePitch = (channelNumber: number, value: number): void => {
       try {
-        audioEngine.saveSamplePitchRate(sampleNumber.toString(), value)
-        pitchAngles.value[sampleNumber] = value
+        audioEngine.saveSamplePitchRate(channelNumber.toString(), value)
+        pitchAngles.value[channelNumber] = value
       } catch (error) {
         handleError('ピッチの更新に失敗しました', error as Error)
       }
     }
 
-    const resetPitch = (sampleNumber: number): void => {
+    const resetPitch = (channelNumber: number): void => {
       try {
         const initialPitch = 0.5
-        pitchAngles.value[sampleNumber] = initialPitch
-        audioEngine.saveSamplePitchRate(sampleNumber.toString(), initialPitch)
+        pitchAngles.value[channelNumber] = initialPitch
+        audioEngine.saveSamplePitchRate(channelNumber.toString(), initialPitch)
       } catch (error) {
         handleError('ピッチのリセットに失敗しました', error as Error)
       }
     }
 
     // フィルター制御
-    const updateFilter = (sampleNumber: number, angle: number) => {
+    const updateFilter = (channelNumber: number, angle: number) => {
       try {
-        audioEngine.setFilterValue(sampleNumber, angle);
-        filterAngles.value[sampleNumber] = angle;
+        audioEngine.setFilterValue(channelNumber, angle);
+        filterAngles.value[channelNumber] = angle;
       } catch (error) {
         handleError('フィルターの更新に失敗しました', error as Error);
       }
     }
 
-    const resetFilter = (sampleNumber: number) => {
+    const resetFilter = (channelNumber: number) => {
       try {
         const initialFilter = 0.5
-        filterAngles.value[sampleNumber] = initialFilter
-        audioEngine.setFilterValue(sampleNumber, initialFilter)
+        filterAngles.value[channelNumber] = initialFilter
+        audioEngine.setFilterValue(channelNumber, initialFilter)
       } catch (error) {
         handleError('フィルターのリセットに失敗しました', error as Error);
       }
@@ -457,7 +457,7 @@ export default defineComponent({
         if (isPlaying.value) {
           const level1 = audioEngine.getSampleVolume('1')
           const level2 = audioEngine.getSampleVolume('2')
-          const level3 = isSample3Enabled.value ? audioEngine.getSampleVolume('3') : 0
+          const level3 = isChannel3Enabled.value ? audioEngine.getSampleVolume('3') : 0
           volumeLevel.value = 20 * Math.log10((level1 + level2 + level3) / 3)
         }
       }, 1000 / 60)
@@ -508,7 +508,7 @@ export default defineComponent({
       timingAngles.value = { 2: 0, 3: 0 }
       filterAngles.value = { 0: 0.5, 1: 0.5, 2: 0.5, 3: 0.5 }
       pitchAngles.value = { 1: 0.5, 2: 0.5, 3: 0.5 }
-      isSample3Enabled.value = false
+      isChannel3Enabled.value = false
       isPlaying.value = false
       errorMessage.value = null
       isLoading.value = false
@@ -523,7 +523,7 @@ export default defineComponent({
       masterVolume,
       timing: timingAngles,
       pitches: pitchAngles,
-      isSample3Enabled,
+      isChannel3Enabled,
       audioBlobs,
       audioEngine,
       volumeLevel,
