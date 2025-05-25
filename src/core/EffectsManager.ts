@@ -16,9 +16,13 @@ import { Filter } from '@/effects/Filter';
 import { BaseEffect } from '@/effects/base/BaseEffect';
 
 /**
- * エフェクトの種類を定義
+ * チャンネルの種類を定義
+ * 0: マスター
+ * 1: チャンネル1
+ * 2: チャンネル2
+ * 3: チャンネル3
  */
-export type ChannelType = 'master' | 'channel1' | 'channel2' | 'channel3';
+export type ChannelType = 0 | 1 | 2 | 3;
 
 /**
  * エフェクトの種類を定義
@@ -30,10 +34,10 @@ export type EffectType = 'filter' | 'reverb' | 'delay' | 'distortion';
  */
 export class EffectsManager {
   private readonly effectTypes = {
-    MASTER: 'master',
-    CHANNEL1: 'channel1',
-    CHANNEL2: 'channel2',
-    CHANNEL3: 'channel3'
+    MASTER: 0,
+    CHANNEL1: 1,
+    CHANNEL2: 2,
+    CHANNEL3: 3
   } as const;
 
   private effects: Map<ChannelType, Map<EffectType, BaseEffect>>;

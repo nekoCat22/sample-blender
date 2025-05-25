@@ -281,17 +281,17 @@ export default defineComponent({
           
           // AudioEngineで音声データを読み込み
           const arrayBuffer = await blob.arrayBuffer()
-          await audioEngine.loadSample(channelNumber.toString(), arrayBuffer)
+          await audioEngine.loadSample(channelNumber, arrayBuffer)
           
           // 初期音量を設定
-          audioEngine.setSampleVolume(channelNumber.toString(), volumeAngles.value[channelNumber])
+          audioEngine.setSampleVolume(channelNumber, volumeAngles.value[channelNumber])
           
           // 初期ピッチを設定
-          audioEngine.saveSamplePitchRate(channelNumber.toString(), pitchAngles.value[channelNumber])
+          audioEngine.saveSamplePitchRate(channelNumber, pitchAngles.value[channelNumber])
           
           // 初期タイミングを設定（サンプル2と3のみ）
           if (channelNumber === 2 || channelNumber === 3) {
-            audioEngine.saveTiming(channelNumber.toString(), timingAngles.value[channelNumber])
+            audioEngine.saveTiming(channelNumber, timingAngles.value[channelNumber])
           }
           
           // 初期フィルターを設定
@@ -325,9 +325,9 @@ export default defineComponent({
         isPlaying.value = true
         
         // 再生するサンプルIDの配列を作成
-        const channelIds = ['1', '2']
+        const channelIds = [1, 2]
         if (isChannel3Enabled.value) {
-          channelIds.push('3')
+          channelIds.push(3)
         }
 
         // AudioEngineを使って再生
@@ -374,7 +374,7 @@ export default defineComponent({
     const updateVolume = (channelNumber: number, value: number): void => {
       try {
         const volume = value * masterVolume.value
-        audioEngine.setSampleVolume(channelNumber.toString(), volume)
+        audioEngine.setSampleVolume(channelNumber, volume)
         volumeAngles.value[channelNumber] = value
       } catch (error) {
         handleError('音量の更新に失敗しました', error as Error)
@@ -385,7 +385,7 @@ export default defineComponent({
       try {
         const initialVolume = 0.8
         volumeAngles.value[channelNumber] = initialVolume
-        audioEngine.setSampleVolume(channelNumber.toString(), initialVolume)
+        audioEngine.setSampleVolume(channelNumber, initialVolume)
       } catch (error) {
         handleError('音量のリセットに失敗しました', error as Error)
       }
@@ -394,7 +394,7 @@ export default defineComponent({
     // タイミング制御
     const updateTiming = (channelNumber: number, value: number): void => {
       try {
-        audioEngine.saveTiming(channelNumber.toString(), value)
+        audioEngine.saveTiming(channelNumber, value)
         timingAngles.value[channelNumber] = value
       } catch (error) {
         handleError('タイミングの調整に失敗しました', error as Error)
@@ -405,7 +405,7 @@ export default defineComponent({
       try {
         const initialTiming = 0
         timingAngles.value[channelNumber] = initialTiming
-        audioEngine.saveTiming(channelNumber.toString(), initialTiming)
+        audioEngine.saveTiming(channelNumber, initialTiming)
       } catch (error) {
         handleError('タイミングのリセットに失敗しました', error as Error)
       }
@@ -414,7 +414,7 @@ export default defineComponent({
     // ピッチ制御
     const updatePitch = (channelNumber: number, value: number): void => {
       try {
-        audioEngine.saveSamplePitchRate(channelNumber.toString(), value)
+        audioEngine.saveSamplePitchRate(channelNumber, value)
         pitchAngles.value[channelNumber] = value
       } catch (error) {
         handleError('ピッチの更新に失敗しました', error as Error)
@@ -425,7 +425,7 @@ export default defineComponent({
       try {
         const initialPitch = 0.5
         pitchAngles.value[channelNumber] = initialPitch
-        audioEngine.saveSamplePitchRate(channelNumber.toString(), initialPitch)
+        audioEngine.saveSamplePitchRate(channelNumber, initialPitch)
       } catch (error) {
         handleError('ピッチのリセットに失敗しました', error as Error)
       }
@@ -455,9 +455,9 @@ export default defineComponent({
     const startMeterUpdate = (): void => {
       meterInterval.value = window.setInterval(() => {
         if (isPlaying.value) {
-          const level1 = audioEngine.getSampleVolume('1')
-          const level2 = audioEngine.getSampleVolume('2')
-          const level3 = isChannel3Enabled.value ? audioEngine.getSampleVolume('3') : 0
+          const level1 = audioEngine.getSampleVolume(1)
+          const level2 = audioEngine.getSampleVolume(2)
+          const level3 = isChannel3Enabled.value ? audioEngine.getSampleVolume(3) : 0
           volumeLevel.value = 20 * Math.log10((level1 + level2 + level3) / 3)
         }
       }, 1000 / 60)

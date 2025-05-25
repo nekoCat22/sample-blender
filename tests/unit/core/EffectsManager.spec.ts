@@ -53,7 +53,7 @@ describe('EffectsManager', () => {
 
   describe('getEffect', () => {
     it('有効なチャンネルタイプとエフェクトタイプを指定するとエフェクトを取得できる', () => {
-      const channelTypes: ChannelType[] = ['master', 'channel1', 'channel2', 'channel3'];
+      const channelTypes: ChannelType[] = [0, 1, 2, 3];
       const effectTypes: EffectType[] = ['filter', 'reverb', 'delay', 'distortion'];
       channelTypes.forEach(channelType => {
         effectTypes.forEach(effectType => {
@@ -63,17 +63,17 @@ describe('EffectsManager', () => {
     });
 
     it('無効なチャンネルタイプを指定するとエラーになる', () => {
-      expect(() => effectsManager.getEffect('invalid' as ChannelType, 'filter')).toThrow();
+      expect(() => effectsManager.getEffect(4 as ChannelType, 'filter')).toThrow();
     });
 
     it('無効なエフェクトタイプを指定するとエラーになる', () => {
-      expect(() => effectsManager.getEffect('master', 'invalid' as EffectType)).toThrow();
+      expect(() => effectsManager.getEffect(0, 'invalid' as EffectType)).toThrow();
     });
   });
 
   describe('setEffectValue', () => {
     it('有効なチャンネルタイプとエフェクトタイプを指定すると値を設定できる', () => {
-      const channelTypes: ChannelType[] = ['master', 'channel1', 'channel2', 'channel3'];
+      const channelTypes: ChannelType[] = [0, 1, 2, 3];
       const effectTypes: EffectType[] = ['filter', 'reverb', 'delay', 'distortion'];
       channelTypes.forEach(channelType => {
         effectTypes.forEach(effectType => {
@@ -83,11 +83,11 @@ describe('EffectsManager', () => {
     });
 
     it('無効なチャンネルタイプを指定するとエラーになる', () => {
-      expect(() => effectsManager.setEffectValue('invalid' as ChannelType, 'filter', 0.5)).toThrow();
+      expect(() => effectsManager.setEffectValue(4 as ChannelType, 'filter', 0.5)).toThrow();
     });
 
     it('無効なエフェクトタイプを指定するとエラーになる', () => {
-      expect(() => effectsManager.setEffectValue('master', 'invalid' as EffectType, 0.5)).toThrow();
+      expect(() => effectsManager.setEffectValue(0, 'invalid' as EffectType, 0.5)).toThrow();
     });
   });
 

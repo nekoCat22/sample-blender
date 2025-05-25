@@ -177,17 +177,17 @@ describe('AudioEngine', () => {
       } as unknown as AudioBuffer;
 
       // サンプルを読み込む
-      await audioEngine.loadSample('1', new ArrayBuffer(0));
-      await audioEngine.loadSample('2', new ArrayBuffer(0));
-      await audioEngine.loadSample('3', new ArrayBuffer(0));
+      await audioEngine.loadSample(1, new ArrayBuffer(0));
+      await audioEngine.loadSample(2, new ArrayBuffer(0));
+      await audioEngine.loadSample(3, new ArrayBuffer(0));
     });
 
     it('サンプルの読み込み時にGainNodeが作成される', async () => {
-      await audioEngine.loadSample('test', new ArrayBuffer(0));
+      await audioEngine.loadSample(1, new ArrayBuffer(0));
       expect(mockAudioContext.createGain).toHaveBeenCalled();
     });
 
-    it('サンプル再生時にAudioBufferSourceNodeがGainNodeに接続される', () => {
+    it('サンプルを再生できる', () => {
       // playSample内で生成されるsourceをキャプチャするための変数
       let createdSource: any = null;
       mockAudioContext.createBufferSource.mockImplementation(() => {
@@ -195,24 +195,24 @@ describe('AudioEngine', () => {
         return createdSource;
       });
 
-      audioEngine.playSample('1');
+      audioEngine.playSample(1);
 
       // playSampleで生成されたsourceのconnectが呼ばれているかを確認
       expect(createdSource.connect).toHaveBeenCalled();
     });
 
     it('複数のサンプルを同時に再生できる', () => {
-      const channelIds = ['1', '2'];
+      const channelIds = [1, 2];
       expect(() => audioEngine.playSamples(channelIds)).not.toThrow();
     });
 
     it('存在しないサンプルを再生しようとするとエラーになる', () => {
-      const channelIds = ['1', '4'];
+      const channelIds = [1, 4];
       expect(() => audioEngine.playSamples(channelIds)).toThrow('チャンネル 4 が見つかりません');
     });
 
     it('タイミングを指定して再生できる', () => {
-      const channelIds = ['1', '2', '3'];
+      const channelIds = [1, 2, 3];
       expect(() => audioEngine.playSamples(channelIds)).not.toThrow();
     });
   });
@@ -220,21 +220,21 @@ describe('AudioEngine', () => {
   describe('エフェクトチェーン', () => {
     beforeEach(async () => {
       // テスト用のサンプルデータを作成
-      await audioEngine.loadSample('1', new ArrayBuffer(0));
-      await audioEngine.loadSample('2', new ArrayBuffer(0));
-      await audioEngine.loadSample('3', new ArrayBuffer(0));
+      await audioEngine.loadSample(1, new ArrayBuffer(0));
+      await audioEngine.loadSample(2, new ArrayBuffer(0));
+      await audioEngine.loadSample(3, new ArrayBuffer(0));
     });
 
     it('サンプルをエフェクトチェーンに接続できる', () => {
-      expect(() => audioEngine.connectSampleToEffectChain('1')).not.toThrow();
+      expect(() => audioEngine.connectSampleToEffectChain(1)).not.toThrow();
     });
 
     it('存在しないサンプルをエフェクトチェーンに接続しようとするとエラーになる', () => {
-      expect(() => audioEngine.connectSampleToEffectChain('4')).toThrow();
+      expect(() => audioEngine.connectSampleToEffectChain(4)).toThrow();
     });
 
     it('フィルター値を設定できる', () => {
-      expect(() => audioEngine.setFilterValue(0, 0.5)).not.toThrow();
+      expect(() => audioEngine.setFilterValue(1, 0.5)).not.toThrow();
     });
 
     it('無効なフィルターインデックスを指定するとエラーになる', () => {
@@ -242,96 +242,95 @@ describe('AudioEngine', () => {
     });
 
     it('フィルター値をリセット値（0.5）に設定できる', () => {
-      expect(() => audioEngine.setFilterValue(0, 0.5)).not.toThrow();
+      expect(() => audioEngine.setFilterValue(1, 0.5)).not.toThrow();
     });
   });
 
   describe('ピッチ制御', () => {
     beforeEach(async () => {
       // テスト用のサンプルデータを作成
-      await audioEngine.loadSample('1', new ArrayBuffer(0));
+      await audioEngine.loadSample(1, new ArrayBuffer(0));
     });
 
     it('有効なピッチ値を設定できること', () => {
-      expect(() => audioEngine.saveSamplePitchRate('1', 0.5)).not.toThrow();
+      expect(() => audioEngine.saveSamplePitchRate(1, 0.5)).not.toThrow();
     });
 
     it('無効なピッチ値を設定するとエラーになること', () => {
-      expect(() => audioEngine.saveSamplePitchRate('1', 1.5)).toThrow();
-      expect(() => audioEngine.saveSamplePitchRate('1', -0.5)).toThrow();
+      expect(() => audioEngine.saveSamplePitchRate(1, 1.5)).toThrow();
+      expect(() => audioEngine.saveSamplePitchRate(1, -0.5)).toThrow();
     });
 
     it('存在しないサンプルのピッチ値を設定するとエラーになること', () => {
-      expect(() => audioEngine.saveSamplePitchRate('4', 0.5)).toThrow();
+      expect(() => audioEngine.saveSamplePitchRate(4, 0.5)).toThrow();
     });
   });
 
   describe('ピッチ値の変換', () => {
     beforeEach(async () => {
-      await audioEngine.loadSample('1', new ArrayBuffer(0));
+      await audioEngine.loadSample(1, new ArrayBuffer(0));
     });
 
     it('0.0のピッチ値が0.5の再生速度に変換されること', () => {
-      audioEngine.saveSamplePitchRate('1', 0.0);
-      expect(audioEngine.getSamplePitchRate('1')).toBe(0.5);
+      audioEngine.saveSamplePitchRate(1, 0.0);
+      expect(audioEngine.getSamplePitchRate(1)).toBe(0.5);
     });
 
     it('0.5のピッチ値が1.0の再生速度に変換されること', () => {
-      audioEngine.saveSamplePitchRate('1', 0.5);
-      expect(audioEngine.getSamplePitchRate('1')).toBe(1.0);
+      audioEngine.saveSamplePitchRate(1, 0.5);
+      expect(audioEngine.getSamplePitchRate(1)).toBe(1.0);
     });
 
     it('1.0のピッチ値が2.0の再生速度に変換されること', () => {
-      audioEngine.saveSamplePitchRate('1', 1.0);
-      expect(audioEngine.getSamplePitchRate('1')).toBe(2.0);
+      audioEngine.saveSamplePitchRate(1, 1.0);
+      expect(audioEngine.getSamplePitchRate(1)).toBe(2.0);
     });
 
     it('0.25のピッチ値が0.75の再生速度に変換されること', () => {
-      audioEngine.saveSamplePitchRate('1', 0.25);
-      expect(audioEngine.getSamplePitchRate('1')).toBe(0.75);
+      audioEngine.saveSamplePitchRate(1, 0.25);
+      expect(audioEngine.getSamplePitchRate(1)).toBe(0.75);
     });
 
     it('0.75のピッチ値が1.5の再生速度に変換されること', () => {
-      audioEngine.saveSamplePitchRate('1', 0.75);
-      expect(audioEngine.getSamplePitchRate('1')).toBe(1.5);
+      audioEngine.saveSamplePitchRate(1, 0.75);
+      expect(audioEngine.getSamplePitchRate(1)).toBe(1.5);
     });
   });
 
   describe('タイミング制御', () => {
     beforeEach(async () => {
       // テスト用のサンプルデータを作成
-      await audioEngine.loadSample('1', new ArrayBuffer(0));
+      await audioEngine.loadSample(1, new ArrayBuffer(0));
     });
 
     it('有効なタイミング値を保存できること', () => {
-      expect(() => audioEngine.saveTiming('1', 0.5)).not.toThrow();
+      expect(() => audioEngine.saveTiming(1, 0.5)).not.toThrow();
     });
 
     it('無効なタイミング値を保存するとエラーになること', () => {
-      expect(() => audioEngine.saveTiming('1', 1.5)).toThrow();
-      expect(() => audioEngine.saveTiming('1', -0.5)).toThrow();
+      expect(() => audioEngine.saveTiming(1, 1.5)).toThrow();
+      expect(() => audioEngine.saveTiming(1, -0.5)).toThrow();
     });
-
   });
 
   describe('タイミング値の変換', () => {
     beforeEach(async () => {
-      await audioEngine.loadSample('1', new ArrayBuffer(0));
+      await audioEngine.loadSample(1, new ArrayBuffer(0));
     });
 
     it('0.0のタイミング値が0.0秒に変換されること', () => {
-      audioEngine.saveTiming('1', 0.0);
-      expect(audioEngine.getTiming('1')).toBe(0.0);
+      audioEngine.saveTiming(1, 0.0);
+      expect(audioEngine.getTiming(1)).toBe(0.0);
     });
 
     it('0.5のタイミング値が0.25秒に変換されること', () => {
-      audioEngine.saveTiming('1', 0.5);
-      expect(audioEngine.getTiming('1')).toBe(0.25);
+      audioEngine.saveTiming(1, 0.5);
+      expect(audioEngine.getTiming(1)).toBe(0.25);
     });
 
     it('1.0のタイミング値が0.5秒に変換されること', () => {
-      audioEngine.saveTiming('1', 1.0);
-      expect(audioEngine.getTiming('1')).toBe(0.5);
+      audioEngine.saveTiming(1, 1.0);
+      expect(audioEngine.getTiming(1)).toBe(0.5);
     });
   });
 }); 

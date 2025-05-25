@@ -1696,21 +1696,21 @@ export<span class="cstat-no" title="statement not covered" > default defineCompo
             throw new Error(`HTTP error! status: ${response.status}`)
           }<span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >          const blob = await response.blob()</span>
-<span class="cstat-no" title="statement not covered" >          audioBlobs.value[chann</span>elNumber] = blob
+<span class="cstat-no" title="statement not covered" >          audioBlobs.value[cha</span>nnelNumber] = blob
           
           // AudioEngineで音声データを読み込み
 <span class="cstat-no" title="statement not covered" >          const arrayBuffer = await blob.arra</span>yBuffer()
-          await audioEngine.loadSample(channelNumber.toString(), arrayBuffer)
+          await audioEngine.loadSample(channelNumber, arrayBuffer)
         <span class="cstat-no" title="statement not covered" >  <span class="fstat-no" title="function not covered" ></span></span>
 <span class="cstat-no" title="statement not covered" >          // 初期音量を設定</span>
-          audioEngine.setSampleVolume(channelNumber.toString(), volumeAngles.value[channelNumber])
+          audioEngine.setSampleVolume(channelNumber, volumeAngles.value[channelNumber])
           
 <span class="cstat-no" title="statement not covered" >          // 初期ピッチを設定</span>
-<span class="cstat-no" title="statement not covered" >          audioEngine.saveSampleP</span>itchRate(channelNumber.toString(), pitchAngles.value[channelNumber])
+<span class="cstat-no" title="statement not covered" >          audioEngine.saveSampleP</span>itchRate(channelNumber, pitchAngles.value[channelNumber])
           
           // 初期タイミングを設定（サンプル2と3のみ）
           if (channelNum<span class="fstat-no" title="function not covered" >be</span>r === 2 || channelNumber === 3) {
-<span class="cstat-no" title="statement not covered" >            audioEngine.saveTiming(channelNumber.toString(), timingAngles.value[channelNumber])</span>
+<span class="cstat-no" title="statement not covered" >            audioEngine.saveTiming(channelNumber, timingAngles.value[channelNumber])</span>
 <span class="cstat-no" title="statement not covered" >          }</span>
         <span class="cstat-no" title="statement not covered" >  </span>
           // 初期フィルターを設定
@@ -1744,9 +1744,9 @@ export<span class="cstat-no" title="statement not covered" > default defineCompo
         isPlaying.value = true
         
         // 再生するサンプルIDの<span class="fstat-no" title="function not covered" >配列</span>を作成
-<span class="cstat-no" title="statement not covered" >        const channelIds = ['1', '2']</span>
+<span class="cstat-no" title="statement not covered" >        const channelIds = [1, 2]</span>
         if (isChannel3Enable<span class="cstat-no" title="statement not covered" >d.va</span>lue) {
-<span class="cstat-no" title="statement not covered" >          channelIds.push('3')</span>
+<span class="cstat-no" title="statement not covered" >          channelIds.push(3)</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >        // AudioEngineを使って再生</span>
@@ -1793,7 +1793,7 @@ export<span class="cstat-no" title="statement not covered" > default defineCompo
     co<span class="cstat-no" title="statement not covered" >nst updateVolume = (channelNumber: number, value: number): void =&gt; {</span>
       tr<span class="cstat-no" title="statement not covered" >y {</span>
 <span class="cstat-no" title="statement not covered" >        const volume = value * masterVolume.value</span>
-        audioEngine.setSampleVolume(channelNumber.toString(), volume)
+        audioEngine.setSampleVolume(channelNumber, volume)
 <span class="cstat-no" title="statement not covered" >        volumeAngles.value[channelNumber] = val</span>ue
       } catch (error) {
         handleError('音量の更新に失敗しました', error as Error)
@@ -1804,16 +1804,16 @@ export<span class="cstat-no" title="statement not covered" > default defineCompo
       tr<span class="cstat-no" title="statement not covered" >y {</span>
         const initialVolume = 0.8
 <span class="cstat-no" title="statement not covered" >        volumeAngles.value[channelNumber] = initi</span>alVolume
-        audioEngine.setSampleVolume(channelNumber.toString(), initialVolume)
+        audioEngine.setSampleVolume(channelNumber, initialVolume)
       } catch (error) {
         handleError('音量のリセットに失敗しました', error as Error)
       }<span class="fstat-no" title="function not covered" ></span>
     }<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ></span></span>
 <span class="cstat-no" title="statement not covered" ></span>
     // タイミング制御<span class="cstat-no" title="statement not covered" ></span>
-    const updateTiming <span class="cstat-no" title="statement not covered" >= (channelNumber: number, value: </span>number): void =&gt; {
+    const updateTiming <span class="cstat-no" title="statement not covered" >= (channelNumber: number, value</span>: number): void =&gt; {
       try {<span class="cstat-no" title="statement not covered" ></span>
-        au<span class="cstat-no" title="statement not covered" >dioEngine.saveTiming(channelNumber.toString(), value)</span>
+        au<span class="cstat-no" title="statement not covered" >dioEngine.saveTiming(channelNumber, value)</span>
         timingAngles.value[channelNumber] = value
       } catch (error) {
         handleError('タイミングの調整に失敗しました', error as Error)
@@ -1824,7 +1824,7 @@ export<span class="cstat-no" title="statement not covered" > default defineCompo
       try {
         const initialTiming = 0
         timingAngles.value[channelNumber] = initialTiming
-        audioEngine.saveTiming(channelNumber.toString(), initialTiming)
+        audioEngine.saveTiming(channelNumber, initialTiming)
       } catch (error) {
 <span class="fstat-no" title="function not covered" >        h</span>andleError('タイミングのリセットに失敗しました', error as Error)
 <span class="cstat-no" title="statement not covered" >      }</span>
@@ -1833,7 +1833,7 @@ export<span class="cstat-no" title="statement not covered" > default defineCompo
     // ピ<span class="cstat-no" title="statement not covered" >ッチ制御</span>
     cons<span class="cstat-no" title="statement not covered" >t updatePitch = (channelN</span>umber: number, value: number): void =&gt; {
       try {
-        audioEngine.saveSamplePitchRate(channelNumber.toString(), value)
+        audioEngine.saveSamplePitchRate(channelNumber, value)
         pitchAngles.value[channelNumber] = value
       } catch (error) {
         handleError('ピッチの更新に失敗しました', error as Error)
@@ -1844,7 +1844,7 @@ export<span class="cstat-no" title="statement not covered" > default defineCompo
       try {
         const initialPitch = 0.5
         pitchAngles.value[channelNumber] = initialPitch
-        audioEngine.saveSamplePitchRate(channelNumber.toString(), initialPitch)
+        audioEngine.saveSamplePitchRate(channelNumber, initialPitch)
       } catch (error) {
         handleError('ピッチのリセットに失敗しました', error as Error)
       }
@@ -1874,9 +1874,9 @@ export<span class="cstat-no" title="statement not covered" > default defineCompo
     const startMeterUpdate = (): void =&gt; {
       meterInterval.value = window.setInterval(() =&gt; {
         if (isPlaying.value) {
-          const level1 = audioEngine.getSampleVolume('1')
-          const level2 = audioEngine.getSampleVolume('2')
-          const level3 = isChannel3Enabled.value ? audioEngine.getSampleVolume('3') : 0
+          const level1 = audioEngine.getSampleVolume(1)
+          const level2 = audioEngine.getSampleVolume(2)
+          const level3 = isChannel3Enabled.value ? audioEngine.getSampleVolume(3) : 0
           volumeLevel.value = 20 * Math.log10((level1 + level2 + level3) / 3)
         }
       }, 1000 / 60)
@@ -2101,7 +2101,7 @@ input:checked + .toggle-slider:before {<span class="cstat-no" title="statement n
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-25T07:31:47.758Z
+                at 2025-05-25T09:49:56.027Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
