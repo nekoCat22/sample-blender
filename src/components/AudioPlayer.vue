@@ -206,17 +206,17 @@ export default defineComponent({
     const isPlaying = ref(false)
     const errorMessage = ref<string | null>(null)
     const isLoading = ref(false)
-    const volumes = ref<{ [key: number]: number }>({
+    const volumeAngles = ref<{ [key: number]: number }>({
       1: 0.8,
       2: 0.8,
       3: 0.8
     })
     const masterVolume = ref(0.8)
-    const timing = ref<{ [key: number]: number }>({
+    const timingAngles = ref<{ [key: number]: number }>({
       2: 0,
       3: 0
     })
-    const pitches = ref<{ [key: number]: number }>({
+    const pitchAngles = ref<{ [key: number]: number }>({
       1: 0.5,
       2: 0.5,
       3: 0.5
@@ -284,14 +284,14 @@ export default defineComponent({
           await audioEngine.loadSample(sampleNumber.toString(), arrayBuffer)
           
           // 初期音量を設定
-          audioEngine.setSampleVolume(sampleNumber.toString(), volumes.value[sampleNumber])
+          audioEngine.setSampleVolume(sampleNumber.toString(), volumeAngles.value[sampleNumber])
           
           // 初期ピッチを設定
-          audioEngine.saveSamplePitchRate(sampleNumber.toString(), pitches.value[sampleNumber])
+          audioEngine.saveSamplePitchRate(sampleNumber.toString(), pitchAngles.value[sampleNumber])
           
           // 初期タイミングを設定（サンプル2と3のみ）
           if (sampleNumber === 2 || sampleNumber === 3) {
-            audioEngine.saveTiming(sampleNumber.toString(), timing.value[sampleNumber])
+            audioEngine.saveTiming(sampleNumber.toString(), timingAngles.value[sampleNumber])
           }
           
           // 初期フィルターを設定
@@ -375,7 +375,7 @@ export default defineComponent({
       try {
         const volume = value * masterVolume.value
         audioEngine.setSampleVolume(sampleNumber.toString(), volume)
-        volumes.value[sampleNumber] = value
+        volumeAngles.value[sampleNumber] = value
       } catch (error) {
         handleError('音量の更新に失敗しました', error as Error)
       }
@@ -384,7 +384,7 @@ export default defineComponent({
     const resetVolume = (sampleNumber: number): void => {
       try {
         const initialVolume = 0.8
-        volumes.value[sampleNumber] = initialVolume
+        volumeAngles.value[sampleNumber] = initialVolume
         audioEngine.setSampleVolume(sampleNumber.toString(), initialVolume)
       } catch (error) {
         handleError('音量のリセットに失敗しました', error as Error)
@@ -395,7 +395,7 @@ export default defineComponent({
     const updateTiming = (sampleNumber: number, value: number): void => {
       try {
         audioEngine.saveTiming(sampleNumber.toString(), value)
-        timing.value[sampleNumber] = value
+        timingAngles.value[sampleNumber] = value
       } catch (error) {
         handleError('タイミングの調整に失敗しました', error as Error)
       }
@@ -404,7 +404,7 @@ export default defineComponent({
     const resetTiming = (sampleNumber: number): void => {
       try {
         const initialTiming = 0
-        timing.value[sampleNumber] = initialTiming
+        timingAngles.value[sampleNumber] = initialTiming
         audioEngine.saveTiming(sampleNumber.toString(), initialTiming)
       } catch (error) {
         handleError('タイミングのリセットに失敗しました', error as Error)
@@ -415,7 +415,7 @@ export default defineComponent({
     const updatePitch = (sampleNumber: number, value: number): void => {
       try {
         audioEngine.saveSamplePitchRate(sampleNumber.toString(), value)
-        pitches.value[sampleNumber] = value
+        pitchAngles.value[sampleNumber] = value
       } catch (error) {
         handleError('ピッチの更新に失敗しました', error as Error)
       }
@@ -424,7 +424,7 @@ export default defineComponent({
     const resetPitch = (sampleNumber: number): void => {
       try {
         const initialPitch = 0.5
-        pitches.value[sampleNumber] = initialPitch
+        pitchAngles.value[sampleNumber] = initialPitch
         audioEngine.saveSamplePitchRate(sampleNumber.toString(), initialPitch)
       } catch (error) {
         handleError('ピッチのリセットに失敗しました', error as Error)
@@ -504,10 +504,10 @@ export default defineComponent({
       
       // 状態のクリーンアップ
       audioBlobs.value = { 1: null, 2: null, 3: null }
-      volumes.value = { 1: 0.8, 2: 0.8, 3: 0.8 }
-      timing.value = { 2: 0, 3: 0 }
+      volumeAngles.value = { 1: 0.8, 2: 0.8, 3: 0.8 }
+      timingAngles.value = { 2: 0, 3: 0 }
       filterAngles.value = { 0: 0.5, 1: 0.5, 2: 0.5, 3: 0.5 }
-      pitches.value = { 1: 0.5, 2: 0.5, 3: 0.5 }
+      pitchAngles.value = { 1: 0.5, 2: 0.5, 3: 0.5 }
       isSample3Enabled.value = false
       isPlaying.value = false
       errorMessage.value = null
@@ -519,10 +519,10 @@ export default defineComponent({
       isPlaying,
       error: errorMessage,
       isLoading,
-      volumes,
+      volumes: volumeAngles,
       masterVolume,
-      timing,
-      pitches,
+      timing: timingAngles,
+      pitches: pitchAngles,
       isSample3Enabled,
       audioBlobs,
       audioEngine,
