@@ -15,7 +15,7 @@ import { Filter } from '@/effects/Filter';
 // Filterのモックを作成
 jest.mock('@/effects/Filter', () => {
   const mockFilter = jest.fn().mockImplementation(() => ({
-    updateFilter: jest.fn(),
+    updateEffect: jest.fn(),
     dispose: jest.fn()
   }));
   return {

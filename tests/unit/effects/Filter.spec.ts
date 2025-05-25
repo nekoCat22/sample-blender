@@ -28,7 +28,10 @@ class MockAudioContext {
 
   createGain() {
     return {
-      gain: { value: 1 },
+      gain: {
+        value: 1,
+        setTargetAtTime: jest.fn()
+      },
       disconnect: jest.fn(),
       connect: jest.fn()
     };

@@ -131,11 +131,11 @@ describe('AudioPlayer.vue', () => {
     expect(wrapper.vm.isChannel3Enabled).toBe(false)
 
     // トグルスイッチをクリックして有効化
-    await toggleSwitch.trigger('click')
+    await toggleSwitch.setValue(true)
     expect(wrapper.vm.isChannel3Enabled).toBe(true)
 
     // 再度クリックして無効化
-    await toggleSwitch.trigger('click')
+    await toggleSwitch.setValue(false)
     expect(wrapper.vm.isChannel3Enabled).toBe(false)
   })
 
