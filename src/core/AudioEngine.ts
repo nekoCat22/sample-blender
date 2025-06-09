@@ -15,20 +15,12 @@
 
 import { EffectChain } from '@/effects/EffectChain'
 import { EffectsManager, ChannelType } from './EffectsManager'
+import { PlaybackSettingManager, SettingType } from './PlaybackSettingManager'
 // BaseEffectはFilterが継承してるため、インポートが必須だが、ESLintのエラーが出るため無視する文
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { BaseEffect } from '@/effects/base/BaseEffect'
 
 export class AudioEngine {
-  // 定数定義
-  private static readonly MAX_TIMING = 0.5;
-  private static readonly MIN_PITCH = 0.0;
-  private static readonly MAX_PITCH = 1.0;
-  private static readonly DEFAULT_PITCH = 0.5;
-  private static readonly MIN_PLAYBACK_RATE = 0.5;  // 最小再生速度（半速）
-  private static readonly MAX_PLAYBACK_RATE = 2.0;  // 最大再生速度（2倍速）
-  private static readonly DEFAULT_PLAYBACK_RATE = 1.0;  // デフォルト再生速度（通常速度）
-
   // 基本プロパティ
   private context: AudioContext;
   private masterGain!: GainNode;  // 初期化はinitMasterGainで行うので、!を使用
@@ -49,6 +41,7 @@ export class AudioEngine {
   // エフェクト関連のプロパティ
   private effectChains: EffectChain[] = [];
   private effectsManager: EffectsManager;
+  private playbackSettings: PlaybackSettingManager;
 
   // ===== 初期化・破棄関連 =====
 
@@ -67,6 +60,9 @@ export class AudioEngine {
       
       // エフェクトチェーンの初期化
       this.initEffectChains();
+
+      // PlaybackSettingManagerの初期化
+      this.playbackSettings = new PlaybackSettingManager();
     } catch (error: unknown) {
       throw new Error(`AudioEngineの初期化に失敗しました: ${(error as Error).message}`);
     }
@@ -313,7 +309,8 @@ export class AudioEngine {
       // 新しいソースを作成
       const source = this.context.createBufferSource();
       source.buffer = buffer;
-      source.playbackRate.value = this.getSamplePitchRate(channelId);
+      // PlaybackSettingManagerから取得した値はすでに変換済みなので、そのまま使用
+      source.playbackRate.value = this.playbackSettings.getSetting(channelId, 'pitch');
 
       // ゲインノードを取得
       const gain = this.sampleGains.get(channelId);
@@ -327,8 +324,8 @@ export class AudioEngine {
       // サンプルをエフェクトチェーンに再接続
       this.connectSampleToEffectChain(channelId);
 
-      // タイミングを設定（既に0-0.5の範囲に変換済みの値を使用）
-      const timing = this.sampleTimings.get(channelId) || 0;
+      // タイミングを設定
+      const timing = this.playbackSettings.getSetting(channelId, 'timing');
       const startTime = this.context.currentTime + timing;
 
       // 再生終了時のイベントを設定
@@ -396,7 +393,45 @@ export class AudioEngine {
     this.onPlaybackEndCallback = callback;
   }  
 
-  // ===== 各パラメータ制御 =====
+  // ===== 各playbackの設定パラメータ制御 =====
+
+  /**
+   * 再生設定を変更
+   * @param {number} channelId - チャンネルID
+   * @param {SettingType} type - 設定の種類
+   * @param {number} value - 設定値
+   * @throws {Error} 初期化されていない場合、または無効な設定値の場合
+   */
+  public setPlaybackSetting(channelId: number, type: SettingType, value: number): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+
+    // 設定を保存
+    this.playbackSettings.setSetting(channelId, type, value);
+
+    // 音量の場合は即時反映
+    if (type === 'volume') {
+      const gain = this.sampleGains.get(channelId);
+      if (gain) {
+        gain.gain.value = value;
+      }
+    }
+  }
+
+  /**
+   * 再生設定を取得
+   * @param {number} channelId - チャンネルID
+   * @param {SettingType} type - 設定の種類
+   * @returns {number} 設定値
+   * @throws {Error} 初期化されていない場合
+   */
+  public getPlaybackSetting(channelId: number, type: SettingType): number {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    return this.playbackSettings.getSetting(channelId, type);
+  }
 
   // ===== マスターボリューム制御 =====
 
@@ -443,6 +478,7 @@ export class AudioEngine {
    * @param {number} channelId - チャンネルID
    * @param {number} timing - 0.0から1.0の範囲のタイミング値（内部で0.0から0.5秒に変換）
    * @throws {Error} 初期化されていない場合、または無効なタイミング値の場合
+   * @deprecated PlaybackSettingManagerを使用してください
    */
   public saveTiming(channelId: number, timing: number): void {
     if (!this.isInitialized) {
@@ -451,9 +487,8 @@ export class AudioEngine {
     if (timing < 0 || timing > 1) {
       throw new Error('タイミングは0から1の範囲で指定してください');
     }
-    // 0-1の値を0-0.5の範囲に変換
-    const convertedTiming = timing * AudioEngine.MAX_TIMING;
-    this.sampleTimings.set(channelId, convertedTiming);
+    // PlaybackSettingManagerを使用して設定を保存
+    this.playbackSettings.setSetting(channelId, 'timing', timing);
   }
 
   /**
@@ -461,12 +496,13 @@ export class AudioEngine {
    * @param {number} channelId - チャンネルID
    * @returns {number} 現在のタイミング値（0.0から0.5秒の範囲）
    * @throws {Error} 初期化されていない場合
+   * @deprecated PlaybackSettingManagerを使用してください
    */
   public getTiming(channelId: number): number {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    return this.sampleTimings.get(channelId) || 0;
+    return this.playbackSettings.getSetting(channelId, 'timing');
   }
 
   // ===== ピッチ制御 =====
@@ -476,6 +512,7 @@ export class AudioEngine {
    * @param {number} channelId - チャンネルID
    * @param {number} value - ピッチ値（0.0から1.0の範囲）
    * @throws {Error} 初期化されていない場合、または無効なピッチ値の場合
+   * @deprecated PlaybackSettingManagerを使用してください
    */
   public saveSamplePitchRate(channelId: number, value: number): void {
     if (!this.isInitialized) {
@@ -484,23 +521,12 @@ export class AudioEngine {
     if (!this.sampleBuffers.has(channelId)) {
       throw new Error(`チャンネル ${channelId} が見つかりません`);
     }
-    if (value < AudioEngine.MIN_PITCH || value > AudioEngine.MAX_PITCH) {
-      throw new Error(`ピッチ値は${AudioEngine.MIN_PITCH}から${AudioEngine.MAX_PITCH}の範囲で指定してください`);
+    if (value < 0 || value > 1) {
+      throw new Error('ピッチ値は0.0から1.0の範囲で指定してください');
     }
 
-    let playbackRate: number;
-    if (value < 0.5) {
-      // 0.0-0.5の範囲を0.5-1.0の範囲に変換
-      playbackRate = AudioEngine.MIN_PLAYBACK_RATE + (value * 2 * (AudioEngine.DEFAULT_PLAYBACK_RATE - AudioEngine.MIN_PLAYBACK_RATE));
-    } else if (value > 0.5) {
-      // 0.5-1.0の範囲を1.0-2.0の範囲に変換
-      playbackRate = AudioEngine.DEFAULT_PLAYBACK_RATE + ((value - 0.5) * 2 * (AudioEngine.MAX_PLAYBACK_RATE - AudioEngine.DEFAULT_PLAYBACK_RATE));
-    } else {
-      // 0.5の場合はデフォルト値
-      playbackRate = AudioEngine.DEFAULT_PLAYBACK_RATE;
-    }
-
-    this.samplePitches.set(channelId, playbackRate);
+    // PlaybackSettingManagerを使用して設定を保存
+    this.playbackSettings.setSetting(channelId, 'pitch', value);
   }
 
   /**
@@ -508,6 +534,7 @@ export class AudioEngine {
    * @param {number} channelId - チャンネルID
    * @returns {number} 現在のピッチレート（0.5から2.0の範囲）
    * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
+   * @deprecated PlaybackSettingManagerを使用してください
    */
   public getSamplePitchRate(channelId: number): number {
     if (!this.isInitialized) {
@@ -516,7 +543,7 @@ export class AudioEngine {
     if (!this.sampleBuffers.has(channelId)) {
       throw new Error(`チャンネル ${channelId} が見つかりません`);
     }
-    return this.samplePitches.get(channelId) ?? AudioEngine.DEFAULT_PLAYBACK_RATE;
+    return this.playbackSettings.getSetting(channelId, 'pitch');
   }
 
   // ===== エフェクト管理 =====
@@ -585,7 +612,7 @@ export class AudioEngine {
     let maxProgress = 0;
 
     this.sampleStartTimes.forEach((startTime, channelId) => {
-      const timing = this.sampleTimings.get(channelId) || 0;
+      const timing = this.playbackSettings.getSetting(channelId, 'timing');
       const progress = currentTime - startTime - timing;
       if (progress > maxProgress) {
         maxProgress = progress;
