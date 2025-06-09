@@ -145,7 +145,8 @@ export class Filter extends BaseEffect {
    * @brief フィルターの設定を更新
    * @param value - フィルター値（0-1）
    */
-  public updateFilter(value: number): void {
+  public updateEffect(value: number): void {
+    this.checkState();
     if (value < 0 || value > 1) {
       throw new Error('フィルター値は0から1の範囲で指定してください');
     }
@@ -231,10 +232,5 @@ export class Filter extends BaseEffect {
     this.filterGain.disconnect();
     this.bypassGain.disconnect();
     super.dispose();
-  }
-
-  public updateEffect(value: number): void {
-    this.checkState();
-    this.updateFilter(value);
   }
 } 

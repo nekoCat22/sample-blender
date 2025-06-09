@@ -67,37 +67,37 @@ describe('Filter', () => {
 
   describe('フィルター値', () => {
     it('有効な値を設定できること', () => {
-      filter.updateFilter(0.8);
+      filter.updateEffect(0.8);
       expect(filter.getState().filterValue).toBe(0.8);
     });
 
     it('無効な値を設定するとエラーになること', () => {
-      expect(() => filter.updateFilter(1.5)).toThrow();
-      expect(() => filter.updateFilter(-0.5)).toThrow();
+      expect(() => filter.updateEffect(1.5)).toThrow();
+      expect(() => filter.updateEffect(-0.5)).toThrow();
     });
 
     it('バイパス範囲内ではフィルターが無効になること', () => {
       filter.enable();
-      filter.updateFilter(0.5);
+      filter.updateEffect(0.5);
       expect(filter.isEffectEnabled()).toBe(false);
     });
 
     it('0-0.45の範囲でローパスフィルターになること', () => {
-      filter.updateFilter(0.3);
+      filter.updateEffect(0.3);
       expect(filter.getState().type).toBe('lowpass');
     });
 
     it('0.55-1.0の範囲でハイパスフィルターになること', () => {
-      filter.updateFilter(0.8);
+      filter.updateEffect(0.8);
       expect(filter.getState().type).toBe('highpass');
     });
   });
 
   describe('周波数', () => {
     it('値に応じて周波数が変化すること', () => {
-      filter.updateFilter(0.6);
+      filter.updateEffect(0.6);
       const frequency1 = filter.getState().frequency;
-      filter.updateFilter(0.8);
+      filter.updateEffect(0.8);
       const frequency2 = filter.getState().frequency;
       expect(frequency2).toBeGreaterThan(frequency1);
     });
@@ -105,7 +105,7 @@ describe('Filter', () => {
 
   describe('リセット', () => {
     it('フィルターをリセットできること', () => {
-      filter.updateFilter(0.8);
+      filter.updateEffect(0.8);
       filter.setCutoffFrequency(2000);
       filter.reset();
       expect(filter.getState().filterValue).toBe(0.5);
