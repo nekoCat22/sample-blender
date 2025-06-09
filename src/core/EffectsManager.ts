@@ -33,7 +33,7 @@ export type EffectType = 'filter' | 'reverb' | 'delay' | 'distortion';
  * エフェクトの管理クラス
  */
 export class EffectsManager {
-  private readonly effectTypes = {
+  private readonly channelTypes = {
     MASTER: 0,
     CHANNEL1: 1,
     CHANNEL2: 2,
@@ -61,7 +61,7 @@ export class EffectsManager {
   private initializeEffects(): void {
     try {
       // 各チャンネルのエフェクトを初期化
-      Object.values(this.effectTypes).forEach(channelType => {
+      Object.values(this.channelTypes).forEach(channelType => {
         const channelEffects = new Map<EffectType, BaseEffect>();
         const channelValues = new Map<EffectType, number>();
 
@@ -145,7 +145,7 @@ export class EffectsManager {
    * @returns {boolean} 有効な場合はtrue
    */
   private isValidChannelType(channelType: ChannelType): boolean {
-    return Object.values(this.effectTypes).includes(channelType);
+    return Object.values(this.channelTypes).includes(channelType);
   }
 
   /**
