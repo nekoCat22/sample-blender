@@ -124,24 +124,6 @@ export class Filter extends BaseEffect {
   }
 
   /**
-   * @brief フィルターの有効/無効を切り替え
-   * @param enabled - フィルターを有効にするかどうか
-   */
-  private setEnabled(enabled: boolean): void {
-    this.isEnabled = enabled;
-    
-    if (enabled) {
-      // フィルターを有効化
-      this.filterGain.gain.value = 1;
-      this.bypassGain.gain.value = 0;
-    } else {
-      // バイパスを有効化
-      this.filterGain.gain.value = 0;
-      this.bypassGain.gain.value = 1;
-    }
-  }
-
-  /**
    * @brief フィルターの設定を更新
    * @param value - フィルター値（0-1）
    */
@@ -154,12 +136,12 @@ export class Filter extends BaseEffect {
 
     if (this.filterValue >= this.BYPASS_MIN && this.filterValue <= this.BYPASS_MAX) {
       // バイパス範囲内ではフィルターをバイパス
-      this.setEnabled(false);
+      this.disable();
       return;
     }
 
     // フィルターを有効にする
-    this.setEnabled(true);
+    this.enable();
 
     if (this.filterValue < this.BYPASS_MIN) {
       // 0-0.45の範囲：ローパスフィルター
@@ -221,7 +203,7 @@ export class Filter extends BaseEffect {
     this.filter.type = 'lowpass';
     this.setParameter('frequency', 1000);
     this.setParameter('Q', 1);
-    this.setEnabled(false);  // リセット時にフィルターを無効にする
+    this.disable();  // リセット時にフィルターを無効にする
   }
 
   /**
