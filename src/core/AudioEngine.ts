@@ -15,7 +15,7 @@
 
 import { EffectChain } from '@/effects/EffectChain'
 import { EffectsManager, ChannelType } from './EffectsManager'
-import { PlaybackSettingManager, SettingType } from './PlaybackSettingManager'
+import { PlaybackSettingManager } from './PlaybackSettingManager'
 // BaseEffectはFilterが継承してるため、インポートが必須だが、ESLintのエラーが出るため無視する文
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { BaseEffect } from '@/effects/base/BaseEffect'
@@ -393,45 +393,7 @@ export class AudioEngine {
     this.onPlaybackEndCallback = callback;
   }  
 
-  // ===== 各playbackの設定パラメータ制御 =====
 
-  /**
-   * 再生設定を変更
-   * @param {number} channelId - チャンネルID
-   * @param {SettingType} type - 設定の種類
-   * @param {number} value - 設定値
-   * @throws {Error} 初期化されていない場合、または無効な設定値の場合
-   */
-  public setPlaybackSetting(channelId: number, type: SettingType, value: number): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-
-    // 設定を保存
-    this.playbackSettings.setSetting(channelId, type, value);
-
-    // 音量の場合は即時反映
-    if (type === 'volume') {
-      const gain = this.sampleGains.get(channelId);
-      if (gain) {
-        gain.gain.value = value;
-      }
-    }
-  }
-
-  /**
-   * 再生設定を取得
-   * @param {number} channelId - チャンネルID
-   * @param {SettingType} type - 設定の種類
-   * @returns {number} 設定値
-   * @throws {Error} 初期化されていない場合
-   */
-  public getPlaybackSetting(channelId: number, type: SettingType): number {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    return this.playbackSettings.getSetting(channelId, type);
-  }
 
   // ===== マスターボリューム制御 =====
 
@@ -478,7 +440,6 @@ export class AudioEngine {
    * @param {number} channelId - チャンネルID
    * @param {number} timing - 0.0から1.0の範囲のタイミング値（内部で0.0から0.5秒に変換）
    * @throws {Error} 初期化されていない場合、または無効なタイミング値の場合
-   * @deprecated PlaybackSettingManagerを使用してください
    */
   public saveTiming(channelId: number, timing: number): void {
     if (!this.isInitialized) {
@@ -496,7 +457,6 @@ export class AudioEngine {
    * @param {number} channelId - チャンネルID
    * @returns {number} 現在のタイミング値（0.0から0.5秒の範囲）
    * @throws {Error} 初期化されていない場合
-   * @deprecated PlaybackSettingManagerを使用してください
    */
   public getTiming(channelId: number): number {
     if (!this.isInitialized) {
@@ -512,7 +472,6 @@ export class AudioEngine {
    * @param {number} channelId - チャンネルID
    * @param {number} value - ピッチ値（0.0から1.0の範囲）
    * @throws {Error} 初期化されていない場合、または無効なピッチ値の場合
-   * @deprecated PlaybackSettingManagerを使用してください
    */
   public saveSamplePitchRate(channelId: number, value: number): void {
     if (!this.isInitialized) {
@@ -534,7 +493,6 @@ export class AudioEngine {
    * @param {number} channelId - チャンネルID
    * @returns {number} 現在のピッチレート（0.5から2.0の範囲）
    * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
-   * @deprecated PlaybackSettingManagerを使用してください
    */
   public getSamplePitchRate(channelId: number): number {
     if (!this.isInitialized) {
