@@ -233,7 +233,7 @@ export class AudioEngine {
     try {
       // エフェクトチェーンを破棄
       this.effectChains.forEach(chain => {
-        if (chain && typeof chain.dispose === 'function') {
+        if (chain !== undefined && typeof chain.dispose === 'function') {
           chain.dispose();
         }
       });
@@ -266,6 +266,9 @@ export class AudioEngine {
 
       // 初期化フラグをリセット
       this.isInitialized = false;
+
+      // サンプルバッファをクリア
+      this.sampleBuffers.clear();
     } catch (error) {
       throw new Error(`AudioEngineの破棄に失敗しました: ${(error as Error).message}`);
     }
@@ -277,6 +280,7 @@ export class AudioEngine {
    * サンプルを読み込み
    * @param {ChannelId} channelId - チャンネルID
    * @param {ArrayBuffer} audioData - 音声データ
+   * @throws {Error} 初期化されていない場合、または音声データのデコードに失敗した場合
    */
   public async loadSample(channelId: ChannelId, audioData: ArrayBuffer): Promise<void> {
     if (!this.isInitialized) {
@@ -293,6 +297,9 @@ export class AudioEngine {
       // サンプルをエフェクトチェーンに接続
       this.connectSampleToEffectChain(channelId);
     } catch (error) {
+      if (error instanceof DOMException) {
+        throw new Error(`音声データのデコードに失敗しました: ${error.message}`);
+      }
       throw new Error(`チャンネル ${channelId} の読み込みに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -318,75 +325,83 @@ export class AudioEngine {
       throw new Error('AudioEngineが初期化されていません');
     }
 
-    // 既存の再生を停止
-    this.stopAll();
+    try {
+      // 既存の再生を停止
+      this.stopAll();
 
-    // アクティブなサンプル数をリセット
-    this.activeSampleCount = channelIds.length;
+      // アクティブなサンプル数をリセット
+      this.activeSampleCount = channelIds.length;
 
-    // 各サンプルを再生
-    channelIds.forEach(channelId => {
-      const buffer = this.sampleBuffers.get(channelId);
-      if (!buffer) {
-        throw new Error(`チャンネル ${channelId} が見つかりません`);
-      }
-
-      // 新しいソースを作成
-      const source = this.context.createBufferSource();
-      source.buffer = buffer;
-
-      // ピッチの設定を取得して適用
-      const normalizedPitch = this.playbackSettingsManager.getSetting(channelId, 'pitch');
-      let playbackRate: number;
-      if (normalizedPitch < 0.5) {
-        // 0.0-0.5の範囲をPITCH_MIN_RATE-1.0の範囲に変換
-        playbackRate = PITCH_MIN_RATE + (normalizedPitch * 2 * (1.0 - PITCH_MIN_RATE));
-      } else if (normalizedPitch > 0.5) {
-        // 0.5-1.0の範囲を1.0-PITCH_MAX_RATEの範囲に変換
-        playbackRate = 1.0 + ((normalizedPitch - 0.5) * 2 * (PITCH_MAX_RATE - 1.0));
-      } else {
-        // 0.5の場合は1.0（通常速度）
-        playbackRate = 1.0;
-      }
-      source.playbackRate.value = playbackRate;
-
-      // ゲインノードを取得
-      const gain = this.sampleGains.get(channelId);
-      if (!gain) {
-        throw new Error(`チャンネル ${channelId} のゲインノードが見つかりません`);
-      }
-
-      // ボリュームの設定を取得して適用
-      const normalizedVolume = this.playbackSettingsManager.getSetting(channelId, 'volume');
-      gain.gain.value = normalizedVolume;
-
-      // 音声信号の接続
-      source.connect(gain);  // ソース → ゲイン
-
-      // サンプルをエフェクトチェーンに接続
-      this.connectSampleToEffectChain(channelId);
-
-      // タイミングの設定を取得して適用
-      const normalizedTiming = this.playbackSettingsManager.getSetting(channelId, 'timing');
-      const delaySeconds = normalizedTiming * TIMING_MAX_DELAY_SECONDS;
-      const startTime = this.context.currentTime + delaySeconds;
-
-      // 再生終了時のイベントを設定
-      source.onended = () => {
-        this.activeSampleCount--;
-        if (this.activeSampleCount === 0 && this.onPlaybackEndCallback) {
-          this.onPlaybackEndCallback();
+      // 各サンプルを再生
+      channelIds.forEach(channelId => {
+        const buffer = this.sampleBuffers.get(channelId);
+        if (!buffer) {
+          throw new Error(`チャンネル ${channelId} が見つかりません`);
         }
-      };
 
-      // 再生開始
-      source.start(startTime);
-      this.sampleSources.set(channelId, source);
-      this.sampleStartTimes.set(channelId, startTime);
-    });
+        // 新しいソースを作成
+        const source = this.context.createBufferSource();
+        source.buffer = buffer;
 
-    // 再生状態を更新
-    this.isPlaying = true;
+        // ピッチの設定を取得して適用
+        const normalizedPitch = this.playbackSettingsManager.getSetting(channelId, 'pitch');
+        let playbackRate: number;
+        if (normalizedPitch < 0.5) {
+          // 0.0-0.5の範囲をPITCH_MIN_RATE-1.0の範囲に変換
+          playbackRate = PITCH_MIN_RATE + (normalizedPitch * 2 * (1.0 - PITCH_MIN_RATE));
+        } else if (normalizedPitch > 0.5) {
+          // 0.5-1.0の範囲を1.0-PITCH_MAX_RATEの範囲に変換
+          playbackRate = 1.0 + ((normalizedPitch - 0.5) * 2 * (PITCH_MAX_RATE - 1.0));
+        } else {
+          // 0.5の場合は1.0（通常速度）
+          playbackRate = 1.0;
+        }
+        source.playbackRate.value = playbackRate;
+
+        // ゲインノードを取得
+        const gain = this.sampleGains.get(channelId);
+        if (!gain) {
+          throw new Error(`チャンネル ${channelId} のゲインノードが見つかりません`);
+        }
+
+        // ボリュームの設定を取得して適用
+        const normalizedVolume = this.playbackSettingsManager.getSetting(channelId, 'volume');
+        gain.gain.value = normalizedVolume;
+
+        // 音声信号の接続
+        source.connect(gain);  // ソース → ゲイン
+
+        // サンプルをエフェクトチェーンに接続
+        this.connectSampleToEffectChain(channelId);
+
+        // タイミングの設定を取得して適用
+        const normalizedTiming = this.playbackSettingsManager.getSetting(channelId, 'timing');
+        const delaySeconds = normalizedTiming * TIMING_MAX_DELAY_SECONDS;
+        const startTime = this.context.currentTime + delaySeconds;
+
+        // 再生終了時のイベントを設定
+        source.onended = () => {
+          this.activeSampleCount--;
+          if (this.activeSampleCount === 0 && this.onPlaybackEndCallback) {
+            this.onPlaybackEndCallback();
+          }
+        };
+
+        // 再生開始
+        source.start(startTime);
+        this.sampleSources.set(channelId, source);
+        this.sampleStartTimes.set(channelId, startTime);
+      });
+
+      // 再生状態を更新
+      this.isPlaying = true;
+    } catch (error) {
+      // エラーが発生した場合は再生を停止し、状態をリセット
+      this.stopAll();
+      this.activeSampleCount = 0;
+      this.isPlaying = false;
+      throw error;
+    }
   }
 
   /**
@@ -544,8 +559,11 @@ export class AudioEngine {
     return maxDuration;
   }
 
+  // ===== エフェクトの制御 =====
+
   /**
    * EffectsManagerのインスタンスを取得
+   * なんかeffectManagerのインスタンスはaudioengine内にカプセル化されてるから、それを変更するにはこのメソッドで公開しなきゃいけないんだって。きもいね。
    * @returns {EffectsManager} EffectsManagerのインスタンス
    * @throws {Error} 初期化されていない場合
    */

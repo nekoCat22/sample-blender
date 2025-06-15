@@ -429,13 +429,13 @@ import { Filter } from '@/effects/Filter';
 import { BaseEffect } from '@/effects/base/BaseEffect';
 &nbsp;
 /**
- * チャンネルの種類を定義
+ * チャンネルの識別子を定義
  * 0: マスター
  * 1: チャンネル1
  * 2: チャンネル2
  * 3: チャンネル3
  */
-export type ChannelType = 0 | 1 | 2 | 3;
+export type ChannelId = 0 | 1 | 2 | 3;
 &nbsp;
 /**
  * エフェクトの種類を定義
@@ -446,15 +446,15 @@ export type EffectType = 'filter' | 'reverb' | 'delay' | 'distortion';
  * エフェクトの管理クラス
  */
 export class EffectsManager {
-  private readonly channelTypes = {
+  private readonly channelIds = {
     MASTER: 0,
     CHANNEL1: 1,
     CHANNEL2: 2,
     CHANNEL3: 3
   } as const;
 &nbsp;
-  private effects: Map&lt;ChannelType, Map&lt;EffectType, BaseEffect&gt;&gt;;
-  private effectValues: Map&lt;ChannelType, Map&lt;EffectType, number&gt;&gt;;
+  private effects: Map&lt;ChannelId, Map&lt;EffectType, BaseEffect&gt;&gt;;
+  private effectValues: Map&lt;ChannelId, Map&lt;EffectType, number&gt;&gt;;
 &nbsp;
   /**
    * EffectsManagerのコンストラクタ
@@ -474,7 +474,7 @@ export class EffectsManager {
   private initializeEffects(): void {
     try {
       // 各チャンネルのエフェクトを初期化
-      Object.values(this.channelTypes).forEach(channelType =&gt; {
+      Object.values(this.channelIds).forEach(channelId =&gt; {
         const channelEffects = new Map&lt;EffectType, BaseEffect&gt;();
         const channelValues = new Map&lt;EffectType, number&gt;();
 &nbsp;
@@ -486,8 +486,8 @@ export class EffectsManager {
           channelValues.set(effectType as EffectType, 0.5);
         });
 &nbsp;
-        this.effects.set(channelType, channelEffects);
-        this.effectValues.set(channelType, channelValues);
+        this.effects.set(channelId, channelEffects);
+        this.effectValues.set(channelId, channelValues);
       });
     } catch (error) {
 <span class="cstat-no" title="statement not covered" >      throw new Error(`エフェクトの初期化に失敗しました: ${(error as Error).message}`);</span>
@@ -496,19 +496,19 @@ export class EffectsManager {
 &nbsp;
   /**
    * エフェクトの値の設定
-   * @param {ChannelType} channelType - チャンネルタイプ
+   * @param {ChannelId} channelId - チャンネル識別子
    * @param {EffectType} effectType - エフェクトタイプ
    * @param {number} value - 設定する値（0.0から1.0の範囲）
-   * @throws {Error} 無効なチャンネルタイプまたはエフェクトタイプの場合
+   * @throws {Error} 無効なチャンネル識別子またはエフェクトタイプの場合
    */
-  public setEffectValue(channelType: ChannelType, effectType: EffectType, value: number): void {
-    if (!this.isValidChannelType(channelType)) {
-      throw new Error(`無効なチャンネルタイプです: ${channelType}`);
+  public setEffectValue(channelId: ChannelId, effectType: EffectType, value: number): void {
+    if (!this.isValidChannelId(channelId)) {
+      throw new Error(`無効なチャンネル識別子です: ${channelId}`);
     }
 &nbsp;
-    const channelEffects = this.effects.get(channelType);
+    const channelEffects = this.effects.get(channelId);
     <span class="missing-if-branch" title="if path not taken" >I</span>if (!channelEffects) {
-<span class="cstat-no" title="statement not covered" >      throw new Error(`チャンネルのエフェクトが見つかりません: ${channelType}`);</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error(`チャンネルのエフェクトが見つかりません: ${channelId}`);</span>
     }
 &nbsp;
     const effect = channelEffects.get(effectType);
@@ -518,7 +518,7 @@ export class EffectsManager {
 &nbsp;
     try {
       effect.updateEffect(value);
-      const channelValues = this.effectValues.get(channelType);
+      const channelValues = this.effectValues.get(channelId);
       <span class="missing-if-branch" title="else path not taken" >E</span>if (channelValues) {
         channelValues.set(effectType, value);
       }
@@ -529,19 +529,19 @@ export class EffectsManager {
 &nbsp;
   /**
    * エフェクトの取得
-   * @param {ChannelType} channelType - チャンネルタイプ
+   * @param {ChannelId} channelId - チャンネル識別子
    * @param {EffectType} effectType - エフェクトタイプ
    * @returns {BaseEffect} エフェクト
-   * @throws {Error} 無効なチャンネルタイプまたはエフェクトタイプの場合
+   * @throws {Error} 無効なチャンネル識別子またはエフェクトタイプの場合
    */
-  public getEffect(channelType: ChannelType, effectType: EffectType): BaseEffect {
-    if (!this.isValidChannelType(channelType)) {
-      throw new Error(`無効なチャンネルタイプです: ${channelType}`);
+  public getEffect(channelId: ChannelId, effectType: EffectType): BaseEffect {
+    if (!this.isValidChannelId(channelId)) {
+      throw new Error(`無効なチャンネル識別子です: ${channelId}`);
     }
 &nbsp;
-    const channelEffects = this.effects.get(channelType);
+    const channelEffects = this.effects.get(channelId);
     <span class="missing-if-branch" title="if path not taken" >I</span>if (!channelEffects) {
-<span class="cstat-no" title="statement not covered" >      throw new Error(`チャンネルのエフェクトが見つかりません: ${channelType}`);</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error(`チャンネルのエフェクトが見つかりません: ${channelId}`);</span>
     }
 &nbsp;
     const effect = channelEffects.get(effectType);
@@ -554,21 +554,21 @@ export class EffectsManager {
 &nbsp;
   /**
    * フィルターの値を設定
-   * @param {ChannelType} channelType - チャンネルタイプ
+   * @param {ChannelId} channelId - チャンネル識別子
    * @param {number} value - 設定する値（0.0から1.0の範囲）
-   * @throws {Error} 無効なチャンネルタイプの場合
+   * @throws {Error} 無効なチャンネル識別子の場合
    */
-  public setFilterValue(channelType: ChannelType, value: number): void {
-    this.setEffectValue(channelType, 'filter', value);
+  public setFilterValue(channelId: ChannelId, value: number): void {
+    this.setEffectValue(channelId, 'filter', value);
   }
 &nbsp;
   /**
-   * チャンネルタイプの検証
-   * @param {ChannelType} channelType - 検証するチャンネルタイプ
+   * チャンネル識別子の検証
+   * @param {ChannelId} channelId - 検証するチャンネル識別子
    * @returns {boolean} 有効な場合はtrue
    */
-  private isValidChannelType(channelType: ChannelType): boolean {
-    return Object.values(this.channelTypes).includes(channelType);
+  private isValidChannelId(channelId: ChannelId): boolean {
+    return Object.values(this.channelIds).includes(channelId);
   }
 &nbsp;
   /**
@@ -592,7 +592,7 @@ export class EffectsManager {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-15T05:32:04.112Z
+                at 2025-06-15T06:19:54.337Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
