@@ -140,6 +140,16 @@ export class EffectsManager {
   }
 
   /**
+   * フィルターの値を設定
+   * @param {ChannelType} channelType - チャンネルタイプ
+   * @param {number} value - 設定する値（0.0から1.0の範囲）
+   * @throws {Error} 無効なチャンネルタイプの場合
+   */
+  public setFilterValue(channelType: ChannelType, value: number): void {
+    this.setEffectValue(channelType, 'filter', value);
+  }
+
+  /**
    * チャンネルタイプの検証
    * @param {ChannelType} channelType - 検証するチャンネルタイプ
    * @returns {boolean} 有効な場合はtrue

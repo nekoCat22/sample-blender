@@ -101,15 +101,15 @@ describe('AudioEngine', () => {
     });
 
     it('フィルター値を設定できる', () => {
-      expect(() => audioEngine.setFilterValue(1, 0.5)).not.toThrow();
+      expect(() => audioEngine.getEffectsManager().setFilterValue(1, 0.5)).not.toThrow();
     });
 
     it('無効なフィルターインデックスを指定するとエラーになる', () => {
-      expect(() => audioEngine.setFilterValue(4 as ChannelId, 0.5)).toThrow();
+      expect(() => audioEngine.getEffectsManager().setFilterValue(4 as ChannelId, 0.5)).toThrow();
     });
 
     it('フィルター値をリセット値（0.5）に設定できる', () => {
-      expect(() => audioEngine.setFilterValue(1, 0.5)).not.toThrow();
+      expect(() => audioEngine.getEffectsManager().setFilterValue(1, 0.5)).not.toThrow();
     });
   });
 

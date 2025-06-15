@@ -14,7 +14,7 @@
  */
 
 import { EffectChain } from '@/effects/EffectChain'
-import { EffectsManager, ChannelType } from './EffectsManager'
+import { EffectsManager } from './EffectsManager'
 import { PlaybackSettingManager } from './PlaybackSettingManager'
 import { PITCH_MIN_RATE, PITCH_MAX_RATE, TIMING_MAX_DELAY_SECONDS, ChannelId } from './audioConstants'
 // BaseEffectはFilterが継承してるため、インポートが必須だが、ESLintのエラーが出るため無視する文
@@ -226,33 +226,49 @@ export class AudioEngine {
    * @throws {Error} 初期化されていない場合
    */
   public async dispose(): Promise<void> {
-    // 既に破棄されている場合は何もしない
     if (!this.isInitialized) {
       return;
     }
 
-    // エフェクトチェーンを破棄
-    this.effectChains.forEach(chain => {
-      if (chain && typeof chain.dispose === 'function') {
-        chain.dispose();
+    try {
+      // エフェクトチェーンを破棄
+      this.effectChains.forEach(chain => {
+        if (chain && typeof chain.dispose === 'function') {
+          chain.dispose();
+        }
+      });
+      this.effectChains = [];
+
+      // EffectsManagerの破棄
+      this.effectsManager.dispose();
+
+      // 音声コンテキストを破棄する前に、すべての接続を切断
+      this.masterGain.disconnect();
+      
+      // サンプルゲインの切断
+      this.sampleGains.forEach(gain => gain.disconnect());
+      this.sampleGains.clear();
+
+      // サンプルソースの切断
+      this.sampleSources.forEach(source => {
+        try {
+          source.disconnect();
+        } catch (error) {
+          // 既に切断されている場合は無視
+        }
+      });
+      this.sampleSources.clear();
+
+      // 音声コンテキストを破棄
+      if (this.context.state !== 'closed') {
+        await this.context.close();
       }
-    });
-    this.effectChains = [];
 
-    // EffectsManagerの破棄
-    this.effectsManager.dispose();
-
-    // 音声コンテキストを破棄する前に、すべての接続を切断
-    this.masterGain.disconnect();
-    this.sampleGains.forEach(gain => gain.disconnect());
-
-    // 音声コンテキストを破棄
-    if (this.context.state !== 'closed') {
-      await this.context.close();
+      // 初期化フラグをリセット
+      this.isInitialized = false;
+    } catch (error) {
+      throw new Error(`AudioEngineの破棄に失敗しました: ${(error as Error).message}`);
     }
-
-    // 初期化フラグをリセット
-    this.isInitialized = false;
   }
 
   // ===== サンプル管理 =====
@@ -452,26 +468,6 @@ export class AudioEngine {
     this.masterGain.gain.value = value;
   }
 
-  // ===== エフェクト管理 =====
-
-  /**
-   * フィルターの値を更新
-   * @param {ChannelId | 0} channelId - チャンネルID（0はマスター）
-   * @param {number} value - 0.0から1.0の範囲の値
-   * @throws {Error} 初期化されていない場合、またはフィルターが存在しない場合
-   */
-  public setFilterValue(channelId: ChannelId | 0, value: number): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-
-    try {
-      this.effectsManager.setEffectValue(channelId as ChannelType, 'filter', value);
-    } catch (error) {
-      throw new Error(`フィルターの更新に失敗しました: ${(error as Error).message}`);
-    }
-  }
-
   // ===== UIの表示・メーター更新用メソッド =====
 
   /**
@@ -546,5 +542,17 @@ export class AudioEngine {
       }
     });
     return maxDuration;
+  }
+
+  /**
+   * EffectsManagerのインスタンスを取得
+   * @returns {EffectsManager} EffectsManagerのインスタンス
+   * @throws {Error} 初期化されていない場合
+   */
+  public getEffectsManager(): EffectsManager {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    return this.effectsManager;
   }
 } 

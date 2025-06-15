@@ -20,5 +20,22 @@ export const VOLUME_MAX = 1.0;  // 最大音量
 export const VOLUME_DEFAULT = 1.0;  // デフォルト音量
 
 // チャンネル関連の定数
-export const CHANNEL_IDS = [1, 2, 3] as const;  // 利用可能なチャンネルID
-export type ChannelId = typeof CHANNEL_IDS[number];  // チャンネルIDの型 
+/**
+ * 有効なチャンネルIDの型定義
+ * - 0: マスターチャンネル（全体の制御用）
+ * - 1: チャンネル1
+ * - 2: チャンネル2
+ * - 3: チャンネル3
+ */
+export type ChannelId = 0 | 1 | 2 | 3;
+
+/**
+ * 利用可能なチャンネルIDの配列
+ * マスターチャンネル（0）は含まない
+ */
+export const CHANNEL_IDS: readonly [1, 2, 3] = [1, 2, 3] as const;
+
+/**
+ * マスターチャンネルのID
+ */
+export const MASTER_CHANNEL_ID: ChannelId = 0; 

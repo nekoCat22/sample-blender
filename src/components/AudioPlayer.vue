@@ -189,6 +189,7 @@ import { defineComponent, ref, onMounted, onBeforeUnmount, watch, computed } fro
 import { AudioEngine } from '../core/AudioEngine'
 import { PlaybackSettingManager } from '../core/PlaybackSettingManager'
 import { ChannelId } from '../core/audioConstants'
+import { ChannelType } from '../core/EffectsManager'
 import WaveformDisplay from './WaveformDisplay.vue'
 import VolumeMeter from './VolumeMeter.vue'
 import Knob from './Knob.vue'
@@ -323,7 +324,7 @@ export default defineComponent({
         audioEngine.updateMasterVolume(masterVolume.value);
 
         // マスターフィルターを設定
-        audioEngine.setFilterValue(0, masterFilterAngle.value);
+        audioEngine.getEffectsManager().setFilterValue(0, masterFilterAngle.value);
 
         // 再生終了時のコールバックを設定
         audioEngine.setOnPlaybackEnd(() => {
@@ -451,13 +452,14 @@ export default defineComponent({
     // フィルター制御
     const updateFilter = (channelNumber: ChannelId | 0, angle: number) => {
       try {
+        const effectsManager = audioEngine.getEffectsManager();
         if (channelNumber === 0) {
           // マスターフィルターの更新
-          audioEngine.setFilterValue(0, angle);
+          effectsManager.setFilterValue(0 as ChannelType, angle);
           masterFilterAngle.value = angle;
         } else {
           // サンプルのフィルターの更新
-          audioEngine.setFilterValue(channelNumber, angle);
+          effectsManager.setFilterValue(channelNumber as ChannelType, angle);
           filterAngles.value[channelNumber] = angle;
         }
       } catch (error) {
@@ -467,15 +469,16 @@ export default defineComponent({
 
     const resetFilter = (channelNumber: ChannelId | 0) => {
       try {
+        const effectsManager = audioEngine.getEffectsManager();
         const initialFilter = 0.5;
         if (channelNumber === 0) {
           // マスターフィルターのリセット
           masterFilterAngle.value = initialFilter;
-          audioEngine.setFilterValue(0, initialFilter);
+          effectsManager.setFilterValue(0 as ChannelType, initialFilter);
         } else {
           // サンプルのフィルターのリセット
           filterAngles.value[channelNumber] = initialFilter;
-          audioEngine.setFilterValue(channelNumber, initialFilter);
+          effectsManager.setFilterValue(channelNumber as ChannelType, initialFilter);
         }
       } catch (error) {
         handleError('フィルターのリセットに失敗しました', error as Error);
