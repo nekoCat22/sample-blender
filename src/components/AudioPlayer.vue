@@ -169,7 +169,7 @@
         <Knob
           label="Filter"
           :sub-label="filterSubLabels[0]"
-          :value="filterAngles[0]"
+          :value="masterFilterAngle"
           :min="0"
           :max="1"
           @update:value="(value) => updateFilter(0, value)"
@@ -187,6 +187,8 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import { AudioEngine } from '../core/AudioEngine'
+import { PlaybackSettingManager } from '../core/PlaybackSettingManager'
+import { ChannelId } from '../core/audioConstants'
 import WaveformDisplay from './WaveformDisplay.vue'
 import VolumeMeter from './VolumeMeter.vue'
 import Knob from './Knob.vue'
@@ -199,156 +201,175 @@ export default defineComponent({
     Knob
   },
   setup() {
+    // PlaybackSettingManagerのインスタンスを作成
+    const playbackSettingsManager = new PlaybackSettingManager();
+
     // AudioEngineのインスタンスを作成
-    const audioEngine = new AudioEngine()
+    const audioEngine = new AudioEngine(playbackSettingsManager);
 
     // 状態の定義
-    const isPlaying = ref(false)
-    const errorMessage = ref<string | null>(null)
-    const isLoading = ref(false)
-    const volumeAngles = ref<{ [key: number]: number }>({
-      1: 0.8,
-      2: 0.8,
-      3: 0.8
-    })
-    const masterVolume = ref(0.8)
-    const timingAngles = ref<{ [key: number]: number }>({
-      2: 0,
-      3: 0
-    })
-    const pitchAngles = ref<{ [key: number]: number }>({
-      1: 0.5,
-      2: 0.5,
-      3: 0.5
-    })
-    const isChannel3Enabled = ref(false)
+    const isPlaying = ref(false);
+    const errorMessage = ref<string | null>(null);
+    const isLoading = ref(false);
+    const masterVolume = ref(0.8);
+    const isChannel3Enabled = ref(false);
     const audioBlobs = ref<{ [key: number]: Blob | null }>({
       1: null,
       2: null,
       3: null
-    })
+    });
     const filterAngles = ref<{ [key: number]: number }>({
-      0: 0.5, // マスター用
       1: 0.5, // サンプル1
       2: 0.5, // サンプル2
       3: 0.5  // サンプル3
-    })
-    const volumeLevel = ref(-60) // 音量レベルの初期値
-    const meterInterval = ref<number | null>(null) // 音量メーターの表示の設定
-    
+    });
+    const volumeLevel = ref(-60); // 音量レベルの初期値
+    const meterInterval = ref<number | null>(null); // 音量メーターの表示の設定
+
+    // ノブの値を保持する状態変数
+    const volumeAngles = ref<{ [key: number]: number }>({
+      1: 0.8,
+      2: 0.8,
+      3: 0.8
+    });
+    const timingAngles = ref<{ [key: number]: number }>({
+      2: 0,
+      3: 0
+    });
+    const pitchAngles = ref<{ [key: number]: number }>({
+      1: 0.5,
+      2: 0.5,
+      3: 0.5
+    });
+
+    // マスターフィルター用の状態変数
+    const masterFilterAngle = ref(0.5);
+
     // 各フィルターのサブラベルを計算（0から1の正規化値で判断）
     const filterSubLabels = computed(() => {
-      return Object.keys(filterAngles.value).map((key) => {
+      const labels: { [key: number]: string } = {};
+      
+      // マスターフィルターのサブラベル
+      const masterValue = masterFilterAngle.value;
+      const bypassRange = 0.05;  // バイパス範囲を0.05に設定（0.45から0.55の範囲）
+      if (Math.abs(masterValue - 0.5) <= bypassRange) {
+        labels[0] = 'BYPASS';
+      } else if (masterValue > 0.5) {
+        labels[0] = 'HP';
+      } else {
+        labels[0] = 'LP';
+      }
+
+      // 各サンプルのフィルターのサブラベル
+      Object.keys(filterAngles.value).forEach((key) => {
         const value = filterAngles.value[parseInt(key)];
-        const bypassRange = 0.05;  // バイパス範囲を0.05に設定（0.45から0.55の範囲）
-        if (Math.abs(value - 0.5) <= bypassRange) return 'BYPASS';
-        if (value > 0.5) return 'HP';
-        return 'LP';
+        if (Math.abs(value - 0.5) <= bypassRange) {
+          labels[parseInt(key)] = 'BYPASS';
+        } else if (value > 0.5) {
+          labels[parseInt(key)] = 'HP';
+        } else {
+          labels[parseInt(key)] = 'LP';
+        }
       });
+
+      return labels;
     })
 
     // ===== エラーハンドリング関連 =====
     const handleError = (message: string, err: Error): void => {
-      console.error('Audio Player Error:', message, err)
-      errorMessage.value = `${message}: ${err.message}`
-      isLoading.value = false
-    }
+      console.error('Audio Player Error:', message, err);
+      errorMessage.value = `${message}: ${err.message}`;
+      isLoading.value = false;
+    };
 
     const handleWaveformError = (error: string): void => {
-      handleError('波形表示でエラーが発生しました', new Error(error))
-    }
+      handleError('波形表示でエラーが発生しました', new Error(error));
+    };
 
     const handleWaveformLoading = (): void => {
-      isLoading.value = true
-    }
+      isLoading.value = true;
+    };
 
     const handleWaveformReady = (): void => {
-      isLoading.value = false
-    }
+      isLoading.value = false;
+    };
 
     // ===== 音声ファイル読み込み関連 =====
     const loadAudioFiles = async (): Promise<void> => {
       try {
-        isLoading.value = true
+        isLoading.value = true;
 
-        for (let channelNumber of [1, 2, 3]) {
-          const response = await fetch(`/sample${channelNumber}.wav`)
+        for (let channelNumber of [1, 2, 3] as ChannelId[]) {
+          const response = await fetch(`/sample${channelNumber}.wav`);
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`)
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
-          const blob = await response.blob()
-          audioBlobs.value[channelNumber] = blob
+          const blob = await response.blob();
+          audioBlobs.value[channelNumber] = blob;
           
           // AudioEngineで音声データを読み込み
-          const arrayBuffer = await blob.arrayBuffer()
-          await audioEngine.loadSample(channelNumber, arrayBuffer)
+          const arrayBuffer = await blob.arrayBuffer();
+          await audioEngine.loadSample(channelNumber, arrayBuffer);
           
-          // 初期音量を設定
-          audioEngine.setSampleVolume(channelNumber, volumeAngles.value[channelNumber])
-          
-          // 初期ピッチを設定
-          audioEngine.saveSamplePitchRate(channelNumber, pitchAngles.value[channelNumber])
-          
-          // 初期タイミングを設定（サンプル2と3のみ）
+          // 初期設定をPlaybackSettingManagerに保存
+          playbackSettingsManager.setSetting(channelNumber, 'volume', 0.8);
+          playbackSettingsManager.setSetting(channelNumber, 'pitch', 0.5);
           if (channelNumber === 2 || channelNumber === 3) {
-            audioEngine.saveTiming(channelNumber, timingAngles.value[channelNumber])
+            playbackSettingsManager.setSetting(channelNumber, 'timing', 0.0);
           }
-          
-          // 初期フィルターを設定
-          audioEngine.setFilterValue(channelNumber, filterAngles.value[channelNumber])
         }
 
         // マスターボリュームを設定
-        audioEngine.setMasterVolume(masterVolume.value)
+        audioEngine.setMasterVolume(masterVolume.value);
         
         // マスターフィルターを設定
-        audioEngine.setFilterValue(0, filterAngles.value[0])
+        audioEngine.setFilterValue(0, masterFilterAngle.value);
 
         // 再生終了時のコールバックを設定
         audioEngine.setOnPlaybackEnd(() => {
-          isPlaying.value = false
-        })
+          isPlaying.value = false;
+        });
       } catch (error) {
-        handleError('音声ファイルの読み込みに失敗しました', error as Error)
+        handleError('音声ファイルの読み込みに失敗しました', error as Error);
       }
-    }
+    };
 
     // ===== 再生制御関連 =====
     const resetPlayback = (): void => {
-      audioEngine.stopAll()
-      isPlaying.value = false
-    }
+      audioEngine.stopAll();
+      isPlaying.value = false;
+    };
 
     const playFromStart = (): void => {
       try {
-        resetPlayback()
-        isPlaying.value = true
+        resetPlayback();
+        isPlaying.value = true;
         
         // 再生するサンプルIDの配列を作成
-        const channelIds = [1, 2]
+        const channelIds: ChannelId[] = [1, 2];
         if (isChannel3Enabled.value) {
-          channelIds.push(3)
+          channelIds.push(3);
         }
 
         // AudioEngineを使って再生
-        audioEngine.playSamples(channelIds)
+        audioEngine.playSamples(channelIds);
 
         // 各サンプルをEffectChainに接続
         channelIds.forEach(channelId => {
-          audioEngine.connectSampleToEffectChain(channelId)
-        })
+          audioEngine.connectSampleToEffectChain(channelId);
+        });
       } catch (error) {
-        handleError('再生に失敗しました', error as Error)
-        isPlaying.value = false
+        handleError('再生に失敗しました', error as Error);
+        isPlaying.value = false;
       }
-    }
+    };
 
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.code === 'Space') {
-        event.preventDefault()
-        playFromStart()
+        event.preventDefault();
+        playFromStart();
       }
-    }
+    };
 
     // ===== パラメータ更新関連 =====
     // マスターボリューム制御
@@ -359,161 +380,171 @@ export default defineComponent({
       } catch (error) {
         handleError('マスターボリュームの更新に失敗しました', error as Error);
       }
-    }
+    };
 
     const resetMasterVolume = (): void => {
       try {
-        masterVolume.value = 0.8
-        audioEngine.setMasterVolume(0.8)
+        masterVolume.value = 0.8;
+        audioEngine.setMasterVolume(0.8);
       } catch (error) {
-        handleError('マスターボリュームのリセットに失敗しました', error as Error)
+        handleError('マスターボリュームのリセットに失敗しました', error as Error);
       }
-    }
+    };
 
     // サンプル音量制御
-    const updateVolume = (channelNumber: number, value: number): void => {
+    const updateVolume = (channelNumber: ChannelId, value: number): void => {
       try {
-        const volume = value * masterVolume.value
-        audioEngine.setSampleVolume(channelNumber, volume)
-        volumeAngles.value[channelNumber] = value
+        playbackSettingsManager.setSetting(channelNumber, 'volume', value);
+        volumeAngles.value[channelNumber] = value;
       } catch (error) {
-        handleError('音量の更新に失敗しました', error as Error)
+        handleError('音量の更新に失敗しました', error as Error);
       }
-    }
+    };
 
-    const resetVolume = (channelNumber: number): void => {
+    const resetVolume = (channelNumber: ChannelId): void => {
       try {
-        const initialVolume = 0.8
-        volumeAngles.value[channelNumber] = initialVolume
-        audioEngine.setSampleVolume(channelNumber, initialVolume)
+        playbackSettingsManager.setSetting(channelNumber, 'volume', 0.8);
+        volumeAngles.value[channelNumber] = 0.8;
       } catch (error) {
-        handleError('音量のリセットに失敗しました', error as Error)
+        handleError('音量のリセットに失敗しました', error as Error);
       }
-    }
+    };
 
     // タイミング制御
-    const updateTiming = (channelNumber: number, value: number): void => {
+    const updateTiming = (channelNumber: ChannelId, value: number): void => {
       try {
-        audioEngine.saveTiming(channelNumber, value)
-        timingAngles.value[channelNumber] = value
+        playbackSettingsManager.setSetting(channelNumber, 'timing', value);
+        timingAngles.value[channelNumber] = value;
       } catch (error) {
-        handleError('タイミングの調整に失敗しました', error as Error)
+        handleError('タイミングの調整に失敗しました', error as Error);
       }
-    }
+    };
 
-    const resetTiming = (channelNumber: number): void => {
+    const resetTiming = (channelNumber: ChannelId): void => {
       try {
-        const initialTiming = 0
-        timingAngles.value[channelNumber] = initialTiming
-        audioEngine.saveTiming(channelNumber, initialTiming)
+        playbackSettingsManager.setSetting(channelNumber, 'timing', 0.0);
+        timingAngles.value[channelNumber] = 0.0;
       } catch (error) {
-        handleError('タイミングのリセットに失敗しました', error as Error)
+        handleError('タイミングのリセットに失敗しました', error as Error);
       }
-    }
+    };
 
     // ピッチ制御
-    const updatePitch = (channelNumber: number, value: number): void => {
+    const updatePitch = (channelNumber: ChannelId, value: number): void => {
       try {
-        audioEngine.saveSamplePitchRate(channelNumber, value)
-        pitchAngles.value[channelNumber] = value
+        playbackSettingsManager.setSetting(channelNumber, 'pitch', value);
+        pitchAngles.value[channelNumber] = value;
       } catch (error) {
-        handleError('ピッチの更新に失敗しました', error as Error)
+        handleError('ピッチの更新に失敗しました', error as Error);
       }
-    }
+    };
 
-    const resetPitch = (channelNumber: number): void => {
+    const resetPitch = (channelNumber: ChannelId): void => {
       try {
-        const initialPitch = 0.5
-        pitchAngles.value[channelNumber] = initialPitch
-        audioEngine.saveSamplePitchRate(channelNumber, initialPitch)
+        playbackSettingsManager.setSetting(channelNumber, 'pitch', 0.5);
+        pitchAngles.value[channelNumber] = 0.5;
       } catch (error) {
-        handleError('ピッチのリセットに失敗しました', error as Error)
+        handleError('ピッチのリセットに失敗しました', error as Error);
       }
-    }
+    };
 
     // フィルター制御
-    const updateFilter = (channelNumber: number, angle: number) => {
+    const updateFilter = (channelNumber: ChannelId | 0, angle: number) => {
       try {
-        audioEngine.setFilterValue(channelNumber, angle);
-        filterAngles.value[channelNumber] = angle;
+        if (channelNumber === 0) {
+          // マスターフィルターの更新
+          audioEngine.setFilterValue(0, angle);
+          masterFilterAngle.value = angle;
+        } else {
+          // サンプルのフィルターの更新
+          audioEngine.setFilterValue(channelNumber, angle);
+          filterAngles.value[channelNumber] = angle;
+        }
       } catch (error) {
         handleError('フィルターの更新に失敗しました', error as Error);
       }
-    }
+    };
 
-    const resetFilter = (channelNumber: number) => {
+    const resetFilter = (channelNumber: ChannelId | 0) => {
       try {
-        const initialFilter = 0.5
-        filterAngles.value[channelNumber] = initialFilter
-        audioEngine.setFilterValue(channelNumber, initialFilter)
+        const initialFilter = 0.5;
+        if (channelNumber === 0) {
+          // マスターフィルターのリセット
+          masterFilterAngle.value = initialFilter;
+          audioEngine.setFilterValue(0, initialFilter);
+        } else {
+          // サンプルのフィルターのリセット
+          filterAngles.value[channelNumber] = initialFilter;
+          audioEngine.setFilterValue(channelNumber, initialFilter);
+        }
       } catch (error) {
         handleError('フィルターのリセットに失敗しました', error as Error);
       }
-    }
+    };
 
     // ===== メーター制御関連 =====
     const startMeterUpdate = (): void => {
       meterInterval.value = window.setInterval(() => {
         if (isPlaying.value) {
-          const level1 = audioEngine.getSampleVolume(1)
-          const level2 = audioEngine.getSampleVolume(2)
-          const level3 = isChannel3Enabled.value ? audioEngine.getSampleVolume(3) : 0
-          volumeLevel.value = 20 * Math.log10((level1 + level2 + level3) / 3)
+          const level1 = audioEngine.getSampleVolume(1);
+          const level2 = audioEngine.getSampleVolume(2);
+          const level3 = isChannel3Enabled.value ? audioEngine.getSampleVolume(3) : 0;
+          volumeLevel.value = 20 * Math.log10((level1 + level2 + level3) / 3);
         }
-      }, 1000 / 60)
-    }
+      }, 1000 / 60);
+    };
 
     const stopMeterUpdate = (): void => {
       if (meterInterval.value) {
-        clearInterval(meterInterval.value)
-        meterInterval.value = null
+        clearInterval(meterInterval.value);
+        meterInterval.value = null;
       }
-    }
+    };
 
     // 再生状態が変更されたときにメーターの更新を制御
     watch(() => isPlaying.value, (newValue) => {
       if (newValue) {
-        startMeterUpdate()
+        startMeterUpdate();
       } else {
-        stopMeterUpdate()
-        volumeLevel.value = -60
+        stopMeterUpdate();
+        volumeLevel.value = -60;
       }
-    })
+    });
 
     // ===== ライフサイクル関連 =====
     onMounted(async () => {
       try {
         // 音声ファイルの読み込み
-        await loadAudioFiles()
+        await loadAudioFiles();
         // キーボードイベントのリスナーを追加
-        window.addEventListener('keydown', handleKeyDown)
+        window.addEventListener('keydown', handleKeyDown);
       } catch (error) {
-        handleError('プレイヤーの初期化に失敗しました', error as Error)
+        handleError('プレイヤーの初期化に失敗しました', error as Error);
       }
-    })
+    });
 
     onBeforeUnmount(() => {
       // キーボードイベントのリスナーを削除
-      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keydown', handleKeyDown);
       
       // メーターの更新を停止
-      stopMeterUpdate()
+      stopMeterUpdate();
       
-      // AudioEngineの破棄を呼び出す（これにより、エフェクトチェーンとフィルターも破棄される）
+      // AudioEngineの破棄を呼び出す
       audioEngine.dispose();
       
       // 状態のクリーンアップ
-      audioBlobs.value = { 1: null, 2: null, 3: null }
-      volumeAngles.value = { 1: 0.8, 2: 0.8, 3: 0.8 }
-      timingAngles.value = { 2: 0, 3: 0 }
-      filterAngles.value = { 0: 0.5, 1: 0.5, 2: 0.5, 3: 0.5 }
-      pitchAngles.value = { 1: 0.5, 2: 0.5, 3: 0.5 }
-      isChannel3Enabled.value = false
-      isPlaying.value = false
-      errorMessage.value = null
-      isLoading.value = false
-      volumeLevel.value = -60
-    })
+      audioBlobs.value = { 1: null, 2: null, 3: null };
+      volumeAngles.value = { 1: 0.8, 2: 0.8, 3: 0.8 };
+      timingAngles.value = { 2: 0, 3: 0 };
+      filterAngles.value = { 1: 0.5, 2: 0.5, 3: 0.5 };
+      pitchAngles.value = { 1: 0.5, 2: 0.5, 3: 0.5 };
+      isChannel3Enabled.value = false;
+      isPlaying.value = false;
+      errorMessage.value = null;
+      isLoading.value = false;
+      volumeLevel.value = -60;
+    });
 
     return {
       isPlaying,
@@ -540,12 +571,13 @@ export default defineComponent({
       updateMasterVolume,
       updatePitch,
       filterAngles,
+      masterFilterAngle,
       filterSubLabels,
       updateFilter,
       resetFilter
-    }
+    };
   }
-})
+});
 </script>
 
 <style scoped>

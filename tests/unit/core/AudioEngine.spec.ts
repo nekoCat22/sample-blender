@@ -12,6 +12,8 @@
 import { AudioEngine } from '@/core/AudioEngine';
 import { EffectChain } from '@/effects/EffectChain';
 import { Filter } from '@/effects/Filter';
+import { PlaybackSettingManager } from '@/core/PlaybackSettingManager';
+import { ChannelId } from '@/core/audioConstants';
 
 // Filterのモックを作成
 jest.mock('@/effects/Filter', () => {
@@ -92,12 +94,54 @@ const mockAudioContext = {
 
 describe('AudioEngine', () => {
   let audioEngine: AudioEngine;
+  let mockAudioContext: jest.Mocked<AudioContext>;
+  let mockGainNode: jest.Mocked<GainNode>;
+  let mockBufferSource: jest.Mocked<AudioBufferSourceNode>;
+  let mockAudioBuffer: jest.Mocked<AudioBuffer>;
+  let playbackSettingsManager: PlaybackSettingManager;
 
   beforeEach(() => {
-    // 各テストの前にモックをリセット
-    jest.clearAllMocks();
-    mockAudioContext.state = 'running';
-    audioEngine = new AudioEngine();
+    // モックの設定
+    mockAudioContext = {
+      createGain: jest.fn().mockReturnValue(mockGainNode),
+      createBufferSource: jest.fn().mockReturnValue(mockBufferSource),
+      decodeAudioData: jest.fn().mockResolvedValue(mockAudioBuffer),
+      currentTime: 0,
+      state: 'suspended',
+      suspend: jest.fn().mockResolvedValue(undefined),
+      resume: jest.fn().mockResolvedValue(undefined),
+      close: jest.fn().mockResolvedValue(undefined),
+      destination: {} as AudioDestinationNode
+    } as unknown as jest.Mocked<AudioContext>;
+
+    mockGainNode = {
+      connect: jest.fn(),
+      disconnect: jest.fn(),
+      gain: { value: 1 }
+    } as unknown as jest.Mocked<GainNode>;
+
+    mockBufferSource = {
+      connect: jest.fn(),
+      disconnect: jest.fn(),
+      start: jest.fn(),
+      stop: jest.fn(),
+      buffer: null,
+      playbackRate: { value: 1 },
+      onended: null
+    } as unknown as jest.Mocked<AudioBufferSourceNode>;
+
+    mockAudioBuffer = {
+      duration: 1.0
+    } as unknown as jest.Mocked<AudioBuffer>;
+
+    // AudioContextのモックを設定
+    window.AudioContext = jest.fn().mockImplementation(() => mockAudioContext) as unknown as typeof AudioContext;
+
+    // PlaybackSettingManagerのインスタンスを作成
+    playbackSettingsManager = new PlaybackSettingManager();
+
+    // AudioEngineのインスタンスを作成
+    audioEngine = new AudioEngine(playbackSettingsManager);
   });
 
   afterEach(async () => {
@@ -202,17 +246,17 @@ describe('AudioEngine', () => {
     });
 
     it('複数のサンプルを同時に再生できる', () => {
-      const channelIds = [1, 2];
+      const channelIds: ChannelId[] = [1, 2];
       expect(() => audioEngine.playSamples(channelIds)).not.toThrow();
     });
 
     it('存在しないサンプルを再生しようとするとエラーになる', () => {
-      const channelIds = [1, 4];
+      const channelIds: ChannelId[] = [1, 2];
       expect(() => audioEngine.playSamples(channelIds)).toThrow('チャンネル 4 が見つかりません');
     });
 
     it('タイミングを指定して再生できる', () => {
-      const channelIds = [1, 2, 3];
+      const channelIds: ChannelId[] = [1, 2, 3];
       expect(() => audioEngine.playSamples(channelIds)).not.toThrow();
     });
   });
@@ -230,7 +274,7 @@ describe('AudioEngine', () => {
     });
 
     it('存在しないサンプルをエフェクトチェーンに接続しようとするとエラーになる', () => {
-      expect(() => audioEngine.connectSampleToEffectChain(4)).toThrow();
+      expect(() => audioEngine.connectSampleToEffectChain(4 as ChannelId)).toThrow();
     });
 
     it('フィルター値を設定できる', () => {
@@ -238,7 +282,7 @@ describe('AudioEngine', () => {
     });
 
     it('無効なフィルターインデックスを指定するとエラーになる', () => {
-      expect(() => audioEngine.setFilterValue(4, 0.5)).toThrow();
+      expect(() => audioEngine.setFilterValue(4 as ChannelId, 0.5)).toThrow();
     });
 
     it('フィルター値をリセット値（0.5）に設定できる', () => {
@@ -262,7 +306,7 @@ describe('AudioEngine', () => {
     });
 
     it('存在しないサンプルのピッチ値を設定するとエラーになること', () => {
-      expect(() => audioEngine.saveSamplePitchRate(4, 0.5)).toThrow();
+      expect(() => audioEngine.saveSamplePitchRate(4 as ChannelId, 0.5)).toThrow();
     });
   });
 

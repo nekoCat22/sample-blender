@@ -3,143 +3,103 @@
  * @brief 再生設定を管理するクラス
  * @details
  * - 音量、タイミング、ピッチなどの再生設定を一元管理
- * - 各設定の値の範囲チェック
+ * - 各設定の値の範囲チェック（0.0から1.0の範囲）
  * - 設定の保存と取得
+ * - デフォルト値の管理
  */
+
+import { CHANNEL_IDS, ChannelId, VOLUME_DEFAULT, PITCH_DEFAULT_RATE } from './audioConstants';
 
 export type SettingType = 'volume' | 'timing' | 'pitch';
 
 export class PlaybackSettingManager {
-  // 定数定義
-  private static readonly MAX_TIMING = 0.5;
-  private static readonly MIN_PITCH = 0.0;
-  private static readonly MAX_PITCH = 1.0;
-  private static readonly DEFAULT_PITCH = 0.5;
-  private static readonly MIN_PLAYBACK_RATE = 0.5;  // 最小再生速度（半速）
-  private static readonly MAX_PLAYBACK_RATE = 2.0;  // 最大再生速度（2倍速）
-  private static readonly DEFAULT_PLAYBACK_RATE = 1.0;  // デフォルト再生速度（通常速度）
-
   // 設定値を保持するMap
-  private volumeSettings: Map<number, number> = new Map();
-  private timingSettings: Map<number, number> = new Map();
-  private pitchSettings: Map<number, number> = new Map();
+  private volumeSettings: Map<ChannelId, number> = new Map();
+  private timingSettings: Map<ChannelId, number> = new Map();
+  private pitchSettings: Map<ChannelId, number> = new Map();
+
+  /**
+   * コンストラクタ
+   * @description デフォルトのチャンネルに対して初期値を設定
+   */
+  constructor() {
+    // 各チャンネルのデフォルト値を設定
+    CHANNEL_IDS.forEach(channelId => {
+      this.volumeSettings.set(channelId, VOLUME_DEFAULT);
+      this.timingSettings.set(channelId, 0.0);
+      this.pitchSettings.set(channelId, PITCH_DEFAULT_RATE);
+    });
+  }
 
   /**
    * 設定値を保存
-   * @param {number} channelId - チャンネルID
+   * @param {ChannelId} channelId - チャンネルID
    * @param {SettingType} type - 設定の種類
-   * @param {number} value - 設定値
+   * @param {number} value - 設定値（0.0から1.0の範囲）
    * @throws {Error} 無効な設定値の場合
    */
-  public setSetting(channelId: number, type: SettingType, value: number): void {
+  public setSetting(channelId: ChannelId, type: SettingType, value: number): void {
+    // 値の範囲チェック
+    if (value < 0.0 || value > 1.0) {
+      throw new Error(`${type}の値は0.0から1.0の範囲で指定してください`);
+    }
+
     switch (type) {
       case 'volume':
-        this.setVolume(channelId, value);
+        this.volumeSettings.set(channelId, value);
         break;
       case 'timing':
-        this.setTiming(channelId, value);
+        this.timingSettings.set(channelId, value);
         break;
       case 'pitch':
-        this.setPitch(channelId, value);
+        this.pitchSettings.set(channelId, value);
         break;
     }
   }
 
   /**
    * 設定値を取得
-   * @param {number} channelId - チャンネルID
+   * @param {ChannelId} channelId - チャンネルID
    * @param {SettingType} type - 設定の種類
-   * @returns {number} 設定値
+   * @returns {number} 設定値（0.0から1.0の範囲）
    */
-  public getSetting(channelId: number, type: SettingType): number {
+  public getSetting(channelId: ChannelId, type: SettingType): number {
+    let value: number | undefined;
+    let defaultValue: number;
+
     switch (type) {
       case 'volume':
-        return this.getVolume(channelId);
+        value = this.volumeSettings.get(channelId);
+        defaultValue = VOLUME_DEFAULT;
+        break;
       case 'timing':
-        return this.getTiming(channelId);
+        value = this.timingSettings.get(channelId);
+        defaultValue = 0.0;
+        break;
       case 'pitch':
-        return this.getPitch(channelId);
-    }
-  }
-
-  /**
-   * 音量を設定
-   * @param {number} channelId - チャンネルID
-   * @param {number} value - 音量値（0.0から1.0の範囲）
-   * @throws {Error} 無効な音量値の場合
-   */
-  private setVolume(channelId: number, value: number): void {
-    if (value < 0 || value > 1) {
-      throw new Error('音量は0.0から1.0の範囲で指定してください');
-    }
-    this.volumeSettings.set(channelId, value);
-  }
-
-  /**
-   * 音量を取得
-   * @param {number} channelId - チャンネルID
-   * @returns {number} 音量値（0.0から1.0の範囲）
-   */
-  private getVolume(channelId: number): number {
-    return this.volumeSettings.get(channelId) ?? 1.0;
-  }
-
-  /**
-   * タイミングを設定
-   * @param {number} channelId - チャンネルID
-   * @param {number} value - タイミング値（0.0から1.0の範囲）
-   * @throws {Error} 無効なタイミング値の場合
-   */
-  private setTiming(channelId: number, value: number): void {
-    if (value < 0 || value > 1) {
-      throw new Error('タイミングは0から1の範囲で指定してください');
-    }
-    // 0-1の値を0-0.5の範囲に変換
-    const convertedTiming = value * PlaybackSettingManager.MAX_TIMING;
-    this.timingSettings.set(channelId, convertedTiming);
-  }
-
-  /**
-   * タイミングを取得
-   * @param {number} channelId - チャンネルID
-   * @returns {number} タイミング値（0.0から0.5秒の範囲）
-   */
-  private getTiming(channelId: number): number {
-    return this.timingSettings.get(channelId) ?? 0;
-  }
-
-  /**
-   * ピッチを設定
-   * @param {number} channelId - チャンネルID
-   * @param {number} value - ピッチ値（0.0から1.0の範囲）
-   * @throws {Error} 無効なピッチ値の場合
-   */
-  private setPitch(channelId: number, value: number): void {
-    if (value < PlaybackSettingManager.MIN_PITCH || value > PlaybackSettingManager.MAX_PITCH) {
-      throw new Error(`ピッチ値は${PlaybackSettingManager.MIN_PITCH}から${PlaybackSettingManager.MAX_PITCH}の範囲で指定してください`);
+        value = this.pitchSettings.get(channelId);
+        defaultValue = PITCH_DEFAULT_RATE;
+        break;
     }
 
-    let playbackRate: number;
-    if (value < 0.5) {
-      // 0.0-0.5の範囲を0.5-1.0の範囲に変換
-      playbackRate = PlaybackSettingManager.MIN_PLAYBACK_RATE + (value * 2 * (PlaybackSettingManager.DEFAULT_PLAYBACK_RATE - PlaybackSettingManager.MIN_PLAYBACK_RATE));
-    } else if (value > 0.5) {
-      // 0.5-1.0の範囲を1.0-2.0の範囲に変換
-      playbackRate = PlaybackSettingManager.DEFAULT_PLAYBACK_RATE + ((value - 0.5) * 2 * (PlaybackSettingManager.MAX_PLAYBACK_RATE - PlaybackSettingManager.DEFAULT_PLAYBACK_RATE));
-    } else {
-      // 0.5の場合はデフォルト値
-      playbackRate = PlaybackSettingManager.DEFAULT_PLAYBACK_RATE;
+    if (value === undefined) {
+      console.warn(`チャンネル ${channelId} の${type}設定が見つかりません。デフォルト値を使用します。`);
+      return defaultValue;
     }
 
-    this.pitchSettings.set(channelId, playbackRate);
+    return value;
   }
 
   /**
-   * ピッチを取得
-   * @param {number} channelId - チャンネルID
-   * @returns {number} ピッチレート（0.5から2.0の範囲）
+   * すべての設定をクリア
+   * @description すべての設定をデフォルト値にリセット
    */
-  private getPitch(channelId: number): number {
-    return this.pitchSettings.get(channelId) ?? PlaybackSettingManager.DEFAULT_PLAYBACK_RATE;
+  public clearSettings(): void {
+    // 各チャンネルの設定をクリア
+    CHANNEL_IDS.forEach(channelId => {
+      this.volumeSettings.set(channelId, VOLUME_DEFAULT);
+      this.timingSettings.set(channelId, 0.0);
+      this.pitchSettings.set(channelId, PITCH_DEFAULT_RATE);
+    });
   }
 } 
