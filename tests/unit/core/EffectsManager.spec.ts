@@ -29,6 +29,14 @@ const mockAudioContext = {
     gain: { value: 1 },
     connect: jest.fn(),
     disconnect: jest.fn()
+  })),
+  createBiquadFilter: jest.fn(() => ({
+    connect: jest.fn(),
+    disconnect: jest.fn(),
+    frequency: { value: 1000 },
+    Q: { value: 1 },
+    gain: { value: 0 },
+    type: 'lowpass'
   }))
 };
 

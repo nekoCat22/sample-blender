@@ -21,15 +21,23 @@ describe('AudioEngine', () => {
     // PlaybackSettingManagerのインスタンスを作成
     playbackSettingsManager = new PlaybackSettingManager();
 
-    // AudioEngineのインスタンスを作成
-    audioEngine = new AudioEngine(playbackSettingsManager);
-
     // AudioContextのモックを設定
-    window.AudioContext = jest.fn().mockImplementation(() => ({
+    const mockAudioContext = {
       createGain: jest.fn().mockReturnValue({
         connect: jest.fn(),
         disconnect: jest.fn(),
-        gain: { value: 1 }
+        gain: {
+          value: 1,
+          setTargetAtTime: jest.fn()
+        }
+      }),
+      createBiquadFilter: jest.fn().mockReturnValue({
+        connect: jest.fn(),
+        disconnect: jest.fn(),
+        frequency: { value: 1000 },
+        Q: { value: 1 },
+        gain: { value: 0 },
+        type: 'lowpass'
       }),
       createBufferSource: jest.fn().mockReturnValue({
         connect: jest.fn(),
@@ -50,7 +58,28 @@ describe('AudioEngine', () => {
       resume: jest.fn(),
       close: jest.fn(),
       destination: {}
-    }));
+    };
+
+    // AudioContextのモックをグローバルに設定
+    window.AudioContext = jest.fn().mockImplementation(() => mockAudioContext);
+
+    // AudioEngineのインスタンスを作成
+    audioEngine = new AudioEngine(playbackSettingsManager);
+
+    // サンプルバッファのダミーをセット（チャンネル1,2,3のみ）
+    const dummyBuffer = { duration: 1, numberOfChannels: 2, sampleRate: 44100 };
+    [1, 2, 3].forEach(id => audioEngine['sampleBuffers'].set(id as ChannelId, dummyBuffer as any));
+
+    // サンプルゲインノードのダミーをセット（チャンネル1,2,3のみ）
+    const dummyGainNode = {
+      connect: jest.fn(),
+      disconnect: jest.fn(),
+      gain: {
+        value: 1,
+        setTargetAtTime: jest.fn()
+      }
+    };
+    [1, 2, 3].forEach(id => audioEngine['sampleGains'].set(id as ChannelId, dummyGainNode as any));
 
     // GainNodeのモックを設定
     window.GainNode = jest.fn().mockImplementation(() => ({
@@ -85,7 +114,7 @@ describe('AudioEngine', () => {
     });
 
     it('存在しないサンプルを再生しようとするとエラーになる', () => {
-      const channelIds: ChannelId[] = [1, 2];
+      const channelIds: ChannelId[] = [4 as ChannelId];
       expect(() => audioEngine.playSamples(channelIds)).toThrow('チャンネル 4 が見つかりません');
     });
 

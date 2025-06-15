@@ -11,7 +11,10 @@ import Knob from '@/components/Knob.vue'
 const mockGainNode = {
   connect: jest.fn(),
   disconnect: jest.fn(),
-  gain: { value: 1 }
+  gain: { 
+    value: 1,
+    setTargetAtTime: jest.fn()
+  }
 }
 
 const mockBiquadFilter = {
