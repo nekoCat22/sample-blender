@@ -7,30 +7,59 @@
  * - エラー処理のテスト
  * - 音声ノードの接続テスト
  * - エフェクトチェーンの接続テスト
+ * - パン機能のテスト
  */
 
 import { AudioEngine } from '@/core/AudioEngine';
 import { PlaybackSettingManager } from '@/core/PlaybackSettingManager';
-import { ChannelId } from '@/core/audioConstants';
+import { EffectChain } from '@/effects/EffectChain';
+import { PAN_MIN, PAN_MAX, ChannelId } from '@/core/audioConstants';
 
 describe('AudioEngine', () => {
   let audioEngine: AudioEngine;
   let playbackSettingsManager: PlaybackSettingManager;
+  let mockGain: any;
+  let mockSource: any;
+  let mockStereoPanner: any;
+  let mockAudioContext: any;
 
   beforeEach(() => {
     // PlaybackSettingManagerのインスタンスを作成
     playbackSettingsManager = new PlaybackSettingManager();
 
-    // AudioContextのモックを設定
-    const mockAudioContext = {
-      createGain: jest.fn().mockReturnValue({
-        connect: jest.fn(),
-        disconnect: jest.fn(),
-        gain: {
-          value: 1,
-          setTargetAtTime: jest.fn()
-        }
-      }),
+    // モックの設定
+    mockGain = {
+      connect: jest.fn(),
+      disconnect: jest.fn(),
+      gain: {
+        value: 1,
+        setTargetAtTime: jest.fn()
+      }
+    };
+
+    mockSource = {
+      connect: jest.fn(),
+      disconnect: jest.fn(),
+      start: jest.fn(),
+      stop: jest.fn(),
+      buffer: null,
+      playbackRate: { value: 1 },
+      onended: null
+    };
+
+    mockStereoPanner = {
+      pan: {
+        value: 0,
+        setValueAtTime: jest.fn()
+      },
+      connect: jest.fn(),
+      disconnect: jest.fn()
+    };
+
+    mockAudioContext = {
+      createGain: jest.fn().mockReturnValue(mockGain),
+      createBufferSource: jest.fn().mockReturnValue(mockSource),
+      createStereoPanner: jest.fn().mockReturnValue(mockStereoPanner),
       createBiquadFilter: jest.fn().mockReturnValue({
         connect: jest.fn(),
         disconnect: jest.fn(),
@@ -39,19 +68,11 @@ describe('AudioEngine', () => {
         gain: { value: 0 },
         type: 'lowpass'
       }),
-      createBufferSource: jest.fn().mockReturnValue({
-        connect: jest.fn(),
-        disconnect: jest.fn(),
-        start: jest.fn(),
-        stop: jest.fn(),
-        buffer: null,
-        playbackRate: { value: 1 },
-        onended: null
-      }),
       decodeAudioData: jest.fn().mockResolvedValue({
         duration: 1,
         numberOfChannels: 2,
-        sampleRate: 44100
+        sampleRate: 44100,
+        getChannelData: jest.fn().mockReturnValue(new Float32Array(44100))
       }),
       currentTime: 0,
       suspend: jest.fn(),
@@ -65,6 +86,7 @@ describe('AudioEngine', () => {
 
     // AudioEngineのインスタンスを作成
     audioEngine = new AudioEngine(playbackSettingsManager);
+    audioEngine['context'] = mockAudioContext;
 
     // サンプルバッファのダミーをセット（チャンネル1,2,3のみ）
     const dummyBuffer = { duration: 1, numberOfChannels: 2, sampleRate: 44100 };
@@ -80,6 +102,17 @@ describe('AudioEngine', () => {
       }
     };
     [1, 2, 3].forEach(id => audioEngine['sampleGains'].set(id as ChannelId, dummyGainNode as any));
+
+    // サンプルパンナーのダミーをセット（チャンネル1,2,3のみ）
+    const dummyPannerNode = {
+      connect: jest.fn(),
+      disconnect: jest.fn(),
+      pan: {
+        value: 0,
+        setValueAtTime: jest.fn()
+      }
+    };
+    [1, 2, 3].forEach(id => audioEngine['samplePanners'].set(id as ChannelId, dummyPannerNode as any));
 
     // GainNodeのモックを設定
     window.GainNode = jest.fn().mockImplementation(() => ({
@@ -97,6 +130,16 @@ describe('AudioEngine', () => {
       buffer: null,
       playbackRate: { value: 1 },
       onended: null
+    }));
+
+    // StereoPannerNodeのモックを設定
+    window.StereoPannerNode = jest.fn().mockImplementation(() => ({
+      connect: jest.fn(),
+      disconnect: jest.fn(),
+      pan: {
+        value: 0,
+        setValueAtTime: jest.fn()
+      }
     }));
 
     // AudioBufferのモックを設定
@@ -157,6 +200,75 @@ describe('AudioEngine', () => {
 
     it('最長のサンプルの長さを取得できる', () => {
       expect(audioEngine.getMaxDuration()).toBeDefined();
+    });
+  });
+
+  describe('パン機能', () => {
+    beforeEach(() => {
+      // モックの呼び出しをリセット
+      mockStereoPanner.pan.setValueAtTime.mockClear();
+      mockSource.connect.mockClear();
+      mockAudioContext.createBufferSource.mockClear();
+
+      // サンプルパンナーのダミーをセット（チャンネル1,2,3のみ）
+      const dummyPannerNode = {
+        connect: jest.fn(),
+        disconnect: jest.fn(),
+        pan: {
+          value: 0,
+          setValueAtTime: jest.fn()
+        }
+      };
+      [1, 2, 3].forEach(id => audioEngine['samplePanners'].set(id as ChannelId, dummyPannerNode as any));
+    });
+
+    it('パン値を更新できる', () => {
+      const channelId: ChannelId = 1;
+      const normalizedPan = 0.5; // 中央
+      audioEngine.updatePan(channelId, normalizedPan);
+      const expectedPanValue = PAN_MIN + (normalizedPan * (PAN_MAX - PAN_MIN));
+      const panner = audioEngine['samplePanners'].get(channelId);
+      expect(panner?.pan.setValueAtTime).toHaveBeenCalledWith(expectedPanValue, expect.any(Number));
+    });
+
+    it('存在しないチャンネルのパン値を更新しようとするとエラーになる', () => {
+      const channelId: ChannelId = 999 as ChannelId;
+      const normalizedPan = 0.5;
+      expect(() => audioEngine.updatePan(channelId, normalizedPan)).toThrow('チャンネル 999 のパンナーが見つかりません');
+    });
+
+    it('パン値の範囲が正しく変換される', () => {
+      const channelId: ChannelId = 1;
+      
+      // 左端
+      audioEngine.updatePan(channelId, 0);
+      const panner = audioEngine['samplePanners'].get(channelId);
+      expect(panner?.pan.setValueAtTime).toHaveBeenCalledWith(PAN_MIN, expect.any(Number));
+      
+      // 中央
+      audioEngine.updatePan(channelId, 0.5);
+      const expectedCenterPanValue = PAN_MIN + (0.5 * (PAN_MAX - PAN_MIN));
+      expect(panner?.pan.setValueAtTime).toHaveBeenCalledWith(expectedCenterPanValue, expect.any(Number));
+      
+      // 右端
+      audioEngine.updatePan(channelId, 1);
+      expect(panner?.pan.setValueAtTime).toHaveBeenCalledWith(PAN_MAX, expect.any(Number));
+    });
+
+    it('再生中にパン値を更新できる', () => {
+      const channelId: ChannelId = 1;
+      const normalizedPan = 0.5;
+      
+      // サンプルを再生
+      audioEngine.playSamples([channelId]);
+      
+      // パン値を更新
+      expect(() => audioEngine.updatePan(channelId, normalizedPan)).not.toThrow();
+      
+      // 新しいソースが作成され、パンナーに接続されていることを確認
+      expect(mockAudioContext.createBufferSource).toHaveBeenCalled();
+      const panner = audioEngine['samplePanners'].get(channelId);
+      expect(panner?.connect).toHaveBeenCalled();
     });
   });
 }); 

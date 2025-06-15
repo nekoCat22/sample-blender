@@ -608,68 +608,69 @@ export class AudioEngine {
     }
     const panner = this.samplePanners.get(channelId);
     const gain = this.sampleGains.get(channelId);
-    if (panner && gain) {
-      // 0.0-1.0の範囲を-1.0-1.0の範囲に変換
-      const panValue = PAN_MIN + (value * (PAN_MAX - PAN_MIN));
-      console.log(`Updating pan for channel ${channelId}: normalized=${value}, actual=${panValue}`);  // デバッグ用
-      
-      // setValueAtTimeを使用してパン値を更新
-      panner.pan.setValueAtTime(panValue, this.context.currentTime);
+    if (!panner || !gain) {
+      throw new Error(`チャンネル ${channelId} のパンナーが見つかりません`);
+    }
+    // 0.0-1.0の範囲を-1.0-1.0の範囲に変換
+    const panValue = PAN_MIN + (value * (PAN_MAX - PAN_MIN));
+    console.log(`Updating pan for channel ${channelId}: normalized=${value}, actual=${panValue}`);  // デバッグ用
+    
+    // setValueAtTimeを使用してパン値を更新
+    panner.pan.setValueAtTime(panValue, this.context.currentTime);
 
-      // 再生中の場合、新しいソースを作成して再接続
-      if (this.isPlaying) {
-        const source = this.sampleSources.get(channelId);
-        const buffer = this.sampleBuffers.get(channelId);
-        if (source && buffer) {
-          console.log(`Creating new source for channel ${channelId}`);  // デバッグ用
-          // 既存のソースを停止
-          try {
-            source.stop();
-            source.disconnect();
-          } catch (error) {
-            // 既に停止している場合は無視
-          }
+    // 再生中の場合、新しいソースを作成して再接続
+    if (this.isPlaying) {
+      const source = this.sampleSources.get(channelId);
+      const buffer = this.sampleBuffers.get(channelId);
+      if (source && buffer) {
+        console.log(`Creating new source for channel ${channelId}`);  // デバッグ用
+        // 既存のソースを停止
+        try {
+          source.stop();
+          source.disconnect();
+        } catch (error) {
+          // 既に停止している場合は無視
+        }
 
-          // 新しいソースを作成
-          const newSource = this.context.createBufferSource();
-          newSource.buffer = buffer;
+        // 新しいソースを作成
+        const newSource = this.context.createBufferSource();
+        newSource.buffer = buffer;
 
-          // ピッチの設定を取得して適用
-          const normalizedPitch = this.playbackSettingsManager.getSetting(channelId, 'pitch');
-          let playbackRate: number;
-          if (normalizedPitch < 0.5) {
-            playbackRate = PITCH_MIN_RATE + (normalizedPitch * 2 * (1.0 - PITCH_MIN_RATE));
-          } else if (normalizedPitch > 0.5) {
-            playbackRate = 1.0 + ((normalizedPitch - 0.5) * 2 * (PITCH_MAX_RATE - 1.0));
-          } else {
-            playbackRate = 1.0;
-          }
-          newSource.playbackRate.value = playbackRate;
+        // ピッチの設定を取得して適用
+        const normalizedPitch = this.playbackSettingsManager.getSetting(channelId, 'pitch');
+        let playbackRate: number;
+        if (normalizedPitch < 0.5) {
+          playbackRate = PITCH_MIN_RATE + (normalizedPitch * 2 * (1.0 - PITCH_MIN_RATE));
+        } else if (normalizedPitch > 0.5) {
+          playbackRate = 1.0 + ((normalizedPitch - 0.5) * 2 * (PITCH_MAX_RATE - 1.0));
+        } else {
+          playbackRate = 1.0;
+        }
+        newSource.playbackRate.value = playbackRate;
 
-          // 既存の接続を完全に切断
-          gain.disconnect();
-          panner.disconnect();
+        // 既存の接続を完全に切断
+        gain.disconnect();
+        panner.disconnect();
 
-          // 音声信号の接続（新しい順序）
-          console.log(`Setting up audio connections for channel ${channelId} in updatePan`);  // デバッグ用
-          newSource.connect(panner);  // ソース → パン
-          panner.connect(gain);  // パン → ゲイン
-          gain.connect(this.effectChains[channelId].getInput());  // ゲイン → エフェクトチェーン
-          console.log(`Audio connections set up for channel ${channelId} in updatePan`);  // デバッグ用
+        // 音声信号の接続（新しい順序）
+        console.log(`Setting up audio connections for channel ${channelId} in updatePan`);  // デバッグ用
+        newSource.connect(panner);  // ソース → パン
+        panner.connect(gain);  // パン → ゲイン
+        gain.connect(this.effectChains[channelId].getInput());  // ゲイン → エフェクトチェーン
+        console.log(`Audio connections set up for channel ${channelId} in updatePan`);  // デバッグ用
 
-          // 再生開始
-          const currentTime = this.context.currentTime;
-          const startTime = this.sampleStartTimes.get(channelId) || currentTime;
-          const normalizedTiming = this.playbackSettingsManager.getSetting(channelId, 'timing');
-          const delaySeconds = normalizedTiming * TIMING_MAX_DELAY_SECONDS;
-          const elapsedTime = Math.max(0, currentTime - startTime - delaySeconds);
-          const remainingTime = buffer.duration - elapsedTime;
-          
-          if (remainingTime > 0) {
-            newSource.start(currentTime, elapsedTime);
-            this.sampleSources.set(channelId, newSource);
-            console.log(`New source started for channel ${channelId} at time ${currentTime} with offset ${elapsedTime}`);  // デバッグ用
-          }
+        // 再生開始
+        const currentTime = this.context.currentTime;
+        const startTime = this.sampleStartTimes.get(channelId) || currentTime;
+        const normalizedTiming = this.playbackSettingsManager.getSetting(channelId, 'timing');
+        const delaySeconds = normalizedTiming * TIMING_MAX_DELAY_SECONDS;
+        const elapsedTime = Math.max(0, currentTime - startTime - delaySeconds);
+        const remainingTime = buffer.duration - elapsedTime;
+        
+        if (remainingTime > 0) {
+          newSource.start(currentTime, elapsedTime);
+          this.sampleSources.set(channelId, newSource);
+          console.log(`New source started for channel ${channelId} at time ${currentTime} with offset ${elapsedTime}`);  // デバッグ用
         }
       }
     }
