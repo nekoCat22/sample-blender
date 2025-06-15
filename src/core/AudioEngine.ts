@@ -435,6 +435,23 @@ export class AudioEngine {
     return this.playbackSettingsManager.getSetting(channelId, 'volume');
   }
 
+  // ===== マスターボリューム制御 =====
+
+  /**
+   * マスターボリュームを更新
+   * @param {number} value - 新しいマスターボリューム値（0.0から1.0の範囲）
+   * @throws {Error} 初期化されていない場合
+   */
+  public updateMasterVolume(value: number): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    // PlaybackSettingManagerに値を保存
+    this.playbackSettingsManager.setSetting(0, 'volume', value);
+    // マスターゲインの値を更新
+    this.masterGain.gain.value = value;
+  }
+
   // ===== エフェクト管理 =====
 
   /**
@@ -467,21 +484,6 @@ export class AudioEngine {
       throw new Error('AudioEngineが初期化されていません');
     }
     return this.playbackSettingsManager.getSetting(0, 'volume');
-  }
-
-  /**
-   * マスターボリュームを更新
-   * @param {number} value - 新しいマスターボリューム値（0.0から1.0の範囲）
-   * @throws {Error} 初期化されていない場合
-   */
-  public updateMasterVolume(value: number): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    // PlaybackSettingManagerに値を保存
-    this.playbackSettingsManager.setSetting(0, 'volume', value);
-    // マスターゲインの値を更新
-    this.masterGain.gain.value = value;
   }
 
   /**
