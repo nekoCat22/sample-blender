@@ -14,7 +14,7 @@ export type SettingType = 'volume' | 'timing' | 'pitch';
 
 export class PlaybackSettingManager {
   // 設定値を保持するMap
-  private volumeSettings: Map<ChannelId, number> = new Map();
+  private volumeSettings: Map<ChannelId | 0, number> = new Map();
   private timingSettings: Map<ChannelId, number> = new Map();
   private pitchSettings: Map<ChannelId, number> = new Map();
 
@@ -23,6 +23,9 @@ export class PlaybackSettingManager {
    * @description デフォルトのチャンネルに対して初期値を設定
    */
   constructor() {
+    // マスターチャンネル（0）のデフォルト値を設定
+    this.volumeSettings.set(0, 1.0); // マスターボリュームのデフォルト値は1.0
+
     // 各チャンネルのデフォルト値を設定
     CHANNEL_IDS.forEach(channelId => {
       this.volumeSettings.set(channelId, VOLUME_DEFAULT);
@@ -33,12 +36,12 @@ export class PlaybackSettingManager {
 
   /**
    * 設定値を保存
-   * @param {ChannelId} channelId - チャンネルID
+   * @param {ChannelId | 0} channelId - チャンネルID（0はマスター）
    * @param {SettingType} type - 設定の種類
    * @param {number} value - 設定値（0.0から1.0の範囲）
    * @throws {Error} 無効な設定値の場合
    */
-  public setSetting(channelId: ChannelId, type: SettingType, value: number): void {
+  public setSetting(channelId: ChannelId | 0, type: SettingType, value: number): void {
     // 値の範囲チェック
     if (value < 0.0 || value > 1.0) {
       throw new Error(`${type}の値は0.0から1.0の範囲で指定してください`);
@@ -49,9 +52,15 @@ export class PlaybackSettingManager {
         this.volumeSettings.set(channelId, value);
         break;
       case 'timing':
+        if (channelId === 0) {
+          throw new Error('マスターチャンネルにはタイミング設定は適用できません');
+        }
         this.timingSettings.set(channelId, value);
         break;
       case 'pitch':
+        if (channelId === 0) {
+          throw new Error('マスターチャンネルにはピッチ設定は適用できません');
+        }
         this.pitchSettings.set(channelId, value);
         break;
     }
@@ -59,24 +68,30 @@ export class PlaybackSettingManager {
 
   /**
    * 設定値を取得
-   * @param {ChannelId} channelId - チャンネルID
+   * @param {ChannelId | 0} channelId - チャンネルID（0はマスター）
    * @param {SettingType} type - 設定の種類
    * @returns {number} 設定値（0.0から1.0の範囲）
    */
-  public getSetting(channelId: ChannelId, type: SettingType): number {
+  public getSetting(channelId: ChannelId | 0, type: SettingType): number {
     let value: number | undefined;
     let defaultValue: number;
 
     switch (type) {
       case 'volume':
         value = this.volumeSettings.get(channelId);
-        defaultValue = VOLUME_DEFAULT;
+        defaultValue = channelId === 0 ? 1.0 : VOLUME_DEFAULT;
         break;
       case 'timing':
+        if (channelId === 0) {
+          throw new Error('マスターチャンネルにはタイミング設定は適用できません');
+        }
         value = this.timingSettings.get(channelId);
         defaultValue = 0.0;
         break;
       case 'pitch':
+        if (channelId === 0) {
+          throw new Error('マスターチャンネルにはピッチ設定は適用できません');
+        }
         value = this.pitchSettings.get(channelId);
         defaultValue = PITCH_DEFAULT_RATE;
         break;
@@ -95,6 +110,9 @@ export class PlaybackSettingManager {
    * @description すべての設定をデフォルト値にリセット
    */
   public clearSettings(): void {
+    // マスターチャンネルの設定をクリア
+    this.volumeSettings.set(0, 1.0);
+
     // 各チャンネルの設定をクリア
     CHANNEL_IDS.forEach(channelId => {
       this.volumeSettings.set(channelId, VOLUME_DEFAULT);

@@ -320,8 +320,8 @@ export default defineComponent({
         }
 
         // マスターボリュームを設定
-        audioEngine.setMasterVolume(masterVolume.value);
-        
+        audioEngine.updateMasterVolume(masterVolume.value);
+
         // マスターフィルターを設定
         audioEngine.setFilterValue(0, masterFilterAngle.value);
 
@@ -376,7 +376,7 @@ export default defineComponent({
     const updateMasterVolume = (value: number): void => {
       try {
         masterVolume.value = value;
-        audioEngine.setMasterVolume(value);
+        audioEngine.updateMasterVolume(value);
       } catch (error) {
         handleError('マスターボリュームの更新に失敗しました', error as Error);
       }
@@ -385,7 +385,7 @@ export default defineComponent({
     const resetMasterVolume = (): void => {
       try {
         masterVolume.value = 0.8;
-        audioEngine.setMasterVolume(0.8);
+        audioEngine.updateMasterVolume(0.8);
       } catch (error) {
         handleError('マスターボリュームのリセットに失敗しました', error as Error);
       }

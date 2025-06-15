@@ -53,9 +53,12 @@ export class AudioEngine {
    */
   constructor(playbackSettingsManager: PlaybackSettingManager) {
     try {
+      // PlaybackSettingManagerの設定を先に行う
+      this.playbackSettingsManager = playbackSettingsManager;
+
+      // AudioContextの初期化
       this.context = new AudioContext();
       this.isInitialized = true;  // 初期化フラグを先に設定
-      this.initMasterGain();
       
       // EffectsManagerの初期化
       this.effectsManager = new EffectsManager(this.context);
@@ -63,8 +66,8 @@ export class AudioEngine {
       // エフェクトチェーンの初期化
       this.initEffectChains();
 
-      // PlaybackSettingManagerの設定
-      this.playbackSettingsManager = playbackSettingsManager;
+      // マスターゲインの初期化（PlaybackSettingManagerを使用するため、最後に実行）
+      this.initMasterGain();
     } catch (error: unknown) {
       throw new Error(`AudioEngineの初期化に失敗しました: ${(error as Error).message}`);
     }
@@ -140,6 +143,10 @@ export class AudioEngine {
       this.effectChains[effectChainIndex].getOutput().disconnect();
       this.effectChains[effectChainIndex].getOutput().connect(this.effectChains[0].getInput());
   
+      // マスターエフェクトチェーンの出力をマスターゲインに接続
+      this.effectChains[0].getOutput().disconnect();
+      this.effectChains[0].getOutput().connect(this.masterGain);
+  
     } catch (error) {
       throw new Error(`チャンネル ${channelId} の接続に失敗しました: ${(error as Error).message}`);
     }
@@ -152,26 +159,12 @@ export class AudioEngine {
   private initMasterGain(): void {
     try {
       this.masterGain = this.context.createGain();
+      // マスターゲインの初期値をPlaybackSettingManagerから取得
+      this.masterGain.gain.value = this.playbackSettingsManager.getSetting(0, 'volume');
       // マスターゲインを出力に接続
-      this.connectMasterGainToOutput();
-    } catch (error) {
-      throw new Error(`マスターゲインの初期化に失敗しました: ${(error as Error).message}`);
-    }
-  }
-
-  /**
-   * マスターゲインを出力に接続
-   * @throws {Error} 初期化されていない場合
-   */
-  private connectMasterGainToOutput(): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    try {
-      this.masterGain.disconnect();
       this.masterGain.connect(this.context.destination);
     } catch (error) {
-      throw new Error(`マスターゲインの接続に失敗しました: ${(error as Error).message}`);
+      throw new Error(`マスターゲインの初期化に失敗しました: ${(error as Error).message}`);
     }
   }
 
@@ -187,26 +180,40 @@ export class AudioEngine {
     try {
       // マスター用エフェクトチェーン
       const masterEffectChain = new EffectChain(this.context);
-      masterEffectChain.addEffect(this.effectsManager.getEffect(0, 'filter'));
+      const masterFilter = this.effectsManager.getEffect(0, 'filter');
+      if (masterFilter) {
+        masterEffectChain.addEffect(masterFilter);
+      }
       this.effectChains[0] = masterEffectChain;
   
       // チャンネル1用エフェクトチェーン
       const channel1EffectChain = new EffectChain(this.context);
-      channel1EffectChain.addEffect(this.effectsManager.getEffect(1, 'filter'));
+      const channel1Filter = this.effectsManager.getEffect(1, 'filter');
+      if (channel1Filter) {
+        channel1EffectChain.addEffect(channel1Filter);
+      }
       this.effectChains[1] = channel1EffectChain;
   
       // チャンネル2用エフェクトチェーン
       const channel2EffectChain = new EffectChain(this.context);
-      channel2EffectChain.addEffect(this.effectsManager.getEffect(2, 'filter'));
+      const channel2Filter = this.effectsManager.getEffect(2, 'filter');
+      if (channel2Filter) {
+        channel2EffectChain.addEffect(channel2Filter);
+      }
       this.effectChains[2] = channel2EffectChain;
   
       // チャンネル3用エフェクトチェーン
       const channel3EffectChain = new EffectChain(this.context);
-      channel3EffectChain.addEffect(this.effectsManager.getEffect(3, 'filter'));
+      const channel3Filter = this.effectsManager.getEffect(3, 'filter');
+      if (channel3Filter) {
+        channel3EffectChain.addEffect(channel3Filter);
+      }
       this.effectChains[3] = channel3EffectChain;
-
+  
       // マスターのEffectChainの出力をマスターゲインに接続
-      this.effectChains[0].getOutput().connect(this.masterGain);
+      if (this.effectChains[0] && this.masterGain) {
+        this.effectChains[0].getOutput().connect(this.masterGain);
+      }
     } catch (error) {
       throw new Error(`エフェクトチェーンの初期化に失敗しました: ${(error as Error).message}`);
     }
@@ -337,10 +344,10 @@ export class AudioEngine {
       const normalizedVolume = this.playbackSettingsManager.getSetting(channelId, 'volume');
       gain.gain.value = normalizedVolume;
 
-      // 既存の接続を切断してから新しい接続を作成
-      gain.disconnect();
-      source.connect(gain);
-      // サンプルをエフェクトチェーンに再接続
+      // 音声信号の接続
+      source.connect(gain);  // ソース → ゲイン
+
+      // サンプルをエフェクトチェーンに接続
       this.connectSampleToEffectChain(channelId);
 
       // タイミングの設定を取得して適用
@@ -413,27 +420,10 @@ export class AudioEngine {
     this.onPlaybackEndCallback = callback;
   }  
 
-  // ===== マスターボリューム制御 =====
-
-  /**
-   * マスターボリュームを設定
-   * @param {number} value - マスターボリューム値（0.0 から 1.0）
-   * @throws {Error} 初期化されていない場合、または値が範囲外の場合
-   */
-  public setMasterVolume(value: number): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    if (value < 0 || value > 1) {
-      throw new Error('マスターボリュームは0.0から1.0の範囲で指定してください');
-    }
-    this.masterGain.gain.value = value;
-  }
-
   // ===== サンプルの音量の制御 =====
 
   /**
-   * サンプルの音量を取得
+   * サンプルの音量を取得VUメータ用
    * @param {ChannelId} channelId - チャンネルID
    * @returns {number} 現在の音量値（0.0から1.0の範囲）
    * @throws {Error} 初期化されていない場合
@@ -443,77 +433,6 @@ export class AudioEngine {
       throw new Error('AudioEngineが初期化されていません');
     }
     return this.playbackSettingsManager.getSetting(channelId, 'volume');
-  }
-  
-  // ===== タイミング制御 =====
-
-  /**
-   * サンプルの再生タイミングを保存
-   * @param {ChannelId} channelId - チャンネルID
-   * @param {number} timing - 0.0から1.0の範囲のタイミング値（内部で0.0から0.5秒に変換）
-   * @throws {Error} 初期化されていない場合、または無効なタイミング値の場合
-   */
-  public saveTiming(channelId: ChannelId, timing: number): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    if (timing < 0 || timing > 1) {
-      throw new Error('タイミングは0から1の範囲で指定してください');
-    }
-    // PlaybackSettingManagerを使用して設定を保存
-    this.playbackSettingsManager.setSetting(channelId, 'timing', timing);
-  }
-
-  /**
-   * サンプルの再生タイミングを取得
-   * @param {ChannelId} channelId - チャンネルID
-   * @returns {number} 現在のタイミング値（0.0から0.5秒の範囲）
-   * @throws {Error} 初期化されていない場合
-   */
-  public getTiming(channelId: ChannelId): number {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    return this.playbackSettingsManager.getSetting(channelId, 'timing');
-  }
-
-  // ===== ピッチ制御 =====
-
-  /**
-   * サンプルのピッチレートを保存
-   * @param {ChannelId} channelId - チャンネルID
-   * @param {number} value - ピッチ値（0.0から1.0の範囲）
-   * @throws {Error} 初期化されていない場合、または無効なピッチ値の場合
-   */
-  public saveSamplePitchRate(channelId: ChannelId, value: number): void {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    if (!this.sampleBuffers.has(channelId)) {
-      throw new Error(`チャンネル ${channelId} が見つかりません`);
-    }
-    if (value < 0 || value > 1) {
-      throw new Error('ピッチ値は0.0から1.0の範囲で指定してください');
-    }
-
-    // PlaybackSettingManagerを使用して設定を保存
-    this.playbackSettingsManager.setSetting(channelId, 'pitch', value);
-  }
-
-  /**
-   * サンプルのピッチレートを取得
-   * @param {ChannelId} channelId - チャンネルID
-   * @returns {number} 現在のピッチレート（0.5から2.0の範囲）
-   * @throws {Error} 初期化されていない場合、またはサンプルが存在しない場合
-   */
-  public getSamplePitchRate(channelId: ChannelId): number {
-    if (!this.isInitialized) {
-      throw new Error('AudioEngineが初期化されていません');
-    }
-    if (!this.sampleBuffers.has(channelId)) {
-      throw new Error(`チャンネル ${channelId} が見つかりません`);
-    }
-    return this.playbackSettingsManager.getSetting(channelId, 'pitch');
   }
 
   // ===== エフェクト管理 =====
@@ -547,7 +466,22 @@ export class AudioEngine {
     if (!this.isInitialized) {
       throw new Error('AudioEngineが初期化されていません');
     }
-    return this.masterGain.gain.value;
+    return this.playbackSettingsManager.getSetting(0, 'volume');
+  }
+
+  /**
+   * マスターボリュームを更新
+   * @param {number} value - 新しいマスターボリューム値（0.0から1.0の範囲）
+   * @throws {Error} 初期化されていない場合
+   */
+  public updateMasterVolume(value: number): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    // PlaybackSettingManagerに値を保存
+    this.playbackSettingsManager.setSetting(0, 'volume', value);
+    // マスターゲインの値を更新
+    this.masterGain.gain.value = value;
   }
 
   /**
