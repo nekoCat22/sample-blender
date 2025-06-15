@@ -188,8 +188,7 @@
 import { defineComponent, ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import { AudioEngine } from '../core/AudioEngine'
 import { PlaybackSettingManager } from '../core/PlaybackSettingManager'
-import { ChannelId } from '../core/audioConstants'
-import { ChannelType } from '../core/EffectsManager'
+import { ChannelId } from '../core/EffectsManager'
 import WaveformDisplay from './WaveformDisplay.vue'
 import VolumeMeter from './VolumeMeter.vue'
 import Knob from './Knob.vue'
@@ -300,23 +299,23 @@ export default defineComponent({
       try {
         isLoading.value = true;
 
-        for (let channelNumber of [1, 2, 3] as ChannelId[]) {
-          const response = await fetch(`/sample${channelNumber}.wav`);
+        for (let channelId of [1, 2, 3] as ChannelId[]) {
+          const response = await fetch(`/sample${channelId}.wav`);
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
           const blob = await response.blob();
-          audioBlobs.value[channelNumber] = blob;
+          audioBlobs.value[channelId] = blob;
           
           // AudioEngineで音声データを読み込み
           const arrayBuffer = await blob.arrayBuffer();
-          await audioEngine.loadSample(channelNumber, arrayBuffer);
+          await audioEngine.loadSample(channelId, arrayBuffer);
           
           // 初期設定をPlaybackSettingManagerに保存
-          playbackSettingsManager.setSetting(channelNumber, 'volume', 0.8);
-          playbackSettingsManager.setSetting(channelNumber, 'pitch', 0.5);
-          if (channelNumber === 2 || channelNumber === 3) {
-            playbackSettingsManager.setSetting(channelNumber, 'timing', 0.0);
+          playbackSettingsManager.setSetting(channelId, 'volume', 0.8);
+          playbackSettingsManager.setSetting(channelId, 'pitch', 0.5);
+          if (channelId === 2 || channelId === 3) {
+            playbackSettingsManager.setSetting(channelId, 'timing', 0.0);
           }
         }
 
@@ -393,92 +392,92 @@ export default defineComponent({
     };
 
     // サンプル音量制御
-    const updateVolume = (channelNumber: ChannelId, value: number): void => {
+    const updateVolume = (channelId: ChannelId, value: number): void => {
       try {
-        playbackSettingsManager.setSetting(channelNumber, 'volume', value);
-        volumeAngles.value[channelNumber] = value;
+        playbackSettingsManager.setSetting(channelId, 'volume', value);
+        volumeAngles.value[channelId] = value;
       } catch (error) {
         handleError('音量の更新に失敗しました', error as Error);
       }
     };
 
-    const resetVolume = (channelNumber: ChannelId): void => {
+    const resetVolume = (channelId: ChannelId): void => {
       try {
-        playbackSettingsManager.setSetting(channelNumber, 'volume', 0.8);
-        volumeAngles.value[channelNumber] = 0.8;
+        playbackSettingsManager.setSetting(channelId, 'volume', 0.8);
+        volumeAngles.value[channelId] = 0.8;
       } catch (error) {
         handleError('音量のリセットに失敗しました', error as Error);
       }
     };
 
     // タイミング制御
-    const updateTiming = (channelNumber: ChannelId, value: number): void => {
+    const updateTiming = (channelId: ChannelId, value: number): void => {
       try {
-        playbackSettingsManager.setSetting(channelNumber, 'timing', value);
-        timingAngles.value[channelNumber] = value;
+        playbackSettingsManager.setSetting(channelId, 'timing', value);
+        timingAngles.value[channelId] = value;
       } catch (error) {
         handleError('タイミングの調整に失敗しました', error as Error);
       }
     };
 
-    const resetTiming = (channelNumber: ChannelId): void => {
+    const resetTiming = (channelId: ChannelId): void => {
       try {
-        playbackSettingsManager.setSetting(channelNumber, 'timing', 0.0);
-        timingAngles.value[channelNumber] = 0.0;
+        playbackSettingsManager.setSetting(channelId, 'timing', 0.0);
+        timingAngles.value[channelId] = 0.0;
       } catch (error) {
         handleError('タイミングのリセットに失敗しました', error as Error);
       }
     };
 
     // ピッチ制御
-    const updatePitch = (channelNumber: ChannelId, value: number): void => {
+    const updatePitch = (channelId: ChannelId, value: number): void => {
       try {
-        playbackSettingsManager.setSetting(channelNumber, 'pitch', value);
-        pitchAngles.value[channelNumber] = value;
+        playbackSettingsManager.setSetting(channelId, 'pitch', value);
+        pitchAngles.value[channelId] = value;
       } catch (error) {
         handleError('ピッチの更新に失敗しました', error as Error);
       }
     };
 
-    const resetPitch = (channelNumber: ChannelId): void => {
+    const resetPitch = (channelId: ChannelId): void => {
       try {
-        playbackSettingsManager.setSetting(channelNumber, 'pitch', 0.5);
-        pitchAngles.value[channelNumber] = 0.5;
+        playbackSettingsManager.setSetting(channelId, 'pitch', 0.5);
+        pitchAngles.value[channelId] = 0.5;
       } catch (error) {
         handleError('ピッチのリセットに失敗しました', error as Error);
       }
     };
 
     // フィルター制御
-    const updateFilter = (channelNumber: ChannelId | 0, angle: number) => {
+    const updateFilter = (channelId: ChannelId | 0, angle: number) => {
       try {
         const effectsManager = audioEngine.getEffectsManager();
-        if (channelNumber === 0) {
+        if (channelId === 0) {
           // マスターフィルターの更新
-          effectsManager.setFilterValue(0 as ChannelType, angle);
+          effectsManager.setFilterValue(0 as ChannelId, angle);
           masterFilterAngle.value = angle;
         } else {
           // サンプルのフィルターの更新
-          effectsManager.setFilterValue(channelNumber as ChannelType, angle);
-          filterAngles.value[channelNumber] = angle;
+          effectsManager.setFilterValue(channelId as ChannelId, angle);
+          filterAngles.value[channelId] = angle;
         }
       } catch (error) {
         handleError('フィルターの更新に失敗しました', error as Error);
       }
     };
 
-    const resetFilter = (channelNumber: ChannelId | 0) => {
+    const resetFilter = (channelId: ChannelId | 0) => {
       try {
         const effectsManager = audioEngine.getEffectsManager();
         const initialFilter = 0.5;
-        if (channelNumber === 0) {
+        if (channelId === 0) {
           // マスターフィルターのリセット
           masterFilterAngle.value = initialFilter;
-          effectsManager.setFilterValue(0 as ChannelType, initialFilter);
+          effectsManager.setFilterValue(0 as ChannelId, initialFilter);
         } else {
           // サンプルのフィルターのリセット
-          filterAngles.value[channelNumber] = initialFilter;
-          effectsManager.setFilterValue(channelNumber as ChannelType, initialFilter);
+          filterAngles.value[channelId] = initialFilter;
+          effectsManager.setFilterValue(channelId as ChannelId, initialFilter);
         }
       } catch (error) {
         handleError('フィルターのリセットに失敗しました', error as Error);

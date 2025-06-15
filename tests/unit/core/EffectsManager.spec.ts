@@ -9,7 +9,7 @@
  */
 
 import { EffectsManager } from '@/core/EffectsManager';
-import { ChannelType, EffectType } from '@/core/EffectsManager';
+import { ChannelId, EffectType } from '@/core/EffectsManager';
 import { Filter } from '@/effects/Filter';
 
 // Filterのモックを作成
@@ -60,18 +60,18 @@ describe('EffectsManager', () => {
   });
 
   describe('getEffect', () => {
-    it('有効なチャンネルタイプとエフェクトタイプを指定するとエフェクトを取得できる', () => {
-      const channelTypes: ChannelType[] = [0, 1, 2, 3];
+    it('有効なチャンネル識別子とエフェクトタイプを指定するとエフェクトを取得できる', () => {
+      const channelIds: ChannelId[] = [0, 1, 2, 3];
       const effectTypes: EffectType[] = ['filter', 'reverb', 'delay', 'distortion'];
-      channelTypes.forEach(channelType => {
+      channelIds.forEach(channelId => {
         effectTypes.forEach(effectType => {
-          expect(() => effectsManager.getEffect(channelType, effectType)).not.toThrow();
+          expect(() => effectsManager.getEffect(channelId, effectType)).not.toThrow();
         });
       });
     });
 
-    it('無効なチャンネルタイプを指定するとエラーになる', () => {
-      expect(() => effectsManager.getEffect(4 as ChannelType, 'filter')).toThrow();
+    it('無効なチャンネル識別子を指定するとエラーになる', () => {
+      expect(() => effectsManager.getEffect(4 as ChannelId, 'filter')).toThrow();
     });
 
     it('無効なエフェクトタイプを指定するとエラーになる', () => {
@@ -80,18 +80,18 @@ describe('EffectsManager', () => {
   });
 
   describe('setEffectValue', () => {
-    it('有効なチャンネルタイプとエフェクトタイプを指定すると値を設定できる', () => {
-      const channelTypes: ChannelType[] = [0, 1, 2, 3];
+    it('有効なチャンネル識別子とエフェクトタイプを指定すると値を設定できる', () => {
+      const channelIds: ChannelId[] = [0, 1, 2, 3];
       const effectTypes: EffectType[] = ['filter', 'reverb', 'delay', 'distortion'];
-      channelTypes.forEach(channelType => {
+      channelIds.forEach(channelId => {
         effectTypes.forEach(effectType => {
-          expect(() => effectsManager.setEffectValue(channelType, effectType, 0.5)).not.toThrow();
+          expect(() => effectsManager.setEffectValue(channelId, effectType, 0.5)).not.toThrow();
         });
       });
     });
 
-    it('無効なチャンネルタイプを指定するとエラーになる', () => {
-      expect(() => effectsManager.setEffectValue(4 as ChannelType, 'filter', 0.5)).toThrow();
+    it('無効なチャンネル識別子を指定するとエラーになる', () => {
+      expect(() => effectsManager.setEffectValue(4 as ChannelId, 'filter', 0.5)).toThrow();
     });
 
     it('無効なエフェクトタイプを指定するとエラーになる', () => {

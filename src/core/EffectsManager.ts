@@ -16,13 +16,13 @@ import { Filter } from '@/effects/Filter';
 import { BaseEffect } from '@/effects/base/BaseEffect';
 
 /**
- * チャンネルの種類を定義
+ * チャンネルの識別子を定義
  * 0: マスター
  * 1: チャンネル1
  * 2: チャンネル2
  * 3: チャンネル3
  */
-export type ChannelType = 0 | 1 | 2 | 3;
+export type ChannelId = 0 | 1 | 2 | 3;
 
 /**
  * エフェクトの種類を定義
@@ -33,15 +33,15 @@ export type EffectType = 'filter' | 'reverb' | 'delay' | 'distortion';
  * エフェクトの管理クラス
  */
 export class EffectsManager {
-  private readonly channelTypes = {
+  private readonly channelIds = {
     MASTER: 0,
     CHANNEL1: 1,
     CHANNEL2: 2,
     CHANNEL3: 3
   } as const;
 
-  private effects: Map<ChannelType, Map<EffectType, BaseEffect>>;
-  private effectValues: Map<ChannelType, Map<EffectType, number>>;
+  private effects: Map<ChannelId, Map<EffectType, BaseEffect>>;
+  private effectValues: Map<ChannelId, Map<EffectType, number>>;
 
   /**
    * EffectsManagerのコンストラクタ
@@ -61,7 +61,7 @@ export class EffectsManager {
   private initializeEffects(): void {
     try {
       // 各チャンネルのエフェクトを初期化
-      Object.values(this.channelTypes).forEach(channelType => {
+      Object.values(this.channelIds).forEach(channelId => {
         const channelEffects = new Map<EffectType, BaseEffect>();
         const channelValues = new Map<EffectType, number>();
 
@@ -73,8 +73,8 @@ export class EffectsManager {
           channelValues.set(effectType as EffectType, 0.5);
         });
 
-        this.effects.set(channelType, channelEffects);
-        this.effectValues.set(channelType, channelValues);
+        this.effects.set(channelId, channelEffects);
+        this.effectValues.set(channelId, channelValues);
       });
     } catch (error) {
       throw new Error(`エフェクトの初期化に失敗しました: ${(error as Error).message}`);
@@ -83,19 +83,19 @@ export class EffectsManager {
 
   /**
    * エフェクトの値の設定
-   * @param {ChannelType} channelType - チャンネルタイプ
+   * @param {ChannelId} channelId - チャンネル識別子
    * @param {EffectType} effectType - エフェクトタイプ
    * @param {number} value - 設定する値（0.0から1.0の範囲）
-   * @throws {Error} 無効なチャンネルタイプまたはエフェクトタイプの場合
+   * @throws {Error} 無効なチャンネル識別子またはエフェクトタイプの場合
    */
-  public setEffectValue(channelType: ChannelType, effectType: EffectType, value: number): void {
-    if (!this.isValidChannelType(channelType)) {
-      throw new Error(`無効なチャンネルタイプです: ${channelType}`);
+  public setEffectValue(channelId: ChannelId, effectType: EffectType, value: number): void {
+    if (!this.isValidChannelId(channelId)) {
+      throw new Error(`無効なチャンネル識別子です: ${channelId}`);
     }
 
-    const channelEffects = this.effects.get(channelType);
+    const channelEffects = this.effects.get(channelId);
     if (!channelEffects) {
-      throw new Error(`チャンネルのエフェクトが見つかりません: ${channelType}`);
+      throw new Error(`チャンネルのエフェクトが見つかりません: ${channelId}`);
     }
 
     const effect = channelEffects.get(effectType);
@@ -105,7 +105,7 @@ export class EffectsManager {
 
     try {
       effect.updateEffect(value);
-      const channelValues = this.effectValues.get(channelType);
+      const channelValues = this.effectValues.get(channelId);
       if (channelValues) {
         channelValues.set(effectType, value);
       }
@@ -116,19 +116,19 @@ export class EffectsManager {
 
   /**
    * エフェクトの取得
-   * @param {ChannelType} channelType - チャンネルタイプ
+   * @param {ChannelId} channelId - チャンネル識別子
    * @param {EffectType} effectType - エフェクトタイプ
    * @returns {BaseEffect} エフェクト
-   * @throws {Error} 無効なチャンネルタイプまたはエフェクトタイプの場合
+   * @throws {Error} 無効なチャンネル識別子またはエフェクトタイプの場合
    */
-  public getEffect(channelType: ChannelType, effectType: EffectType): BaseEffect {
-    if (!this.isValidChannelType(channelType)) {
-      throw new Error(`無効なチャンネルタイプです: ${channelType}`);
+  public getEffect(channelId: ChannelId, effectType: EffectType): BaseEffect {
+    if (!this.isValidChannelId(channelId)) {
+      throw new Error(`無効なチャンネル識別子です: ${channelId}`);
     }
 
-    const channelEffects = this.effects.get(channelType);
+    const channelEffects = this.effects.get(channelId);
     if (!channelEffects) {
-      throw new Error(`チャンネルのエフェクトが見つかりません: ${channelType}`);
+      throw new Error(`チャンネルのエフェクトが見つかりません: ${channelId}`);
     }
 
     const effect = channelEffects.get(effectType);
@@ -141,21 +141,21 @@ export class EffectsManager {
 
   /**
    * フィルターの値を設定
-   * @param {ChannelType} channelType - チャンネルタイプ
+   * @param {ChannelId} channelId - チャンネル識別子
    * @param {number} value - 設定する値（0.0から1.0の範囲）
-   * @throws {Error} 無効なチャンネルタイプの場合
+   * @throws {Error} 無効なチャンネル識別子の場合
    */
-  public setFilterValue(channelType: ChannelType, value: number): void {
-    this.setEffectValue(channelType, 'filter', value);
+  public setFilterValue(channelId: ChannelId, value: number): void {
+    this.setEffectValue(channelId, 'filter', value);
   }
 
   /**
-   * チャンネルタイプの検証
-   * @param {ChannelType} channelType - 検証するチャンネルタイプ
+   * チャンネル識別子の検証
+   * @param {ChannelId} channelId - 検証するチャンネル識別子
    * @returns {boolean} 有効な場合はtrue
    */
-  private isValidChannelType(channelType: ChannelType): boolean {
-    return Object.values(this.channelTypes).includes(channelType);
+  private isValidChannelId(channelId: ChannelId): boolean {
+    return Object.values(this.channelIds).includes(channelId);
   }
 
   /**
