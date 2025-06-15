@@ -56,6 +56,12 @@
           @update:value="(value) => updatePitch(1, value)"
           @reset="resetPitch(1)"
         />
+        <Knob
+          label="Pan"
+          :value="pans[1]"
+          @update:value="(value) => updatePan(1, value)"
+          @reset="resetPan(1)"
+        />
       </div>
     </div>
 
@@ -95,6 +101,12 @@
           :initial-rotation-offset="-135"
           @update:value="(value) => updatePitch(2, value)"
           @reset="resetPitch(2)"
+        />
+        <Knob
+          label="Pan"
+          :value="pans[2]"
+          @update:value="(value) => updatePan(2, value)"
+          @reset="resetPan(2)"
         />
       </div>
     </div>
@@ -146,6 +158,13 @@
           :is-disabled="!isChannel3Enabled"
           @update:value="(value) => updatePitch(3, value)"
           @reset="resetPitch(3)"
+        />
+        <Knob
+          label="Pan"
+          :value="pans[3]"
+          :is-disabled="!isChannel3Enabled"
+          @update:value="(value) => updatePan(3, value)"
+          @reset="resetPan(3)"
         />
       </div>
     </div>
@@ -244,6 +263,13 @@ export default defineComponent({
 
     // マスターフィルター用の状態変数
     const masterFilterAngle = ref(0.5);
+
+    // パン用の状態変数
+    const panAngles = ref<{ [key: number]: number }>({
+      1: 0.5,
+      2: 0.5,
+      3: 0.5
+    });
 
     // 各フィルターのサブラベルを計算（0から1の正規化値で判断）
     const filterSubLabels = computed(() => {
@@ -484,6 +510,27 @@ export default defineComponent({
       }
     };
 
+    // パン制御
+    const updatePan = (channelId: ChannelId, value: number): void => {
+      try {
+        playbackSettingsManager.setSetting(channelId, 'pan', value);
+        panAngles.value[channelId] = value;
+        audioEngine.updatePan(channelId, value);  // AudioEngineのパン値を更新
+      } catch (error) {
+        handleError('パンの更新に失敗しました', error as Error);
+      }
+    };
+
+    const resetPan = (channelId: ChannelId): void => {
+      try {
+        playbackSettingsManager.setSetting(channelId, 'pan', 0.5);
+        panAngles.value[channelId] = 0.5;
+        audioEngine.updatePan(channelId, 0.5);  // AudioEngineのパン値をリセット
+      } catch (error) {
+        handleError('パンのリセットに失敗しました', error as Error);
+      }
+    };
+
     // ===== メーター制御関連 =====
     const startMeterUpdate = (): void => {
       meterInterval.value = window.setInterval(() => {
@@ -546,6 +593,7 @@ export default defineComponent({
       errorMessage.value = null;
       isLoading.value = false;
       volumeLevel.value = -60;
+      panAngles.value = { 1: 0.5, 2: 0.5, 3: 0.5 };
     });
 
     return {
@@ -576,7 +624,10 @@ export default defineComponent({
       masterFilterAngle,
       filterSubLabels,
       updateFilter,
-      resetFilter
+      resetFilter,
+      pans: panAngles,
+      updatePan,
+      resetPan
     };
   }
 });

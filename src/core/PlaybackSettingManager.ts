@@ -10,15 +10,16 @@
  * - チャンネルごとの個別設定と、マスターチャンネルによる全体制御
  */
 
-import { CHANNEL_IDS, ChannelId, VOLUME_DEFAULT, PITCH_DEFAULT_RATE } from './audioConstants';
+import { CHANNEL_IDS, ChannelId, VOLUME_DEFAULT, PITCH_DEFAULT_RATE, PAN_DEFAULT } from './audioConstants';
 
-export type SettingType = 'volume' | 'timing' | 'pitch';
+export type SettingType = 'volume' | 'timing' | 'pitch' | 'pan';
 
 export class PlaybackSettingManager {
   // 設定値を保持するMap
   private volumeSettings: Map<ChannelId | 0, number> = new Map();
   private timingSettings: Map<ChannelId, number> = new Map();
   private pitchSettings: Map<ChannelId, number> = new Map();
+  private panSettings: Map<ChannelId, number> = new Map();
 
   /**
    * コンストラクタ
@@ -33,6 +34,7 @@ export class PlaybackSettingManager {
       this.volumeSettings.set(channelId, VOLUME_DEFAULT);
       this.timingSettings.set(channelId, 0.0);
       this.pitchSettings.set(channelId, PITCH_DEFAULT_RATE);
+      this.panSettings.set(channelId, PAN_DEFAULT);
     });
   }
 
@@ -64,6 +66,12 @@ export class PlaybackSettingManager {
           throw new Error('マスターチャンネルにはピッチ設定は適用できません');
         }
         this.pitchSettings.set(channelId, value);
+        break;
+      case 'pan':
+        if (channelId === 0) {
+          throw new Error('マスターチャンネルにはパン設定は適用できません');
+        }
+        this.panSettings.set(channelId, value);
         break;
     }
   }
@@ -97,6 +105,13 @@ export class PlaybackSettingManager {
         value = this.pitchSettings.get(channelId);
         defaultValue = PITCH_DEFAULT_RATE;
         break;
+      case 'pan':
+        if (channelId === 0) {
+          throw new Error('マスターチャンネルにはパン設定は適用できません');
+        }
+        value = this.panSettings.get(channelId);
+        defaultValue = PAN_DEFAULT;
+        break;
     }
 
     if (value === undefined) {
@@ -120,6 +135,7 @@ export class PlaybackSettingManager {
       this.volumeSettings.set(channelId, VOLUME_DEFAULT);
       this.timingSettings.set(channelId, 0.0);
       this.pitchSettings.set(channelId, PITCH_DEFAULT_RATE);
+      this.panSettings.set(channelId, PAN_DEFAULT);
     });
   }
 } 

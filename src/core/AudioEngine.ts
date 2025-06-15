@@ -16,7 +16,7 @@
 import { EffectChain } from '@/effects/EffectChain'
 import { EffectsManager } from './EffectsManager'
 import { PlaybackSettingManager } from './PlaybackSettingManager'
-import { PITCH_MIN_RATE, PITCH_MAX_RATE, TIMING_MAX_DELAY_SECONDS, ChannelId } from './audioConstants'
+import { PITCH_MIN_RATE, PITCH_MAX_RATE, TIMING_MAX_DELAY_SECONDS, ChannelId, PAN_MIN, PAN_MAX } from './audioConstants'
 // BaseEffectはFilterが継承してるため、インポートが必須だが、ESLintのエラーが出るため無視する文
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { BaseEffect } from '@/effects/base/BaseEffect'
@@ -38,6 +38,7 @@ export class AudioEngine {
   private sampleStartTimes: Map<ChannelId, number> = new Map();
   private sampleTimings: Map<number, number> = new Map();
   private samplePitches: Map<number, number> = new Map();
+  private samplePanners: Map<ChannelId, StereoPannerNode> = new Map();
 
   // エフェクト関連のプロパティ
   private effectChains: EffectChain[] = [];
@@ -294,8 +295,15 @@ export class AudioEngine {
       const gain = this.context.createGain();
       this.sampleGains.set(channelId, gain);
 
-      // サンプルをエフェクトチェーンに接続
-      this.connectSampleToEffectChain(channelId);
+      // パンノードを作成
+      const panner = this.context.createStereoPanner();
+      // 初期パン値を設定
+      const normalizedPan = this.playbackSettingsManager.getSetting(channelId, 'pan');
+      const panValue = PAN_MIN + (normalizedPan * (PAN_MAX - PAN_MIN));
+      panner.pan.value = panValue;
+      this.samplePanners.set(channelId, panner);
+
+      // 音声信号の接続はplaySamplesで行うため、ここでは接続しない
     } catch (error) {
       if (error instanceof DOMException) {
         throw new Error(`音声データのデコードに失敗しました: ${error.message}`);
@@ -347,13 +355,10 @@ export class AudioEngine {
         const normalizedPitch = this.playbackSettingsManager.getSetting(channelId, 'pitch');
         let playbackRate: number;
         if (normalizedPitch < 0.5) {
-          // 0.0-0.5の範囲をPITCH_MIN_RATE-1.0の範囲に変換
           playbackRate = PITCH_MIN_RATE + (normalizedPitch * 2 * (1.0 - PITCH_MIN_RATE));
         } else if (normalizedPitch > 0.5) {
-          // 0.5-1.0の範囲を1.0-PITCH_MAX_RATEの範囲に変換
           playbackRate = 1.0 + ((normalizedPitch - 0.5) * 2 * (PITCH_MAX_RATE - 1.0));
         } else {
-          // 0.5の場合は1.0（通常速度）
           playbackRate = 1.0;
         }
         source.playbackRate.value = playbackRate;
@@ -364,15 +369,32 @@ export class AudioEngine {
           throw new Error(`チャンネル ${channelId} のゲインノードが見つかりません`);
         }
 
+        // パンノードを取得
+        const panner = this.samplePanners.get(channelId);
+        if (!panner) {
+          throw new Error(`チャンネル ${channelId} のパンノードが見つかりません`);
+        }
+
         // ボリュームの設定を取得して適用
         const normalizedVolume = this.playbackSettingsManager.getSetting(channelId, 'volume');
         gain.gain.value = normalizedVolume;
 
-        // 音声信号の接続
-        source.connect(gain);  // ソース → ゲイン
+        // パンの設定を取得して適用
+        const normalizedPan = this.playbackSettingsManager.getSetting(channelId, 'pan');
+        const panValue = PAN_MIN + (normalizedPan * (PAN_MAX - PAN_MIN));
+        panner.pan.setValueAtTime(panValue, this.context.currentTime);
 
-        // サンプルをエフェクトチェーンに接続
-        this.connectSampleToEffectChain(channelId);
+        // 既存の接続を完全に切断
+        source.disconnect();
+        gain.disconnect();
+        panner.disconnect();
+
+        // 音声信号の接続（新しい順序）
+        console.log(`Setting up audio connections for channel ${channelId} in playSamples`);  // デバッグ用
+        source.connect(panner);  // ソース → パン
+        panner.connect(gain);  // パン → ゲイン
+        gain.connect(this.effectChains[channelId].getInput());  // ゲイン → エフェクトチェーン
+        console.log(`Audio connections set up for channel ${channelId} in playSamples`);  // デバッグ用
 
         // タイミングの設定を取得して適用
         const normalizedTiming = this.playbackSettingsManager.getSetting(channelId, 'timing');
@@ -572,5 +594,84 @@ export class AudioEngine {
       throw new Error('AudioEngineが初期化されていません');
     }
     return this.effectsManager;
+  }
+
+  /**
+   * パン値を更新
+   * @param {ChannelId} channelId - チャンネルID
+   * @param {number} value - 新しいパン値（0.0から1.0の範囲）
+   * @throws {Error} 初期化されていない場合
+   */
+  public updatePan(channelId: ChannelId, value: number): void {
+    if (!this.isInitialized) {
+      throw new Error('AudioEngineが初期化されていません');
+    }
+    const panner = this.samplePanners.get(channelId);
+    const gain = this.sampleGains.get(channelId);
+    if (panner && gain) {
+      // 0.0-1.0の範囲を-1.0-1.0の範囲に変換
+      const panValue = PAN_MIN + (value * (PAN_MAX - PAN_MIN));
+      console.log(`Updating pan for channel ${channelId}: normalized=${value}, actual=${panValue}`);  // デバッグ用
+      
+      // setValueAtTimeを使用してパン値を更新
+      panner.pan.setValueAtTime(panValue, this.context.currentTime);
+
+      // 再生中の場合、新しいソースを作成して再接続
+      if (this.isPlaying) {
+        const source = this.sampleSources.get(channelId);
+        const buffer = this.sampleBuffers.get(channelId);
+        if (source && buffer) {
+          console.log(`Creating new source for channel ${channelId}`);  // デバッグ用
+          // 既存のソースを停止
+          try {
+            source.stop();
+            source.disconnect();
+          } catch (error) {
+            // 既に停止している場合は無視
+          }
+
+          // 新しいソースを作成
+          const newSource = this.context.createBufferSource();
+          newSource.buffer = buffer;
+
+          // ピッチの設定を取得して適用
+          const normalizedPitch = this.playbackSettingsManager.getSetting(channelId, 'pitch');
+          let playbackRate: number;
+          if (normalizedPitch < 0.5) {
+            playbackRate = PITCH_MIN_RATE + (normalizedPitch * 2 * (1.0 - PITCH_MIN_RATE));
+          } else if (normalizedPitch > 0.5) {
+            playbackRate = 1.0 + ((normalizedPitch - 0.5) * 2 * (PITCH_MAX_RATE - 1.0));
+          } else {
+            playbackRate = 1.0;
+          }
+          newSource.playbackRate.value = playbackRate;
+
+          // 既存の接続を完全に切断
+          gain.disconnect();
+          panner.disconnect();
+
+          // 音声信号の接続（新しい順序）
+          console.log(`Setting up audio connections for channel ${channelId} in updatePan`);  // デバッグ用
+          newSource.connect(panner);  // ソース → パン
+          panner.connect(gain);  // パン → ゲイン
+          gain.connect(this.effectChains[channelId].getInput());  // ゲイン → エフェクトチェーン
+          console.log(`Audio connections set up for channel ${channelId} in updatePan`);  // デバッグ用
+
+          // 再生開始
+          const currentTime = this.context.currentTime;
+          const startTime = this.sampleStartTimes.get(channelId) || currentTime;
+          const normalizedTiming = this.playbackSettingsManager.getSetting(channelId, 'timing');
+          const delaySeconds = normalizedTiming * TIMING_MAX_DELAY_SECONDS;
+          const elapsedTime = Math.max(0, currentTime - startTime - delaySeconds);
+          const remainingTime = buffer.duration - elapsedTime;
+          
+          if (remainingTime > 0) {
+            newSource.start(currentTime, elapsedTime);
+            this.sampleSources.set(channelId, newSource);
+            console.log(`New source started for channel ${channelId} at time ${currentTime} with offset ${elapsedTime}`);  // デバッグ用
+          }
+        }
+      }
+    }
   }
 } 

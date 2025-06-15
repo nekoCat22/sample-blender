@@ -19,6 +19,11 @@ export const VOLUME_MIN = 0.0;  // 最小音量
 export const VOLUME_MAX = 1.0;  // 最大音量
 export const VOLUME_DEFAULT = 1.0;  // デフォルト音量
 
+// パン関連の定数
+export const PAN_MIN = -1.0;  // 最小パン値（左）
+export const PAN_MAX = 1.0;   // 最大パン値（右）
+export const PAN_DEFAULT = 0.5;  // デフォルトパン値（中央）
+
 // チャンネル関連の定数
 /**
  * 有効なチャンネルIDの型定義
